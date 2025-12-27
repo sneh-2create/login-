@@ -1,0 +1,21 @@
+{
+    "name": "@od-erp/store",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts,tsx"
+    },
+    "dependencies": {
+        "@reduxjs/toolkit": "^2.0.1",
+        "react-redux": "^9.0.4"
+    },
+    "peerDependencies": {
+        "react": "^18.2.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "@types/react": "^18.2.0"
+    }
+}

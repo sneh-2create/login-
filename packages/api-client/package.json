@@ -1,0 +1,16 @@
+{
+    "name": "@od-erp/api-client",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts"
+    },
+    "dependencies": {
+        "axios": "^1.6.2"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3"
+    }
+}

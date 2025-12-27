@@ -1,0 +1,29 @@
+{
+    "name": "od-erp-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Monorepo for OD ERP Micro-frontends",
+    "scripts": {
+        "build": "pnpm -r build",
+        "test": "pnpm -r test",
+        "lint": "pnpm -r lint",
+        "dev": "pnpm -r dev",
+        "dev:shell": "pnpm --filter shell dev",
+        "dev:admission": "pnpm --filter admission-crm dev",
+        "dev:fee": "pnpm --filter fee-module dev",
+        "dev:academic": "pnpm --filter academic-module dev",
+        "dev:exam": "pnpm --filter exam-coe dev",
+        "dev:hrm": "pnpm --filter hrm dev",
+        "dev:back-office": "pnpm --filter back-office dev",
+        "dev:templates": "pnpm --filter document-template-angular dev"
+    },
+    "devDependencies": {
+        "typescript": "^5.3.3",
+        "prettier": "^3.1.1",
+        "eslint": "^8.56.0"
+    },
+    "engines": {
+        "node": ">=18",
+        "pnpm": ">=8"
+    }
+}
