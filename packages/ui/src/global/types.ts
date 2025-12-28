@@ -11,6 +11,7 @@ export interface SubMenuItem {
     title: string;
     submenu?: SubSubMenuItem[];
     page?: string;
+    fav?: boolean;
 }
 
 export interface SubSubMenuItem {

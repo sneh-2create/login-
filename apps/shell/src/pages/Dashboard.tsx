@@ -1,82 +1,103 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Users, DollarSign, BookOpen, FileText, Briefcase, Settings } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSession } from '@od-erp/store';
+import { useAppSelector } from '@od-erp/store';
+import { cn } from '@od-erp/ui';
 
-interface ModuleCard {
-    title: string;
-    description: string;
-    path: string;
-    icon: React.ReactNode;
-    color: string;
+// Section Placeholders - To be replaced with actual implementations or Module MFEs
+import { StudentOverviewSection, FeeSection, AdmissionSection, AttendanceSection, AnalyticsSection } from '../components/dashboard/sections/Placeholders';
+import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
+import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
+
+
+interface TabConfig {
+    id: string;
+    label: string;
+    component: React.FC;
+    permission: string;
 }
 
-const modules: ModuleCard[] = [
-    {
-        title: 'Admission CRM',
-        description: 'Manage student admissions, leads, and follow-ups',
-        path: '/admission',
-        icon: <Users size={32} />,
-        color: 'bg-blue-500',
-    },
-    {
-        title: 'Fee Module',
-        description: 'Handle fee collection, invoices, and payments',
-        path: '/fee',
-        icon: <DollarSign size={32} />,
-        color: 'bg-green-500',
-    },
-    {
-        title: 'Academic Module',
-        description: 'Manage courses, schedules, and curriculum',
-        path: '/academic',
-        icon: <BookOpen size={32} />,
-        color: 'bg-purple-500',
-    },
-    {
-        title: 'Exam/COE',
-        description: 'Examination controller and result processing',
-        path: '/exam',
-        icon: <FileText size={32} />,
-        color: 'bg-orange-500',
-    },
-    {
-        title: 'HRM',
-        description: 'Employee management and payroll',
-        path: '/hrm',
-        icon: <Briefcase size={32} />,
-        color: 'bg-indigo-500',
-    },
-    {
-        title: 'Back Office',
-        description: 'System configuration and administration',
-        path: '/back-office',
-        icon: <Settings size={32} />,
-        color: 'bg-gray-500',
-    },
+const allTabs: TabConfig[] = [
+    { id: 'quick_links', label: 'Quick Links', component: QuickLinksSection, permission: 'viewEntityDashboard' },
+    { id: 'calendar', label: 'Calendar', component: CalendarSection, permission: 'calendarDashboard' },
+    { id: 'overview', label: 'Student Overview', component: StudentOverviewSection, permission: 'overviewDashboard' },
+    { id: 'fee', label: 'Fee', component: FeeSection, permission: 'feeDashboard' },
+    { id: 'admission', label: 'Admission', component: AdmissionSection, permission: 'admissionDashboard' },
+    { id: 'attendance', label: 'Attendance', component: AttendanceSection, permission: 'attendanceDashboard' },
+    { id: 'analytics', label: 'Analytics', component: AnalyticsSection, permission: 'analyticsDashboard' },
+
 ];
 
 export const Dashboard: React.FC = () => {
+    const { session: { user } } = useSession();
+    const permissions = useAppSelector((state) => state.auth.permissions);
+
+    // Filter tabs based on permissions
+    // If permissions array is empty (or dev mode), we might want to show all or none. 
+    // Legacy app checks if permissions.includes(value).
+    // For Dev convenience, if user is 'admin' or permissions is empty, we might want to show defaults?
+    // But strictly following legacy:
+
+    const visibleTabs = allTabs.filter(tab => permissions.includes(tab.permission));
+
+    // Fallback for development if no permissions are set yet (e.g. fresh login without specific permissions mock)
+    // You can remove this fallback later.
+    const effectiveTabs = visibleTabs.length > 0 ? visibleTabs : allTabs;
+
+    const [activeTab, setActiveTab] = useState(effectiveTabs[0]?.id || '');
+
+    useEffect(() => {
+        if (effectiveTabs.length > 0 && !effectiveTabs.find(t => t.id === activeTab)) {
+            setActiveTab(effectiveTabs[0].id);
+        }
+    }, [effectiveTabs, activeTab]);
+
+    const ActiveComponent = effectiveTabs.find(t => t.id === activeTab)?.component || (() => <div>Section not found</div>);
+
+    if (effectiveTabs.length === 0) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <p className="text-gray-500 text-lg">Please ask admin to set Dashboard preferences</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div>
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Welcome to OD ERP</h1>
-                <p className="text-gray-600 mt-2">Select a module to get started</p>
+        <div className="p-6 bg-gray-50 min-h-screen">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900">
+                        <span className="text-gray-500 font-normal">Hello,</span> {user?.name || 'User'}
+                    </h1>
+                    <p className="text-gray-500 mt-1">Nice to have you back, what an exciting day!</p>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {modules.map((module) => (
-                    <Link
-                        key={module.path}
-                        to={module.path}
-                        className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 border border-gray-200"
-                    >
-                        <div className={`${module.color} w-16 h-16 rounded-lg flex items-center justify-center text-white mb-4`}>
-                            {module.icon}
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{module.title}</h3>
-                        <p className="text-gray-600 text-sm">{module.description}</p>
-                    </Link>
-                ))}
+            {/* Tabs Navigation */}
+            <div className="bg-white rounded-lg shadow-sm p-2 mb-6 overflow-x-auto">
+                <nav className="flex space-x-1 min-w-max" aria-label="Tabs">
+                    {effectiveTabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                                activeTab === tab.id
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="bg-white rounded-lg shadow-sm p-6 min-h-[400px]">
+                <ActiveComponent />
             </div>
         </div>
     );

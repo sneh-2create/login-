@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useSession } from '@od-erp/store';
-import { User } from 'lucide-react';
+import { useSession, useAppDispatch, logout } from '@od-erp/store'; // Added imports
+import { User, LogOut } from 'lucide-react';
 import { cn } from '../utils.ts';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
     className?: string;
@@ -9,10 +11,22 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ className }) => {
     const { session } = useSession();
+    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+
     const [showQuickActions, setShowQuickActions] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     const entityName = session?.user?.name || "OD ERP";
+    const userName = session?.user?.name || "User";
+    const userRole = session?.user?.role || "Admin"; // Fallback
     const quickActionIcon = "https://cdn.lordicon.com/mwzdatpw.json";
+
+    const handleLogout = () => {
+        dispatch(logout());
+        Cookies.remove('token');
+        navigate('/login');
+    };
 
     return (
         <header
@@ -68,21 +82,23 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                     />
 
                     {showQuickActions && (
-                        <div className="absolute top-full right-0 mt-2 w-64 bg-white shadow-xl rounded-lg border border-gray-100 p-4 animate-in fade-in slide-in-from-top-2 origin-top-right">
-                            <h5 className="text-sm font-bold text-gray-800 mb-2 border-b pb-2">Quick Actions</h5>
-                            <div className="space-y-2">
-                                <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">IS</div>
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-700">Institute Setup</p>
-                                        <p className="text-[10px] text-gray-500">Informative Details</p>
+                        <div className="absolute top-full right-0 pt-2 w-64 z-50">
+                            <div className="bg-white shadow-xl rounded-lg border border-gray-100 p-4 animate-in fade-in slide-in-from-top-2 origin-top-right">
+                                <h5 className="text-sm font-bold text-gray-800 mb-2 border-b pb-2">Quick Actions</h5>
+                                <div className="space-y-2">
+                                    <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">IS</div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-700">Institute Setup</p>
+                                            <p className="text-[10px] text-gray-500">Informative Details</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">FS</div>
-                                    <div>
-                                        <p className="text-xs font-bold text-gray-700">Fee Structure</p>
-                                        <p className="text-[10px] text-gray-500">Fee Details</p>
+                                    <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">FS</div>
+                                        <div>
+                                            <p className="text-xs font-bold text-gray-700">Fee Structure</p>
+                                            <p className="text-[10px] text-gray-500">Fee Details</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -90,10 +106,43 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                     )}
                 </div>
 
-                <div className="ml-2 w-10 h-10 rounded-full bg-[#f2ebf8] flex items-center justify-center text-[#9C41ED] hover:bg-[#9C41ED] hover:text-white transition-colors cursor-pointer">
-                    <User size={20} />
+                {/* Profile Dropdown */}
+                <div
+                    className="relative"
+                    onMouseEnter={() => setShowProfileMenu(true)}
+                    onMouseLeave={() => setShowProfileMenu(false)}
+                >
+                    <div className="ml-2 w-10 h-10 rounded-full bg-[#f2ebf8] flex items-center justify-center text-[#9C41ED] hover:bg-[#9C41ED] hover:text-white transition-colors cursor-pointer">
+                        <User size={20} />
+                    </div>
+
+                    {showProfileMenu && (
+                        <div className="absolute top-full right-0 pt-2 w-56 z-50">
+                            <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-2 animate-in fade-in slide-in-from-top-2 origin-top-right">
+                                <div className="px-4 py-3 border-b border-gray-100">
+                                    <p className="text-sm font-bold text-gray-900 truncate">{userName}</p>
+                                    <p className="text-xs text-gray-500 truncate capitalize">{userRole}</p>
+                                </div>
+
+                                <div className="py-1">
+                                    <div className="px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700">
+                                        <User size={16} />
+                                        <span>My Profile</span>
+                                    </div>
+                                    <div
+                                        onClick={handleLogout}
+                                        className="px-4 py-2 hover:bg-red-50 cursor-pointer flex items-center gap-2 text-sm text-red-600 hover:text-red-700"
+                                    >
+                                        <LogOut size={16} />
+                                        <span>Sign Out</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </header>
     );
 };
+

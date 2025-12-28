@@ -6,12 +6,14 @@ import {
     // useAppSelector,
     // toggleSidebar,
     setMenuConfig,
-    setCredentials,
-    setEntityPreferences
 } from '@od-erp/store';
+
 import { menuConfig } from '../config/menu.config';
 
+import { useAppInitialization } from '../hooks/useAppInitialization';
+
 export const Layout: React.FC = () => {
+    useAppInitialization();
     const dispatch = useAppDispatch();
     // const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
     // const user = useAppSelector((state) => state.auth.user); // Handled in Header
@@ -21,33 +23,7 @@ export const Layout: React.FC = () => {
         // Initialize Config
         dispatch(setMenuConfig(menuConfig));
 
-        // Mock Login for demonstration of dynamic menu
-        dispatch(setCredentials({
-            user: { id: '1', name: 'Super Admin', email: 'admin@od.com', role: 'superadmin' },
-            token: 'mock-token',
-            permissions: ['viewSuperAdminDashboard', 'viewEntityList', 'viewWhiteLabellingList']
-        }));
 
-        // Mock Entity Preferences
-        dispatch(setEntityPreferences({
-            displayNames: {
-                course: 'Class',
-                event: 'Event',
-                partnerInstitute: 'Partner Institute',
-                sharePoint: 'SharePoint',
-                greenSheet: 'Green Sheet',
-                schoolDiary: 'School Diary',
-                issuedBooks: 'Issued Books',
-                seminar: 'Seminar',
-                classTest: 'Class Test',
-                rollNo: 'Roll No',
-                regNo: 'Reg No',
-                lesson: 'Lesson',
-                homework: 'Homework'
-            },
-            studentAttendanceVersion: 'new',
-            colourTheme: '#1ca9c9'
-        }));
 
     }, [dispatch]);
 

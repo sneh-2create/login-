@@ -12,15 +12,19 @@ export interface ConfigMenuItem {
     admPermission?: string;
     entPermission?: string;
     submenu?: ConfigMenuItem[];
+
+    fav?: boolean;
 }
 
 export const useMenu = () => {
     const { menuConfig, entityPreferences } = useAppSelector((state) => state.config);
-    const { permissions, user } = useAppSelector((state) => state.auth);
+    const { permissions, user, preferences } = useAppSelector((state) => state.auth);
 
     // Transform logic
     const getFilteredMenu = (): ConfigMenuItem[] => {
-        if (!menuConfig) return [];
+        if (!menuConfig) {
+            return [];
+        }
 
         let rawItems: ConfigMenuItem[] = [];
         // Determine which section to use based on user role/type
@@ -32,10 +36,11 @@ export const useMenu = () => {
             rawItems = menuConfig.entityAside?.items || [];
         }
 
-        return transformMenuItems(rawItems);
+        const favourites = preferences?.favourites || [];
+        return transformMenuItems(rawItems, favourites);
     };
 
-    const transformMenuItems = (items: ConfigMenuItem[]): ConfigMenuItem[] => {
+    const transformMenuItems = (items: ConfigMenuItem[], favourites: any[]): ConfigMenuItem[] => {
         let updatedItems: ConfigMenuItem[] = [];
 
         for (const item of items) {
@@ -57,12 +62,17 @@ export const useMenu = () => {
                 newItem.title = renameTitle(newItem.title, entityPreferences.displayNames);
             }
 
-            // 4. Process Submenu
+            // 4. Check Favourite Status
+            newItem.fav = favourites.some((f: any) => f.name === newItem.title);
+
+            // 5. Process Submenu
             if (newItem.submenu && newItem.submenu.length > 0) {
-                newItem.submenu = transformMenuItems(newItem.submenu);
+                newItem.submenu = transformMenuItems(newItem.submenu, favourites);
+                // Also check if any child is favourite, might be relevant for parent highlighting, but typically only leaf or direct subitems are marked. 
+                // However, matching Angular logic, we might not need to mark parent as fav based on child. 
             }
 
-            // 5. Version Check (Attendance) - simplified for now
+            // 6. Version Check (Attendance) - simplified for now
             if (newItem.title === 'Attendance' && entityPreferences?.studentAttendanceVersion !== 'old') continue;
             if (newItem.title === 'Attendance New' && entityPreferences?.studentAttendanceVersion !== 'new') continue;
 

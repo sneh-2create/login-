@@ -77,5 +77,9 @@ export const authService = {
     forgotPassword: async (email: string) => {
         const response = await apiClient.post('/auth/forgot-password', { email });
         return response.data;
+    },
+    fetchSession: async (entity: string, session: string) => {
+        const response = await apiClient.get('/fetch/session', { params: { entity, session } });
+        return response.data;
     }
 }

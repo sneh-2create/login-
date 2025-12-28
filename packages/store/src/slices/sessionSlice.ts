@@ -6,6 +6,7 @@ export interface SessionState {
     entityType: string | null;
     academicSession: string | null;
     admissionSession: string | null;
+    sessionList: any[]; // List of available sessions
 }
 
 const initialState: SessionState = {
@@ -14,6 +15,7 @@ const initialState: SessionState = {
     entityType: null,
     academicSession: null,
     admissionSession: null,
+    sessionList: [],
 };
 
 const sessionSlice = createSlice({
@@ -31,15 +33,21 @@ const sessionSlice = createSlice({
         setAdmissionSession: (state, action: PayloadAction<string>) => {
             state.admissionSession = action.payload;
         },
+        setSessionList: (state, action: PayloadAction<any[]>) => {
+            // Assuming session list items have at least { name: string } or similar
+            // Storing raw array for now as 'any[]', can refine types later
+            state.sessionList = action.payload;
+        },
         clearSession: (state) => {
             state.entityId = null;
             state.entityName = null;
             state.entityType = null;
             state.academicSession = null;
             state.admissionSession = null;
+            state.sessionList = [];
         },
     },
 });
 
-export const { setEntity, setAcademicSession, setAdmissionSession, clearSession } = sessionSlice.actions;
+export const { setEntity, setAcademicSession, setAdmissionSession, setSessionList, clearSession } = sessionSlice.actions;
 export default sessionSlice.reducer;

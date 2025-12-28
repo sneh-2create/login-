@@ -14,7 +14,7 @@ import { AdmissionPage } from './pages/AdmissionPage';
 const App: React.FC = () => {
     return (
         <Provider store={store}>
-            <Router>
+            <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Routes>
                     {/* Public Route */}
                     <Route path="/login" element={<Login />} />
@@ -23,6 +23,7 @@ const App: React.FC = () => {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<Layout />}>
                             <Route index element={<Dashboard />} />
+                            <Route path="entity/dashboard" element={<Dashboard />} />
                             <Route path="admission/*" element={<AdmissionPage />} />
                             <Route path="fee/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Fee Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
                             <Route path="academic/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Academic Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />

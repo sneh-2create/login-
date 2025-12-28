@@ -26,6 +26,8 @@ export interface EntityPreferences {
 export interface ConfigState {
     menuConfig: any; // Using any for complex nested structure for now
     entityPreferences: EntityPreferences | null;
+    currentDate: string | null;
+    whiteLabelConfig: any | null;
     loading: boolean;
     error: string | null;
 }
@@ -33,6 +35,8 @@ export interface ConfigState {
 const initialState: ConfigState = {
     menuConfig: null,
     entityPreferences: null,
+    currentDate: null,
+    whiteLabelConfig: null,
     loading: false,
     error: null,
 };
@@ -47,6 +51,12 @@ const configSlice = createSlice({
         setEntityPreferences: (state, action: PayloadAction<EntityPreferences>) => {
             state.entityPreferences = action.payload;
         },
+        setCurrentDate: (state, action: PayloadAction<string>) => {
+            state.currentDate = action.payload;
+        },
+        setWhiteLabelConfig: (state, action: PayloadAction<any>) => {
+            state.whiteLabelConfig = action.payload;
+        },
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.loading = action.payload;
         },
@@ -56,5 +66,5 @@ const configSlice = createSlice({
     },
 });
 
-export const { setMenuConfig, setEntityPreferences, setLoading, setError } = configSlice.actions;
+export const { setMenuConfig, setEntityPreferences, setCurrentDate, setWhiteLabelConfig, setLoading, setError } = configSlice.actions;
 export default configSlice.reducer;

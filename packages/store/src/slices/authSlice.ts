@@ -9,11 +9,13 @@ export interface User {
     permissions?: string[];
 }
 
+
 export interface AuthState {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
     permissions: string[];
+    preferences: any | null;
 }
 
 const initialState: AuthState = {
@@ -21,22 +23,25 @@ const initialState: AuthState = {
     token: null,
     isAuthenticated: false,
     permissions: [],
+    preferences: null,
 };
 
 const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        setCredentials: (state, action: PayloadAction<{ user: User; token: string; permissions?: string[] }>) => {
+        setCredentials: (state, action: PayloadAction<{ user: User; token: string; permissions?: string[]; preferences?: any }>) => {
             state.user = action.payload.user;
             state.token = action.payload.token;
             state.permissions = action.payload.permissions || action.payload.user.permissions || [];
+            state.preferences = action.payload.preferences || null;
             state.isAuthenticated = true;
         },
         logout: (state) => {
             state.user = null;
             state.token = null;
             state.permissions = [];
+            state.preferences = null;
             state.isAuthenticated = false;
         },
         updateUser: (state, action: PayloadAction<Partial<User>>) => {
@@ -44,8 +49,11 @@ const authSlice = createSlice({
                 state.user = { ...state.user, ...action.payload };
             }
         },
+        updatePreferences: (state, action: PayloadAction<any>) => {
+            state.preferences = action.payload;
+        },
     },
 });
 
-export const { setCredentials, logout, updateUser } = authSlice.actions;
+export const { setCredentials, logout, updateUser, updatePreferences } = authSlice.actions;
 export default authSlice.reducer;

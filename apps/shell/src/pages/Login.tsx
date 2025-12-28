@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@od-erp/api-client';
 import { useAppDispatch } from '@od-erp/store';
-import { setCredentials } from '@od-erp/store';
+import { setCredentials, setAcademicSession, setEntity } from '@od-erp/store';
 import { Loader2 } from 'lucide-react';
+import { useMutation } from '@od-erp/query';
 
 // Import Assets
 import slide1 from '../assets/images/slide1.1.svg';
@@ -11,9 +12,6 @@ import slide2 from '../assets/images/slider2.svg';
 import slide3 from '../assets/images/slider3.svg';
 import topLogo from '../assets/images/top-logo.png';
 import welcomeIcon from '../assets/images/welcomeIcon.png';
-// Using these as fallbacks or main icons if specific assets not available
-// import otpIcon from '../assets/images/otpIcon.png'; 
-// import loginPointer from '../assets/images/loginPointer.png';
 
 export const Login: React.FC = () => {
     const navigate = useNavigate();
@@ -22,8 +20,12 @@ export const Login: React.FC = () => {
     // UI State
     const [authMode, setAuthMode] = useState<'OTP' | 'PASSWORD'>('OTP');
     const [otpSent, setOtpSent] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Form Data
+    const [mobile, setMobile] = useState('');
+    const [password, setPassword] = useState('');
+    const [otp, setOtp] = useState('');
 
     // Carousel State
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -40,83 +42,120 @@ export const Login: React.FC = () => {
         return () => clearInterval(interval);
     }, [slides.length]);
 
-    // Form Data
-    const [mobile, setMobile] = useState('');
-    const [password, setPassword] = useState('');
-    const [otp, setOtp] = useState('');
-
-    const handleGetOtp = async () => {
-        if (!mobile || mobile.length !== 10) {
-            setError('Please enter a valid 10-digit mobile number');
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            await authService.sendOtp(mobile);
+    // Mutations
+    const sendOtpMutation = useMutation({
+        mutationFn: (mobile: string) => authService.sendOtp(mobile),
+        onSuccess: () => {
             setOtpSent(true);
-            setAuthMode('OTP'); // Ensure we are in OTP mode
-        } catch (err: any) {
+            setAuthMode('OTP');
+            setError(null);
+        },
+        onError: (err: any) => {
             console.error('Send OTP failed', err);
             setError(err.response?.data?.message || 'Failed to send OTP');
-        } finally {
-            setLoading(false);
         }
-    };
+    });
 
-    const handleVerifyOtp = async () => {
-        if (!otp || otp.length !== 6) {
-            setError('Please enter a valid 6-digit OTP');
-            return;
+    const fetchSessionMutation = useMutation({
+        mutationFn: ({ entityId, sessionName }: { entityId: string; sessionName: string }) =>
+            authService.fetchSession(entityId, sessionName),
+        onSuccess: (data) => {
+            // Update session with preferred session details
+            dispatch(setAcademicSession(data.name));
+            // You might want to update other session details here if added to sessionSlice (superSession, dates etc)
         }
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await authService.verifyOtp(mobile, otp, 'erp');
-            handleAuthSuccess(response);
-        } catch (err: any) {
-            console.error('Verify OTP failed', err);
-            setError(err.response?.data?.message || 'Invalid OTP');
-        } finally {
-            setLoading(false);
-        }
-    };
+    });
 
-    const handlePasswordLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!mobile || !password) {
-            setError('Mobile and Password are required');
-            return;
-        }
-        setLoading(true);
-        setError(null);
-        try {
-            const response = await authService.login({ mobile, password });
-            handleAuthSuccess(response);
-        } catch (err: any) {
-            console.error('Login failed', err);
-            setError(err.response?.data?.message || 'Invalid Credentials');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleAuthSuccess = (response: any) => {
-        // Dispatch to store
+    const handleAuthSuccess = async (response: any) => {
+        // 1. Dispatch Initial Credentials & Entity
         dispatch(setCredentials({
             user: {
                 id: response.userId || response._id,
                 name: response.name,
                 email: response.email || '',
                 role: response.userType,
+                employeeId: response.employee || response.employeeId,
                 permissions: response.permissions ? (Array.isArray(response.permissions) ? response.permissions : []) : [],
             },
-            token: response.token
+            token: response.token,
+            preferences: response.userPreferences || null
         }));
 
-        // Handle redirection based on userType (mimicking Angular logic roughly)
-        // For now, just go to root/dashboard
+        if (response.entity) {
+            dispatch(setEntity({
+                id: response.entity._id,
+                name: response.entity.displayName || response.entity.name,
+                type: response.entity.entityType
+            }));
+            // Set default active session first
+            if (response.entity.activeSession) {
+                dispatch(setAcademicSession(response.entity.activeSession.name));
+            }
+        }
+
+        // 2. Check for Preferred Session (The "In-Between" Step)
+        if (response.userPreferences && response.userPreferences.session && response.entity) {
+            try {
+                // If user has a specific preferred session, fetch it
+                const sessionData = await fetchSessionMutation.mutateAsync({
+                    entityId: response.entity._id,
+                    sessionName: response.userPreferences.session
+                });
+                // Update Redux with the preferred session
+                dispatch(setAcademicSession(sessionData.name));
+            } catch (err) {
+                console.warn('Failed to fetch preferred session, sticking to active session', err);
+                // Optional: Show toast or alert like legacy "Preferred session not found..."
+            }
+        }
+
+        // 3. Navigate to Dashboard
         navigate('/');
+    };
+
+    const loginMutation = useMutation({
+        mutationFn: (credentials: any) => authService.login(credentials),
+        onSuccess: handleAuthSuccess,
+        onError: (err: any) => {
+            console.error('Login failed', err);
+            setError(err.response?.data?.message || 'Invalid Credentials');
+        }
+    });
+
+    const verifyOtpMutation = useMutation({
+        mutationFn: ({ mobile, otp }: { mobile: string; otp: string }) => authService.verifyOtp(mobile, otp, 'erp'),
+        onSuccess: handleAuthSuccess,
+        onError: (err: any) => {
+            console.error('Verify OTP failed', err);
+            setError(err.response?.data?.message || 'Invalid OTP');
+        }
+    });
+
+    const isLoading = sendOtpMutation.isPending || loginMutation.isPending || verifyOtpMutation.isPending || fetchSessionMutation.isPending;
+
+    const handleGetOtp = () => {
+        if (!mobile || mobile.length !== 10) {
+            setError('Please enter a valid 10-digit mobile number');
+            return;
+        }
+        sendOtpMutation.mutate(mobile);
+    };
+
+    const handleVerifyOtp = () => {
+        if (!otp || otp.length !== 6) {
+            setError('Please enter a valid 6-digit OTP');
+            return;
+        }
+        verifyOtpMutation.mutate({ mobile, otp });
+    };
+
+    const handlePasswordLogin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!mobile || !password) {
+            setError('Mobile and Password are required');
+            return;
+        }
+        loginMutation.mutate({ mobile, password });
     };
 
     return (
@@ -193,7 +232,7 @@ export const Login: React.FC = () => {
                                         value={mobile}
                                         onChange={(e) => setMobile(e.target.value.replace(/\D/, ''))} // Only numbers
                                         maxLength={10}
-                                        disabled={loading || otpSent}
+                                        disabled={isLoading || otpSent}
                                     />
                                 </div>
 
@@ -207,7 +246,7 @@ export const Login: React.FC = () => {
                                             value={otp}
                                             onChange={(e) => setOtp(e.target.value.replace(/\D/, ''))}
                                             maxLength={6}
-                                            disabled={loading}
+                                            disabled={isLoading}
                                         />
                                     </div>
                                 )}
@@ -221,7 +260,7 @@ export const Login: React.FC = () => {
                                             className="w-full bg-[#FAFBFB] text-gray-600 text-lg py-3 px-6 rounded-[14px] outline-none focus:ring-2 focus:ring-[#9C41ED]/20"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
-                                            disabled={loading}
+                                            disabled={isLoading}
                                         />
                                     </div>
                                 )}
@@ -233,30 +272,30 @@ export const Login: React.FC = () => {
                                 {authMode === 'OTP' && !otpSent && (
                                     <button
                                         onClick={handleGetOtp}
-                                        disabled={loading}
+                                        disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : 'Get OTP'}
+                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Get OTP'}
                                     </button>
                                 )}
 
                                 {authMode === 'OTP' && otpSent && (
                                     <button
                                         onClick={handleVerifyOtp}
-                                        disabled={loading}
+                                        disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
+                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
                                     </button>
                                 )}
 
                                 {authMode === 'PASSWORD' && (
                                     <button
                                         onClick={handlePasswordLogin}
-                                        disabled={loading}
+                                        disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : 'Sign In'}
+                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
                                     </button>
                                 )}
                             </div>
