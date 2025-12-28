@@ -1,39 +1,45 @@
-import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 
-const config: AxiosRequestConfig = {
-    baseURL: '/api', // Relative path to work with proxy or same-domain API
+import axios, { AxiosInstance } from 'axios';
+
+import Cookies from 'js-cookie';
+
+// Create axios instance with default config
+const apiClient: AxiosInstance = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || '/api',
     headers: {
         'Content-Type': 'application/json',
     },
-    withCredentials: true, // Important for HTTP-only cookies
-};
+});
 
-const client: AxiosInstance = axios.create(config);
-
-// Request interceptor
-client.interceptors.request.use(
-    (config) => {
-        // You can add auth headers here if needed, 
-        // but we are using HTTP-only cookies so mostly no need for Bearer token in headers
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+// Request interceptor to add auth token
+apiClient.interceptors.request.use((config) => {
+    const token = Cookies.get('token');
+    if (token) {
+        config.headers.Authorization = `${token}`;
     }
-);
+    return config;
+});
 
-// Response interceptor
-client.interceptors.response.use(
-    (response) => {
-        return response;
-    },
+// Response interceptor to handle errors
+apiClient.interceptors.response.use(
+    (response) => response,
     (error) => {
-        if (error.response && error.response.status === 401) {
-            // Handle unauthorized access (e.g., redirect to login)
-            window.location.href = '/login';
+        if (error.response?.status === 401) {
+            // Check if we are not already on the login page to avoid loops
+            if (!window.location.pathname.includes('/login')) {
+                // Clear token from cookie
+                Cookies.remove('token');
+                // Clear other storage
+                localStorage.clear();
+                // Redirect
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }
 );
+// You might dispatch a logout action if you had access to store here,
+// but since store depends on api-client (sometimes), circular dependency is risk.
+// Safest to redirect or emit an event.
 
-export default client;
+export default apiClient;

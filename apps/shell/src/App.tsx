@@ -1,33 +1,42 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from '@od-erp/store';
+import { Layout } from './components/Layout';
+import { Login } from './pages/Login';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
-import { Button } from '@od-erp/ui';
+// Placeholder pages
+import { Dashboard } from './pages/Dashboard';
+import { NotFound } from './pages/NotFound';
+import { AdmissionPage } from './pages/AdmissionPage';
 
-function App() {
+const App: React.FC = () => {
     return (
-        <div className="min-h-screen bg-gray-100 font-sans text-gray-900">
-            <header className="bg-white shadow p-4 flex justify-between items-center">
-                <h1 className="text-xl font-bold text-primary">OD ERP</h1>
-                <Button variant="primary">Login</Button>
-            </header>
-            <main className="p-8">
-                <h2 className="text-2xl font-semibold mb-4">Welcome to the React Shell</h2>
-                <p className="mb-4">This is the container for all micro-frontends.</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white p-6 rounded shadow">
-                        <h3 className="font-bold mb-2">Admission CRM</h3>
-                        <p className="text-sm text-secondary">Manage admissions and leads.</p>
-                    </div>
-                    <div className="bg-white p-6 rounded shadow">
-                        <h3 className="font-bold mb-2">Fee Module</h3>
-                        <p className="text-sm text-secondary">Manage student fees and payments.</p>
-                    </div>
-                    <div className="bg-white p-6 rounded shadow">
-                        <h3 className="font-bold mb-2">HRM</h3>
-                        <p className="text-sm text-secondary">Employee management.</p>
-                    </div>
-                </div>
-            </main>
-        </div>
+        <Provider store={store}>
+            <Router>
+                <Routes>
+                    {/* Public Route */}
+                    <Route path="/login" element={<Login />} />
+
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                        <Route path="/" element={<Layout />}>
+                            <Route index element={<Dashboard />} />
+                            <Route path="admission/*" element={<AdmissionPage />} />
+                            <Route path="fee/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Fee Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="academic/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Academic Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="exam/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Exam/COE Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="hrm/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">HRM Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="back-office/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Back Office</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="templates/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Document Templates</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                            <Route path="*" element={<NotFound />} />
+                        </Route>
+                    </Route>
+                </Routes>
+            </Router>
+        </Provider>
     );
-}
+};
 
 export default App;

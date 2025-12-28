@@ -18,8 +18,14 @@
         "@od-erp/theme": "workspace:*",
         "@od-erp/ui": "workspace:*",
         "@od-erp/utils": "workspace:*",
+        "@reduxjs/toolkit": "^2.11.2",
+        "@tanstack/react-query": "^5.90.12",
+        "@types/js-cookie": "^3.0.6",
+        "js-cookie": "^3.0.5",
+        "lucide-react": "^0.562.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "react-redux": "^9.2.0",
         "react-router-dom": "^6.20.0"
     },
     "devDependencies": {

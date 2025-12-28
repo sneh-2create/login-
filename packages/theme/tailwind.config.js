@@ -7,6 +7,12 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                brand: {
+                    DEFAULT: 'var(--color-brand)',
+                    dark: 'var(--color-brand-dark)',
+                    hover: 'var(--color-brand-hover)',
+                    light: 'var(--color-brand-light)'
+                },
                 primary: {
                     DEFAULT: 'var(--color-primary)',
                     dark: 'var(--color-primary-dark)',
@@ -18,11 +24,21 @@ module.exports = {
                 info: 'var(--color-info)',
                 light: 'var(--color-light)',
                 dark: 'var(--color-dark)',
+                grey: {
+                    1: 'var(--color-grey-1)',
+                    2: 'var(--color-grey-2)'
+                }
             },
-            borderRadius: {
-                sm: 'var(--border-radius-sm)',
-                md: 'var(--border-radius-md)',
-                lg: 'var(--border-radius-lg)',
+            fontFamily: {
+                sans: ['var(--font-family)', 'sans-serif'],
+                body: ['var(--font-family)', 'sans-serif'],
+                cabin: ['Cabin', 'sans-serif'],
+                poppins: ['Poppins', 'sans-serif'],
+            },
+            spacing: {
+                'header': 'var(--header-height)',
+                'aside': 'var(--aside-width)',
+                'aside-min': 'var(--aside-minimize-width)'
             }
         },
     },

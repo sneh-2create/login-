@@ -26,6 +26,9 @@
             "@od-erp/ui": [
                 "./packages/ui/src"
             ],
+            "@od-erp/ui/global/*": [
+                "./packages/ui/src/global/*"
+            ],
             "@od-erp/ui/*": [
                 "./packages/ui/src/*"
             ],
