@@ -4,28 +4,47 @@ import { useAppSelector } from '@od-erp/store';
 import { cn } from '@od-erp/ui';
 
 // Section Placeholders - To be replaced with actual implementations or Module MFEs
-import { StudentOverviewSection, FeeSection, AdmissionSection, AttendanceSection, AnalyticsSection } from '../components/dashboard/sections/Placeholders';
+import {
+    StudentOverviewSection,
+    FeeSection,
+    AdmissionSection,
+    AttendanceSection,
+    AnalyticsSection,
+    ExaminationSection,
+    EmployeeSection,
+    HODSection,
+    CommunicationSection,
+    LibrarySection,
+    ProfileSection,
+    MessSection
+} from '../components/dashboard/sections/Placeholders';
 import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
 import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
+import { TabConfig } from '@od-erp/types';
 
+import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';
 
-interface TabConfig {
-    id: string;
-    label: string;
-    component: React.FC;
-    permission: string;
-}
+const TAB_COMPONENTS: Record<string, React.FC> = {
+    quick_links: QuickLinksSection,
+    overview: StudentOverviewSection,
+    fee: FeeSection,
+    admission: AdmissionSection,
+    attendance: AttendanceSection,
+    examination: ExaminationSection,
+    employee: EmployeeSection,
+    hod: HODSection,
+    communication: CommunicationSection,
+    analytics: AnalyticsSection,
+    library: LibrarySection,
+    profile: ProfileSection,
+    calendar: CalendarSection,
+    mess: MessSection,
+};
 
-const allTabs: TabConfig[] = [
-    { id: 'quick_links', label: 'Quick Links', component: QuickLinksSection, permission: 'viewEntityDashboard' },
-    { id: 'calendar', label: 'Calendar', component: CalendarSection, permission: 'calendarDashboard' },
-    { id: 'overview', label: 'Student Overview', component: StudentOverviewSection, permission: 'overviewDashboard' },
-    { id: 'fee', label: 'Fee', component: FeeSection, permission: 'feeDashboard' },
-    { id: 'admission', label: 'Admission', component: AdmissionSection, permission: 'admissionDashboard' },
-    { id: 'attendance', label: 'Attendance', component: AttendanceSection, permission: 'attendanceDashboard' },
-    { id: 'analytics', label: 'Analytics', component: AnalyticsSection, permission: 'analyticsDashboard' },
-
-];
+const allTabs: TabConfig[] = DASHBOARD_TABS_METADATA.map(meta => ({
+    ...meta,
+    component: TAB_COMPONENTS[meta.id] || (() => <div>Component Not Found</div>)
+}));
 
 export const Dashboard: React.FC = () => {
     const { session: { user } } = useSession();
@@ -76,14 +95,14 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Tabs Navigation */}
-            <div className="bg-white rounded-lg shadow-sm p-2 mb-6 overflow-x-auto">
-                <nav className="flex space-x-1 min-w-max" aria-label="Tabs">
+            <div className="bg-white rounded-lg shadow-sm p-2 mb-6">
+                <nav className="flex flex-wrap gap-2" aria-label="Tabs">
                     {effectiveTabs.map((tab) => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                'px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                                'px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap',
                                 activeTab === tab.id
                                     ? 'bg-blue-50 text-blue-700'
                                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'

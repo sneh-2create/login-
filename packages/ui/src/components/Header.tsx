@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useSession, useAppDispatch, logout } from '@od-erp/store'; // Added imports
+import { useSession, useAppDispatch, useAppSelector, logout } from '@od-erp/store'; // Added imports
 import { User, LogOut } from 'lucide-react';
-import { cn } from '../utils.ts';
+import { cn } from '../utils';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,11 +13,15 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
     const { session } = useSession();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
+    const { entityDetails } = useAppSelector((state) => state.auth); // Get entity details
 
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-    const entityName = session?.user?.name || "OD ERP";
+    // Dynamic Branding Logic
+    const displayName = entityDetails?.displayName || "OD ERP";
+    const logoUrl = entityDetails?.logo; // If null, fallback logic in UI
+
     const userName = session?.user?.name || "User";
     const userRole = session?.user?.role || "Admin"; // Fallback
     const quickActionIcon = "https://cdn.lordicon.com/mwzdatpw.json";
@@ -36,23 +40,29 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
             )}
         >
             <div className="flex items-center gap-4">
-                <div className="w-[180px] flex items-center justify-center">
-                    <span className="text-2xl font-bold text-[#9C41ED]">OD ERP</span>
+                {/* Logo Area */}
+                <div className="flex items-center gap-3">
+                    {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain max-w-[150px]" />
+                    ) : (
+                        <div className="h-10 w-10 bg-[var(--sidebar-item-active-bg)] rounded-full flex items-center justify-center text-[var(--color-primary)] font-bold">
+                            OD
+                        </div>
+                    )}
+                    <h3 className="text-xl font-bold text-[var(--color-primary)] hidden md:block cursor-pointer hover:text-[var(--color-primary)] transition-colors">
+                        {displayName}
+                    </h3>
                 </div>
-
-                <h3 className="text-lg font-medium text-[#6c7293] hidden md:block cursor-pointer hover:text-[#9C41ED] transition-colors">
-                    {entityName}
-                </h3>
 
                 {/* Horizontal Menu (Legacy Parity) */}
                 <nav className="hidden lg:flex items-center gap-6 pl-8">
                     {['Fee', 'Advanced', 'Analytics', 'Admission'].map((item) => (
                         <div key={item} className="group relative cursor-pointer">
-                            <span className="text-[13px] font-medium text-[#6c7293] group-hover:text-[#9C41ED] transition-colors uppercase tracking-wide">
+                            <span className="text-[13px] font-medium text-[#6c7293] group-hover:text-[var(--color-primary)] transition-colors uppercase tracking-wide">
                                 {item}
                             </span>
                             {/* Active/Hover Indicator Line (Optional) */}
-                            <span className="absolute -bottom-[29px] left-0 w-full h-[2px] bg-[#9C41ED] scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
+                            <span className="absolute -bottom-[29px] left-0 w-full h-[2px] bg-[var(--color-primary)] scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                         </div>
                     ))}
                 </nav>
@@ -64,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                 </div>
 
                 <button
-                    className="hidden md:flex items-center justify-center px-4 py-2 text-sm font-bold text-[#9C41ED] border border-[#9C41ED] rounded-md hover:bg-[#9C41ED] hover:text-white transition-all uppercase tracking-wide"
+                    className="hidden md:flex items-center justify-center px-4 py-2 text-sm font-bold text-[var(--color-primary)] border border-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary)] hover:text-white transition-all uppercase tracking-wide"
                 >
                     Create Ticket
                 </button>
@@ -77,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                     <lord-icon
                         src={quickActionIcon}
                         trigger="hover"
-                        colors="primary:#9C41ED,secondary:#9C41ED"
+                        colors="primary:var(--color-primary),secondary:var(--color-primary)"
                         style={{ width: '30px', height: '30px' }}
                     />
 
@@ -86,15 +96,15 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                             <div className="bg-white shadow-xl rounded-lg border border-gray-100 p-4 animate-in fade-in slide-in-from-top-2 origin-top-right">
                                 <h5 className="text-sm font-bold text-gray-800 mb-2 border-b pb-2">Quick Actions</h5>
                                 <div className="space-y-2">
-                                    <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">IS</div>
+                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs">IS</div>
                                         <div>
                                             <p className="text-xs font-bold text-gray-700">Institute Setup</p>
                                             <p className="text-[10px] text-gray-500">Informative Details</p>
                                         </div>
                                     </div>
-                                    <div className="p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 text-xs">FS</div>
+                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs">FS</div>
                                         <div>
                                             <p className="text-xs font-bold text-gray-700">Fee Structure</p>
                                             <p className="text-[10px] text-gray-500">Fee Details</p>
@@ -112,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                     onMouseEnter={() => setShowProfileMenu(true)}
                     onMouseLeave={() => setShowProfileMenu(false)}
                 >
-                    <div className="ml-2 w-10 h-10 rounded-full bg-[#f2ebf8] flex items-center justify-center text-[#9C41ED] hover:bg-[#9C41ED] hover:text-white transition-colors cursor-pointer">
+                    <div className="ml-2 w-10 h-10 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white transition-colors cursor-pointer">
                         <User size={20} />
                     </div>
 
@@ -125,7 +135,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                                 </div>
 
                                 <div className="py-1">
-                                    <div className="px-4 py-2 hover:bg-purple-50 cursor-pointer flex items-center gap-2 text-sm text-gray-700">
+                                    <div className="px-4 py-2 hover:bg-[var(--sidebar-item-active-bg)] cursor-pointer flex items-center gap-2 text-sm text-gray-700">
                                         <User size={16} />
                                         <span>My Profile</span>
                                     </div>

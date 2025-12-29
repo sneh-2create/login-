@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMenu } from '@od-erp/store';
-import { cn } from '../../utils.ts';
+import { cn } from '../../utils';
 import { getIconSrc } from './iconMapping';
 import { LayoutDashboard } from 'lucide-react';
 import { SidebarItem } from '../../global/SidebarItem';

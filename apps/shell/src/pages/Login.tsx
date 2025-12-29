@@ -67,7 +67,37 @@ export const Login: React.FC = () => {
     });
 
     const handleAuthSuccess = async (response: any) => {
-        // 1. Dispatch Initial Credentials & Entity
+        // 1. Extract Entity Details & Theme
+        let entityDetails: any = undefined;
+        if (response.entity) {
+            // Theme Logic: Use entity preference color, fallback to default (undefined lets CSS variable take over)
+            let primaryColour: string | undefined;
+            let secondaryColour: string | undefined;
+
+            if (response.entity.entityPreferences) {
+                const prefPrimary = response.entity.entityPreferences.primaryColour;
+                if (prefPrimary && prefPrimary !== '#ffffff' && prefPrimary !== '#fff') {
+                    primaryColour = prefPrimary;
+                }
+                if (response.entity.entityPreferences.secondaryColour) {
+                    secondaryColour = response.entity.entityPreferences.secondaryColour;
+                }
+            }
+
+            entityDetails = {
+                id: response.entity._id,
+                logo: response.entity.logo,
+                displayName: response.entity.displayName || response.entity.name,
+                primaryColour,
+                secondaryColour,
+                qac: response.entity.qac,
+                activeSession: response.entity.activeSession,
+                entityPreferences: response.entity.entityPreferences,
+                type: response.entity.entityType
+            };
+        }
+
+        // 2. Dispatch Initial Credentials with Entity Details
         dispatch(setCredentials({
             user: {
                 id: response.userId || response._id,
@@ -78,7 +108,8 @@ export const Login: React.FC = () => {
                 permissions: response.permissions ? (Array.isArray(response.permissions) ? response.permissions : []) : [],
             },
             token: response.token,
-            preferences: response.userPreferences || null
+            preferences: response.userPreferences || null,
+            entityDetails: entityDetails
         }));
 
         if (response.entity) {
@@ -87,30 +118,52 @@ export const Login: React.FC = () => {
                 name: response.entity.displayName || response.entity.name,
                 type: response.entity.entityType
             }));
+
             // Set default active session first
             if (response.entity.activeSession) {
                 dispatch(setAcademicSession(response.entity.activeSession.name));
             }
         }
 
-        // 2. Check for Preferred Session (The "In-Between" Step)
-        if (response.userPreferences && response.userPreferences.session && response.entity) {
-            try {
-                // If user has a specific preferred session, fetch it
-                const sessionData = await fetchSessionMutation.mutateAsync({
-                    entityId: response.entity._id,
-                    sessionName: response.userPreferences.session
-                });
-                // Update Redux with the preferred session
-                dispatch(setAcademicSession(sessionData.name));
-            } catch (err) {
-                console.warn('Failed to fetch preferred session, sticking to active session', err);
-                // Optional: Show toast or alert like legacy "Preferred session not found..."
-            }
-        }
+        // 3. Navigation Logic
+        switch (response.userType) {
+            case 'od1':
+                navigate('/dashboard');
+                break;
+            case 'od2':
+            case 'od3':
+            default:
+                if (response.entity) {
+                    // Check Active Session
+                    if (!response.entity.activeSession) {
+                        // TODO: Alert user "Please Activate A Session First"
+                        navigate('/schoolSetup/academicSession'); // Correct path based on legacy
+                        return;
+                    }
 
-        // 3. Navigate to Dashboard
-        navigate('/');
+                    // Check for Preferred Session
+                    if (response.userPreferences && response.userPreferences.session) {
+                        try {
+                            const sessionData = await fetchSessionMutation.mutateAsync({
+                                entityId: response.entity._id,
+                                sessionName: response.userPreferences.session
+                            });
+                            dispatch(setAcademicSession(sessionData.name));
+                            navigate('/entity/dashboard');
+                        } catch (err) {
+                            console.warn('Preferred session fetch failed, sticking to active session');
+                            // Alert user logic can be added here
+                            navigate('/entity/dashboard');
+                        }
+                    } else {
+                        navigate('/entity/dashboard');
+                    }
+                } else {
+                    // Fallback if no entity found for od2/od3 (should not happen usually)
+                    navigate('/dashboard');
+                }
+                break;
+        }
     };
 
     const loginMutation = useMutation({

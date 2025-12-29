@@ -6,6 +6,7 @@ module.exports = {
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
-        "../../packages/ui/src/**/*.{js,ts,jsx,tsx}" // Ensure UI package is scanned
+        "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
+        "../../packages/constants/src/**/*.{js,ts,jsx,tsx}" // Ensure constants are scanned for arbitrary values
     ],
 }

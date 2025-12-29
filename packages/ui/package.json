@@ -13,16 +13,20 @@
         "react-router-dom": "^6.20.0"
     },
     "devDependencies": {
+        "@types/js-cookie": "^3.0.6",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.20.0",
-        "typescript": "^5.3.3"
+        "typescript": "^5.3.3",
+        "vite": "^7.3.0"
     },
     "dependencies": {
         "@od-erp/store": "workspace:*",
+        "@od-erp/types": "workspace:*",
         "clsx": "^2.1.1",
+        "js-cookie": "^3.0.5",
         "lucide-react": "^0.562.0",
         "tailwind-merge": "^3.4.0"
     }

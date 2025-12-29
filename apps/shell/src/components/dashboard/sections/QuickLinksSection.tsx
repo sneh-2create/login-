@@ -2,39 +2,19 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Star, FileText } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
+import { RANDOM_COLORS, TEXT_COLORS, STATIC_FAVOURITE_LIST } from '@od-erp/constants';
 
 export const QuickLinksSection: React.FC = () => {
     const { preferences } = useAppSelector((state) => state.auth);
-
-    // Legacy random colors logic
-    const randomColors = [
-        'bg-[#41a6ed]',
-        'bg-[#35c87c]',
-        'bg-[#fe6c8a]',
-        'bg-[#ffbb5b]',
-        'bg-[#35c87c]'
-    ];
-
-    // Text colors matching background for buttons (mapped manually for Tailwind)
-    const textColors = [
-        'text-[#41a6ed]',
-        'text-[#35c87c]',
-        'text-[#fe6c8a]',
-        'text-[#ffbb5b]',
-        'text-[#35c87c]'
-    ];
 
     const { actions, reports } = useMemo(() => {
         const favs = preferences?.favourites || [];
         const acts: any[] = [];
         const reps: any[] = [];
 
-        // Specific favorites filtering logic from Legacy
-        const staticFavouriteList = ['Analysis Dashboard', 'Fee Collection', 'Fee Defaulter', 'Attendance Report', 'Admission Report']; // Simplified list
-
         favs.forEach((item: any) => {
             // Legacy filter: !item.name.includes('Report') && !staticFavouriteList.includes(item.name) && item.name!='Result At A Glance'
-            if (!item.name.includes('Report') && item.name !== 'Result At A Glance') {
+            if (!item.name.includes('Report') && !STATIC_FAVOURITE_LIST.includes(item.name) && item.name !== 'Result At A Glance') {
                 acts.push(item);
             } else {
                 reps.push(item);
@@ -64,17 +44,17 @@ export const QuickLinksSection: React.FC = () => {
                 {actions.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                         {actions.map((fav, index) => {
-                            const colorIndex = index % randomColors.length;
+                            const colorIndex = index % RANDOM_COLORS.length;
                             return (
                                 <Link
                                     key={index}
                                     to={fav.route} // TODO: Map legacy routes to new routes if needed
                                     className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border border-gray-100 hover:shadow-md transition-all group"
                                 >
-                                    <div className={`p-3 rounded-full ${randomColors[colorIndex]} bg-opacity-20`}>
-                                        <Star className={`w-6 h-6 ${textColors[colorIndex]}`} />
+                                    <div className={`p-3 rounded-full ${RANDOM_COLORS[colorIndex]} bg-opacity-20`}>
+                                        <Star className={`w-6 h-6 ${TEXT_COLORS[colorIndex]}`} />
                                     </div>
-                                    <span className={`text-sm font-medium ${textColors[colorIndex]} text-center`}>{fav.name}</span>
+                                    <span className={`text-sm font-medium ${TEXT_COLORS[colorIndex]} text-center`}>{fav.name}</span>
                                 </Link>
                             );
                         })}

@@ -10,7 +10,8 @@
     "dependencies": {
         "@reduxjs/toolkit": "^2.11.2",
         "react-redux": "^9.2.0",
-        "redux-persist": "^6.0.0"
+        "redux-persist": "^6.0.0",
+        "@od-erp/types": "workspace:*"
     },
     "peerDependencies": {
         "react": "^18.2.0"

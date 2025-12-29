@@ -3,29 +3,41 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar, Header } from '@od-erp/ui';
 import {
     useAppDispatch,
-    // useAppSelector,
+    useAppSelector,
     // toggleSidebar,
     setMenuConfig,
 } from '@od-erp/store';
 
-import { menuConfig } from '../config/menu.config';
+import { menuConfig } from '@od-erp/constants';
 
 import { useAppInitialization } from '../hooks/useAppInitialization';
 
 export const Layout: React.FC = () => {
     useAppInitialization();
     const dispatch = useAppDispatch();
-    // const sidebarCollapsed = useAppSelector((state) => state.ui.sidebarCollapsed);
-    // const user = useAppSelector((state) => state.auth.user); // Handled in Header
-    // const { entityName, academicSession } = useAppSelector((state) => state.session);
+    const { entityDetails } = useAppSelector((state) => state.auth);
 
     useEffect(() => {
         // Initialize Config
         dispatch(setMenuConfig(menuConfig));
-
-
-
     }, [dispatch]);
+
+    // Dynamic Theming
+    useEffect(() => {
+        if (entityDetails?.primaryColour) {
+            document.documentElement.style.setProperty('--color-primary', entityDetails.primaryColour);
+        } else {
+            // Fallback to CSS default (remove override)
+            document.documentElement.style.removeProperty('--color-primary');
+        }
+
+        if (entityDetails?.secondaryColour) {
+            document.documentElement.style.setProperty('--color-secondary', entityDetails.secondaryColour);
+        } else {
+            // Fallback to CSS default
+            document.documentElement.style.removeProperty('--color-secondary');
+        }
+    }, [entityDetails]);
 
     // const handleLogout = () => {
     //     dispatch(logout());

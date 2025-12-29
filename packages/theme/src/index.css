@@ -7,13 +7,13 @@
 @layer base {
     :root {
         /* Brand Colors (Legacy Angular Parity) */
-        --color-brand: #5d78ff;
+        --color-brand: var(--color-primary);
         --color-brand-dark: #272631;
         /* Brand/Logo Area Background */
-        --color-brand-hover: #4861cf;
+        --color-brand-hover: #cf4320;
 
         /* State Colors */
-        --color-primary: #5867dd;
+        --color-primary: #e95029;
         --color-primary-dark: #4854b0;
         --color-secondary: #6c757d;
         --color-success: #0abb87;
@@ -35,6 +35,12 @@
         --header-height-mobile: 50px;
         --aside-width: 265px;
         --aside-minimize-width: 80px;
+
+        /* Sidebar Component Colors */
+        --sidebar-item-active-bg: #f0f3ff;
+        --sidebar-section-title: #3F4254;
+        --sidebar-bullet-inactive: #b8bac3;
+        --sidebar-border: #eff2f5;
 
         /* Typography */
         --font-family: "Cabin", Poppins, Helvetica, sans-serif;

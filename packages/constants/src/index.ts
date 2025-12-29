@@ -9,3 +9,7 @@ export const PERMISSIONS = {
     VIEW_DASHBOARD: 'view_dashboard',
     EDIT_PROFILE: 'edit_profile',
 } as const;
+
+export * from './menu.config';
+export * from './dashboard.config';
+export * from './ui.config';

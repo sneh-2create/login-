@@ -36,7 +36,7 @@ export const commonService = {
         return response.data;
     },
 
-    getSessionList: async (entityId: string, showArchived: boolean = false) => {
+    getSessionList: async (entityId: string, _showArchived: boolean = false) => {
         const response = await apiClient.get(`/list/session`, {
             params: {
                 entity: entityId
@@ -52,6 +52,11 @@ export const commonService = {
 
     editUserPreferences: async (preferences: any) => {
         const response = await apiClient.post(`/edit/userPreferences`, preferences);
+        return response.data;
+    },
+
+    getMessDashboard: async () => {
+        const response = await apiClient.get('/getMessMangementDashboard/dashboard');
         return response.data;
     },
 

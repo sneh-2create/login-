@@ -1,18 +1,14 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MenuItem } from './types';
+import { MenuItem, SubMenuItem } from './types';
 import { useAppSelector, useAppDispatch, updatePreferences } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
-
-
 
 interface SidebarExpansionPanelProps {
     item: MenuItem | null;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
 }
-
-import { SubMenuItem } from './types';
 
 // Helper component for rendering a column of submenu items
 const SubMenuColumn: React.FC<{
@@ -30,7 +26,7 @@ const SubMenuColumn: React.FC<{
                         <>
                             {/* Section Title - Darker, 12px, Uppercase */}
                             {category.title && (
-                                <div className="submenuSectionTitle text-[12px] font-semibold text-[#3F4254] uppercase tracking-wider mb-2">
+                                <div className="submenuSectionTitle text-[12px] font-semibold text-[var(--sidebar-section-title)] uppercase tracking-wider mb-2">
                                     <span>{category.title}</span>
                                 </div>
                             )}
@@ -50,8 +46,8 @@ const SubMenuColumn: React.FC<{
                                                     text-[15px] font-normal
                                                     transition-all duration-300
                                                     ${active
-                                                        ? 'bg-[#f0f3ff] pl-[10px] rounded-[12px] font-bold text-[#5d78ff]'
-                                                        : 'text-black hover:bg-[#f0f3ff] hover:pl-[10px] hover:rounded-[12px] hover:font-bold hover:text-[#5d78ff]'
+                                                        ? 'bg-[var(--sidebar-item-active-bg)] pl-[10px] rounded-[12px] font-bold text-[var(--color-brand)]'
+                                                        : 'text-black hover:bg-[var(--sidebar-item-active-bg)] hover:pl-[10px] hover:rounded-[12px] hover:font-bold hover:text-[var(--color-brand)]'
                                                     }
                                                 `}
                                             >
@@ -61,7 +57,7 @@ const SubMenuColumn: React.FC<{
                                                         submenuSectionContentItemIcon
                                                         flex-shrink-0 flex items-center justify-center 
                                                         after:content-['○'] after:text-[1.2rem]
-                                                        ${active ? "after:content-['●'] after:text-[#5d78ff]" : "after:text-[#b8bac3] group-hover/item:after:content-['●'] group-hover/item:after:text-[#5d78ff]"}
+                                                        ${active ? "after:content-['●'] after:text-[var(--color-brand)]" : "after:text-[var(--sidebar-bullet-inactive)] group-hover/item:after:content-['●'] group-hover/item:after:text-[var(--color-brand)]"}
                                                     `}></span>
                                                     <span className="truncate">{subItem.title}</span>
                                                 </div>
@@ -74,7 +70,7 @@ const SubMenuColumn: React.FC<{
                                                 <lord-icon
                                                     src={subItem.fav ? 'https://cdn.lordicon.com/xjronrda.json' : 'https://cdn.lordicon.com/vcuhguff.json'}
                                                     trigger="hover"
-                                                    colors="primary:#5d78ff,secondary:#5d78ff"
+                                                    colors="primary:var(--color-brand),secondary:var(--color-brand)"
                                                     stroke="bold"
                                                     style={{ width: '24px', height: '24px', cursor: 'pointer' }}
                                                 />
@@ -226,7 +222,7 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
         <div
             className={`
                 fixed left-[100px] top-[80px] bottom-0 ${containerWidthClass}
-                bg-white border-r border-[#eff2f5] shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-10 
+                bg-white border-r border-[var(--sidebar-border)] shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-10 
                 overflow-y-auto py-[18px] transition-all duration-300 ease-in-out
                 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
                 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}

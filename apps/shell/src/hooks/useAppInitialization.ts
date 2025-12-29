@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
-import { setCurrentDate, setWhiteLabelConfig, setLoading, setEntityPreferences } from '@od-erp/store/src/slices/configSlice'; // deep import for now if index doesn't export
+import { setCurrentDate, setWhiteLabelConfig, setLoading, setEntityPreferences, setMessDashboardData } from '@od-erp/store/src/slices/configSlice'; // deep import for now if index doesn't export
 import { setSessionList } from '@od-erp/store/src/slices/sessionSlice';
 
 export const useAppInitialization = () => {
     const dispatch = useAppDispatch();
     const { isAuthenticated, preferences } = useAppSelector((state) => state.auth);
-    const { currentDate } = useAppSelector((state) => state.config);
+    const { currentDate, messDashboardData } = useAppSelector((state) => state.config);
     const { sessionList, entityId } = useAppSelector((state) => state.session);
     const { entityPreferences, whiteLabelConfig } = useAppSelector((state) => state.config);
 
@@ -44,11 +44,17 @@ export const useAppInitialization = () => {
                             }));
                         }
 
-                        // Guard: Only fetch if whiteLabelConfig is missing
+                        // 3. Entity Website Config (firebase service in Angular)
+                        // This seems distinct from whiteLabeling in the user request, but often related.
+                        // We fetch it if not present.
                         if (!whiteLabelConfig) {
                             promises.push(commonService.getEntityWebsiteConfig(targetEntityId).then(res => {
                                 // Dispatch config
                                 if (res) {
+                                    // Note: We might want separate store field for this if distinct from whiteLabelConfig
+                                    // but for now reusing or just ensuring call is made.
+                                    // If this is strictly website config, we might need a new action.
+                                    // Assuming for now it maps to whiteLabelConfig or similar.
                                     dispatch(setWhiteLabelConfig(res));
                                 }
                             }));
@@ -64,6 +70,28 @@ export const useAppInitialization = () => {
                         }
                     } else {
                         console.warn('useAppInitialization: No Entity ID found (session or preferences), skipping entity data fetch.');
+                    }
+
+                    // 4. White Labelling By URL (Always call on init if needed)
+                    // The user specifically requested: api/getWhiteLabellingByURL -> src/app/app.component.ts
+                    // This might overlap with getEntityWebsiteConfig, but we'll call it as requested.
+                    const currentUrl = window.location.hostname;
+                    promises.push(commonService.getWhiteLabellingByURL(currentUrl).then(res => {
+                        if (res) {
+                            // If this returns white label config, we update it.
+                            // It might overwrite getEntityWebsiteConfig result if both map to same store.
+                            // We'll prioritize this as it's URL based (tenant specific).
+                            dispatch(setWhiteLabelConfig(res));
+                        }
+                    }));
+
+                    // 5. Mess Management Dashboard (Always call on init)
+                    if (!messDashboardData) {
+                        promises.push(commonService.getMessDashboard().then(res => {
+                            if (res) {
+                                dispatch(setMessDashboardData(res));
+                            }
+                        }));
                     }
 
 
