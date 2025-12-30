@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dashboardService } from '@od-erp/api-client';
-import Cookies from 'js-cookie';
+
 import {
     DashboardCounts,
     ActiveStudentData,
