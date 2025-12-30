@@ -16,11 +16,12 @@
         "@od-erp/query": "workspace:*",
         "@od-erp/store": "workspace:*",
         "@od-erp/theme": "workspace:*",
+        "@od-erp/types": "workspace:*",
         "@od-erp/ui": "workspace:*",
         "@od-erp/utils": "workspace:*",
-        "@od-erp/types": "workspace:*",
         "@reduxjs/toolkit": "^2.11.2",
         "@tanstack/react-query": "^5.90.12",
+        "@tanstack/react-table": "^8.21.3",
         "@types/js-cookie": "^3.0.6",
         "js-cookie": "^3.0.5",
         "lucide-react": "^0.562.0",
@@ -31,6 +32,7 @@
         "redux-persist": "^6.0.0"
     },
     "devDependencies": {
+        "@types/node": "~8.9.5",
         "@types/react": "^18.2.0",
         "@types/react-dom": "^18.2.0",
         "@vitejs/plugin-react": "^4.2.1",

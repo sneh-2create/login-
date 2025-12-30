@@ -27,10 +27,12 @@ export const useMenu = () => {
         }
 
         let rawItems: ConfigMenuItem[] = [];
+
+
         // Determine which section to use based on user role/type
         // For now assuming 'admin' or 'entity' based on existence of entityPreferences
         // In real app, check user.role or userType
-        if (user?.role === 'superadmin') {
+        if (user?.role === 'superadmin' || user?.role === 'od1') {
             rawItems = menuConfig.adminAside?.items || [];
         } else if (entityPreferences) { // If logged in as entity
             rawItems = menuConfig.entityAside?.items || [];
@@ -46,10 +48,16 @@ export const useMenu = () => {
         for (const item of items) {
             // 1. Check Permissions
             let hasPermission = true;
-            if (item.entPermission) {
-                hasPermission = permissions.includes(item.entPermission);
-            } else if (item.admPermission) {
-                hasPermission = permissions.includes(item.admPermission);
+            const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'od1';
+
+            if (!isSuperAdmin) {
+                if (item.entPermission) {
+                    hasPermission = permissions.includes(item.entPermission);
+                    if (!hasPermission) console.log(`DEBUG: Permission Failed for ${item.title} (Needed: ${item.entPermission})`);
+                } else if (item.admPermission) {
+                    hasPermission = permissions.includes(item.admPermission);
+                    if (!hasPermission) console.log(`DEBUG: Permission Failed for ${item.title} (Needed: ${item.admPermission})`);
+                }
             }
 
             if (!hasPermission) continue;

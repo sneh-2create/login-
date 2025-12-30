@@ -19,7 +19,11 @@ export const Layout: React.FC = () => {
 
     useEffect(() => {
         // Initialize Config
-        dispatch(setMenuConfig(menuConfig));
+        if (menuConfig) {
+            dispatch(setMenuConfig(menuConfig));
+        } else {
+            console.error('CRITICAL: MenuConfig is undefined in Layout');
+        }
     }, [dispatch]);
 
     // Dynamic Theming

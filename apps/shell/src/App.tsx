@@ -13,6 +13,7 @@ import { PublicRoute } from './components/PublicRoute';
 import { Dashboard } from './pages/Dashboard';
 import { NotFound } from './pages/NotFound';
 import { AdmissionPage } from './pages/AdmissionPage';
+import { SuperAdminDashboard } from './pages/SuperAdminDashboard';
 
 const LoadingState = () => (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -35,6 +36,7 @@ const App: React.FC = () => {
                         <Route element={<ProtectedRoute />}>
                             <Route path="/" element={<Layout />}>
                                 <Route index element={<Dashboard />} />
+                                <Route path="dashboard" element={<SuperAdminDashboard />} />
                                 <Route path="entity/dashboard" element={<Dashboard />} />
                                 <Route path="admission/*" element={<AdmissionPage />} />
                                 <Route path="fee/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Fee Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />

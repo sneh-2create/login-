@@ -5,6 +5,7 @@ export interface User {
     name: string;
     email: string;
     role: string;
+    userType: string;
     employeeId?: string;
     permissions?: string[];
 }
@@ -67,3 +68,5 @@ export interface SubSubMenuItem {
     bullet?: string;
     entPermission?: string;
 }
+
+export * from './dashboard';

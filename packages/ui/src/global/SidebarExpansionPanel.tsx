@@ -41,9 +41,9 @@ const SubMenuColumn: React.FC<{
                                                 to={subItem.page || '#'}
                                                 onClick={onLinkClick}
                                                 className={`
-                                                    flex items-center justify-between
-                                                    h-[45px] p-[10px] pl-0 gap-[10px]
-                                                    text-[15px] font-normal
+                                                    block w-full
+                                                    min-h-[40px] py-2 pl-0
+                                                    text-[13px] font-normal
                                                     transition-all duration-300
                                                     ${active
                                                         ? 'bg-[var(--sidebar-item-active-bg)] pl-[10px] rounded-[12px] font-bold text-[var(--color-brand)]'
@@ -51,15 +51,16 @@ const SubMenuColumn: React.FC<{
                                                     }
                                                 `}
                                             >
-                                                <div className="flex items-center gap-[10px] min-w-0 overflow-hidden">
+                                                <div className="grid grid-cols-[20px_1fr] gap-[10px] items-start">
                                                     {/* Bullet Icon */}
                                                     <span className={`
                                                         submenuSectionContentItemIcon
-                                                        flex-shrink-0 flex items-center justify-center 
-                                                        after:content-['○'] after:text-[1.2rem]
+                                                        flex items-center justify-center 
+                                                        h-[20px] 
+                                                        after:content-['○'] after:text-[0.7rem]
                                                         ${active ? "after:content-['●'] after:text-[var(--color-brand)]" : "after:text-[var(--sidebar-bullet-inactive)] group-hover/item:after:content-['●'] group-hover/item:after:text-[var(--color-brand)]"}
                                                     `}></span>
-                                                    <span className="truncate">{subItem.title}</span>
+                                                    <span className="whitespace-normal leading-tight break-words pt-[1px] pr-8">{subItem.title}</span>
                                                 </div>
                                             </Link>
                                             {/* Favorite Icon */}
@@ -87,9 +88,9 @@ const SubMenuColumn: React.FC<{
                                 to={category.page || '#'}
                                 onClick={onLinkClick}
                                 className={`
-                                    flex items-center justify-between
-                                    h-[45px] p-[10px] pl-0 gap-[10px]
-                                    text-[15px] font-normal
+                                    block w-full
+                                    min-h-[40px] py-2 pl-0
+                                    text-[13px] font-normal
                                     transition-all duration-300
                                     ${isActive(category.page)
                                         ? 'bg-[#f0f3ff] pl-[10px] rounded-[12px] font-bold text-[#5d78ff]'
@@ -97,15 +98,16 @@ const SubMenuColumn: React.FC<{
                                     }
                                 `}
                             >
-                                <div className="flex items-center gap-[10px] min-w-0 overflow-hidden">
+                                <div className="grid grid-cols-[20px_1fr] gap-[10px] items-start">
                                     {/* Bullet Icon */}
                                     <span className={`
                                         submenuSectionContentItemIcon
-                                        flex-shrink-0 flex items-center justify-center 
-                                        after:content-['○'] after:text-[1.2rem]
+                                        flex items-center justify-center 
+                                        h-[20px]
+                                        after:content-['○'] after:text-[0.7rem]
                                         ${isActive(category.page) ? "after:content-['●'] after:text-[#5d78ff]" : "after:text-[#b8bac3] group-hover/item:after:content-['●'] group-hover/item:after:text-[#5d78ff]"}
                                     `}></span>
-                                    <span className="truncate">{category.title}</span>
+                                    <span className="whitespace-normal leading-tight break-words pt-[1px] pr-8">{category.title}</span>
                                 </div>
                             </Link>
                             {/* Favorite Icon */}

@@ -104,6 +104,7 @@ export const Login: React.FC = () => {
                 name: response.name,
                 email: response.email || '',
                 role: response.userType,
+                userType: response.userType,
                 employeeId: response.employee || response.employeeId,
                 permissions: response.permissions ? (Array.isArray(response.permissions) ? response.permissions : []) : [],
             },
@@ -126,18 +127,18 @@ export const Login: React.FC = () => {
         }
 
         // 3. Navigation Logic
+        // 3. Navigation Logic
         switch (response.userType) {
             case 'od1':
                 navigate('/dashboard');
                 break;
             case 'od2':
             case 'od3':
-            default:
                 if (response.entity) {
                     // Check Active Session
                     if (!response.entity.activeSession) {
                         // TODO: Alert user "Please Activate A Session First"
-                        navigate('/schoolSetup/academicSession'); // Correct path based on legacy
+                        navigate('/schoolSetup/academicSession');
                         return;
                     }
 
@@ -152,7 +153,6 @@ export const Login: React.FC = () => {
                             navigate('/entity/dashboard');
                         } catch (err) {
                             console.warn('Preferred session fetch failed, sticking to active session');
-                            // Alert user logic can be added here
                             navigate('/entity/dashboard');
                         }
                     } else {
@@ -160,8 +160,14 @@ export const Login: React.FC = () => {
                     }
                 } else {
                     // Fallback if no entity found for od2/od3 (should not happen usually)
-                    navigate('/dashboard');
+                    navigate('/');
                 }
+                break;
+            case 'od4': // Student
+                navigate('/');
+                break;
+            default:
+                navigate('/');
                 break;
         }
     };

@@ -1,8 +1,15 @@
+import {
+    useAppDispatch,
+    useAppSelector,
+    setCurrentDate,
+    setWhiteLabelConfig,
+    setLoading,
+    setEntityPreferences,
+    setMessDashboardData,
+    setSessionList
+} from '@od-erp/store';
 import { useEffect } from 'react';
-import { useAppDispatch, useAppSelector } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
-import { setCurrentDate, setWhiteLabelConfig, setLoading, setEntityPreferences, setMessDashboardData } from '@od-erp/store/src/slices/configSlice'; // deep import for now if index doesn't export
-import { setSessionList } from '@od-erp/store/src/slices/sessionSlice';
 
 export const useAppInitialization = () => {
     const dispatch = useAppDispatch();
