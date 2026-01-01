@@ -126,8 +126,17 @@ export const Login: React.FC = () => {
             }
         }
 
-        // 3. Navigation Logic
-        // 3. Navigation Logic
+        // 3. Navigation & Redirect Logic
+        const params = new URLSearchParams(window.location.search);
+        const redirectUrl = params.get('redirect');
+
+        if (redirectUrl) {
+            console.log('Redirecting to origin:', redirectUrl);
+            window.location.href = redirectUrl;
+            return;
+        }
+
+        // 4. Default Navigation Logic (if no redirect params)
         switch (response.userType) {
             case 'od1':
                 navigate('/dashboard');

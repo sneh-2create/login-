@@ -16,6 +16,14 @@ const NotFound = lazy(() => import('./pages/NotFound').then(module => ({ default
 const AdmissionPage = lazy(() => import('./pages/AdmissionPage').then(module => ({ default: module.AdmissionPage })));
 const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard').then(module => ({ default: module.SuperAdminDashboard })));
 
+// Module Pages
+const FeePage = lazy(() => import('./pages/FeePage').then(module => ({ default: module.FeePage })));
+const AcademicPage = lazy(() => import('./pages/AcademicPage').then(module => ({ default: module.AcademicPage })));
+const ExamPage = lazy(() => import('./pages/ExamPage').then(module => ({ default: module.ExamPage })));
+const HRMPage = lazy(() => import('./pages/HRMPage').then(module => ({ default: module.HRMPage })));
+const BackOfficePage = lazy(() => import('./pages/BackOfficePage').then(module => ({ default: module.BackOfficePage })));
+const TemplatesPage = lazy(() => import('./pages/TemplatesPage').then(module => ({ default: module.TemplatesPage })));
+
 const LoadingState = () => (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -41,12 +49,12 @@ const App: React.FC = () => {
                                     <Route path="dashboard" element={<SuperAdminDashboard />} />
                                     <Route path="entity/dashboard" element={<Dashboard />} />
                                     <Route path="admission/*" element={<AdmissionPage />} />
-                                    <Route path="fee/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Fee Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
-                                    <Route path="academic/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Academic Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
-                                    <Route path="exam/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Exam/COE Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
-                                    <Route path="hrm/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">HRM Module</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
-                                    <Route path="back-office/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Back Office</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
-                                    <Route path="templates/*" element={<div className="p-6 bg-white rounded-lg shadow"><h1 className="text-2xl font-bold">Document Templates</h1><p className="text-gray-600 mt-2">Coming soon...</p></div>} />
+                                    <Route path="fee/*" element={<FeePage />} />
+                                    <Route path="academic/*" element={<AcademicPage />} />
+                                    <Route path="exam/*" element={<ExamPage />} />
+                                    <Route path="hrm/*" element={<HRMPage />} />
+                                    <Route path="back-office/*" element={<BackOfficePage />} />
+                                    <Route path="templates/*" element={<TemplatesPage />} />
                                     <Route path="*" element={<NotFound />} />
                                 </Route>
                             </Route>

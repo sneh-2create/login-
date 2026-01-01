@@ -1,4 +1,4 @@
-
+/// <reference types="vite/client" />
 import axios, { AxiosInstance } from 'axios';
 
 import Cookies from 'js-cookie';
