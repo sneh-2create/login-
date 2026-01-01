@@ -65,6 +65,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                                 <div className="w-8 h-8 flex items-center justify-center">
                                     {iconSrc ? (
                                         <lord-icon
+                                            key={`${index}-${isActive}-${isHovered}`}
                                             src={iconSrc}
                                             trigger="hover"
                                             colors={`primary:${(isActive || isHovered) ? '#5d78ff' : '#b8bac3'}`}

@@ -280,7 +280,10 @@ export const Login: React.FC = () => {
                         </div>
 
                         {/* Form */}
-                        <div className="flex-1">
+                        <form className="flex-1" onSubmit={(e) => {
+                            e.preventDefault();
+                            if (authMode === 'PASSWORD') handlePasswordLogin(e);
+                        }}>
                             <div className="space-y-6">
                                 {/* Mobile Input */}
                                 <div>
@@ -292,6 +295,8 @@ export const Login: React.FC = () => {
                                         onChange={(e) => setMobile(e.target.value.replace(/\D/, ''))} // Only numbers
                                         maxLength={10}
                                         disabled={isLoading || otpSent}
+                                        name="mobile"
+                                        autoComplete="tel"
                                     />
                                 </div>
 
@@ -306,6 +311,8 @@ export const Login: React.FC = () => {
                                             onChange={(e) => setOtp(e.target.value.replace(/\D/, ''))}
                                             maxLength={6}
                                             disabled={isLoading}
+                                            name="otp"
+                                            autoComplete="one-time-code"
                                         />
                                     </div>
                                 )}
@@ -320,6 +327,8 @@ export const Login: React.FC = () => {
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             disabled={isLoading}
+                                            name="password"
+                                            autoComplete="current-password"
                                         />
                                     </div>
                                 )}
@@ -330,6 +339,7 @@ export const Login: React.FC = () => {
                             <div className="mt-8">
                                 {authMode === 'OTP' && !otpSent && (
                                     <button
+                                        type="button"
                                         onClick={handleGetOtp}
                                         disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
@@ -340,6 +350,7 @@ export const Login: React.FC = () => {
 
                                 {authMode === 'OTP' && otpSent && (
                                     <button
+                                        type="button"
                                         onClick={handleVerifyOtp}
                                         disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
@@ -350,7 +361,7 @@ export const Login: React.FC = () => {
 
                                 {authMode === 'PASSWORD' && (
                                     <button
-                                        onClick={handlePasswordLogin}
+                                        type="submit"
                                         disabled={isLoading}
                                         className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
                                     >
@@ -358,27 +369,27 @@ export const Login: React.FC = () => {
                                     </button>
                                 )}
                             </div>
+                        </form>
 
-                            {/* Switcher */}
-                            <div className="flex items-center justify-center gap-4 mt-6 text-[#9C41ED] font-semibold">
-                                {authMode === 'OTP' && !otpSent && (
-                                    <button onClick={() => setAuthMode('PASSWORD')} className="hover:underline">
-                                        Password Login
-                                    </button>
-                                )}
-                                {authMode === 'PASSWORD' && (
-                                    <button onClick={() => setAuthMode('OTP')} className="hover:underline">
-                                        OTP Login
-                                    </button>
-                                )}
-                                {otpSent && (
-                                    <button onClick={() => setOtpSent(false)} className="hover:underline text-sm">
-                                        Change Mobile
-                                    </button>
-                                )}
-                            </div>
-
+                        {/* Switcher */}
+                        <div className="flex items-center justify-center gap-4 mt-6 text-[#9C41ED] font-semibold">
+                            {authMode === 'OTP' && !otpSent && (
+                                <button onClick={() => setAuthMode('PASSWORD')} className="hover:underline">
+                                    Password Login
+                                </button>
+                            )}
+                            {authMode === 'PASSWORD' && (
+                                <button onClick={() => setAuthMode('OTP')} className="hover:underline">
+                                    OTP Login
+                                </button>
+                            )}
+                            {otpSent && (
+                                <button onClick={() => setOtpSent(false)} className="hover:underline text-sm">
+                                    Change Mobile
+                                </button>
+                            )}
                         </div>
+
                     </div>
                 </div>
             </div>

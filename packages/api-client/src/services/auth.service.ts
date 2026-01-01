@@ -20,7 +20,8 @@ export const authService = {
 
         const response = await apiClient.post(loginUrl, credentials);
         if (response.data.token) {
-            Cookies.set('token', response.data.token, { secure: true, sameSite: 'strict' });
+            const isSecure = window.location.protocol === 'https:';
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
         }
         return response.data;
     },
@@ -33,7 +34,8 @@ export const authService = {
     verifyOtp: async (mobile: string, otp: string, source: string = 'erp') => {
         const response = await apiClient.get(`/verify/otp`, { params: { mobile, otp, source } });
         if (response.data.token) {
-            Cookies.set('token', response.data.token, { secure: true, sameSite: 'strict' });
+            const isSecure = window.location.protocol === 'https:';
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
         }
         return response.data;
     },
@@ -52,7 +54,8 @@ export const authService = {
     studentLogin: async (credentials: { phone: string; password: string; entity: string; session: string }) => {
         const response = await apiClient.post('/auth/student/login', credentials);
         if (response.data.token) {
-            Cookies.set('token', response.data.token, { secure: true, sameSite: 'strict' });
+            const isSecure = window.location.protocol === 'https:';
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
         }
         return response.data;
     },
@@ -70,7 +73,8 @@ export const authService = {
     refreshToken: async () => {
         const response = await apiClient.post('/auth/refresh-token');
         if (response.data.token) {
-            Cookies.set('token', response.data.token, { secure: true, sameSite: 'strict' });
+            const isSecure = window.location.protocol === 'https:';
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
         }
         return response.data;
     },
