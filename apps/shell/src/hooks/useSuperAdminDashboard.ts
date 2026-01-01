@@ -36,7 +36,7 @@ export const useSuperAdminDashboard = () => {
     const [loading, setLoading] = useState(false);
 
     // We can use a local refreshing state if we want to show a spinner only on refresh distinct from initial load
-    const [refreshing, setRefreshing] = useState(false);
+    // const [refreshing, setRefreshing] = useState(false);
 
     const fetchActiveStudents = useCallback(async () => {
         try {
