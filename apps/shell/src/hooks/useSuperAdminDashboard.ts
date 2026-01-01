@@ -1,50 +1,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { dashboardService } from '@od-erp/api-client';
-
+import { useAppDispatch, useAppSelector } from '@od-erp/store';
 import {
-    DashboardCounts,
-    ActiveStudentData,
-    OnlineFeePaymentData,
-    CommunicationReportData,
-    UserEntityData,
-    EntityModuleCount,
-    EntityLocationCount
-} from '@od-erp/types';
+    setCounts,
+    setActiveStudents,
+    setUserEntityData,
+    setOnlinePayments,
+    setCommunicationReport,
+    setEntityModuleCounts,
+    setEntityLocationCounts,
+    setActiveStudentDateRange,
+    setUserEntityDateRange,
+    setOnlinePaymentDateRange,
+    setCommunicationDateRange,
+    setSelectedLocation,
+} from '@od-erp/store';
 
 export const useSuperAdminDashboard = () => {
-    const [loading, setLoading] = useState(true);
-    const [counts, setCounts] = useState<DashboardCounts | null>(null);
+    const dispatch = useAppDispatch();
+    const {
+        counts,
+        activeStudents,
+        userEntityData,
+        onlinePayments,
+        communicationReport,
+        entityModuleCounts,
+        entityLocationCounts,
+        activeStudentDateRange,
+        userEntityDateRange,
+        onlinePaymentDateRange,
+        communicationDateRange,
+        selectedLocation
+    } = useAppSelector((state: any) => state.dashboard); // Keeping simple for now, define RootState properly later if needed context
 
-    // Data States
-    const [activeStudents, setActiveStudents] = useState<ActiveStudentData[]>([]);
-    const [userEntityData, setUserEntityData] = useState<UserEntityData[]>([]);
-    const [onlinePayments, setOnlinePayments] = useState<OnlineFeePaymentData[]>([]);
-    const [communicationReport, setCommunicationReport] = useState<CommunicationReportData[]>([]);
-    const [entityModuleCounts, setEntityModuleCounts] = useState<EntityModuleCount[]>([]);
-    const [entityLocationCounts, setEntityLocationCounts] = useState<EntityLocationCount[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    // Filter States (Default to last 30 days)
-    const [activeStudentDateRange, setActiveStudentDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-    });
-
-    const [userEntityDateRange, setUserEntityDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-    });
-
-    const [onlinePaymentDateRange, setOnlinePaymentDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-    });
-
-    const [communicationDateRange, setCommunicationDateRange] = useState({
-        start: new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0],
-        end: new Date().toISOString().split('T')[0]
-    });
-
-    const [selectedLocation, setSelectedLocation] = useState('state');
+    // We can use a local refreshing state if we want to show a spinner only on refresh distinct from initial load
+    const [refreshing, setRefreshing] = useState(false);
 
     const fetchActiveStudents = useCallback(async () => {
         try {
@@ -52,9 +44,9 @@ export const useSuperAdminDashboard = () => {
                 new Date(activeStudentDateRange.start).getTime(),
                 new Date(activeStudentDateRange.end).getTime()
             );
-            setActiveStudents(data);
+            dispatch(setActiveStudents(data));
         } catch (e) { console.error(e); }
-    }, [activeStudentDateRange]);
+    }, [activeStudentDateRange, dispatch]);
 
     const fetchUserEntityData = useCallback(async () => {
         try {
@@ -62,9 +54,9 @@ export const useSuperAdminDashboard = () => {
                 new Date(userEntityDateRange.start).getTime(),
                 new Date(userEntityDateRange.end).getTime()
             );
-            setUserEntityData(data);
+            dispatch(setUserEntityData(data));
         } catch (e) { console.error(e); }
-    }, [userEntityDateRange]);
+    }, [userEntityDateRange, dispatch]);
 
     const fetchOnlinePayments = useCallback(async () => {
         try {
@@ -72,9 +64,9 @@ export const useSuperAdminDashboard = () => {
                 new Date(onlinePaymentDateRange.start).getTime(),
                 new Date(onlinePaymentDateRange.end).getTime()
             );
-            setOnlinePayments(data);
+            dispatch(setOnlinePayments(data));
         } catch (e) { console.error(e); }
-    }, [onlinePaymentDateRange]);
+    }, [onlinePaymentDateRange, dispatch]);
 
     const fetchCommunicationReport = useCallback(async () => {
         try {
@@ -82,31 +74,34 @@ export const useSuperAdminDashboard = () => {
                 new Date(communicationDateRange.start).getTime(),
                 new Date(communicationDateRange.end).getTime()
             );
-            setCommunicationReport(data);
+            dispatch(setCommunicationReport(data));
         } catch (e) { console.error(e); }
-    }, [communicationDateRange]);
+    }, [communicationDateRange, dispatch]);
 
     const fetchEntityModuleCounts = useCallback(async () => {
         try {
             const data = await dashboardService.getEntityCountByModule();
-            setEntityModuleCounts(data);
+            dispatch(setEntityModuleCounts(data));
         } catch (e) { console.error(e); }
-    }, []);
+    }, [dispatch]);
 
     const fetchEntityLocationCounts = useCallback(async () => {
         try {
             const data = await dashboardService.getEntityCountByLocation(selectedLocation);
-            setEntityLocationCounts(data);
+            dispatch(setEntityLocationCounts(data));
         } catch (e) { console.error(e); }
-    }, [selectedLocation]);
+    }, [selectedLocation, dispatch]);
 
-    const fetchInitialData = useCallback(async () => {
-        setLoading(true);
+    const fetchInitialData = useCallback(async (isRefresh = false) => {
+        // If we have data and it's not a forced refresh, don't show full page loading
+        if (!counts || isRefresh) {
+            setLoading(true);
+        }
+
         try {
             console.log("Fetching Dashboard Data...");
             const countData = await dashboardService.getCount();
-            console.log("Counts Data:", countData);
-            setCounts(countData);
+            dispatch(setCounts(countData));
 
             await Promise.all([
                 fetchActiveStudents(),
@@ -122,35 +117,43 @@ export const useSuperAdminDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [fetchActiveStudents, fetchUserEntityData, fetchOnlinePayments, fetchCommunicationReport, fetchEntityModuleCounts, fetchEntityLocationCounts]);
+    }, [fetchActiveStudents, fetchUserEntityData, fetchOnlinePayments, fetchCommunicationReport, fetchEntityModuleCounts, fetchEntityLocationCounts, counts, dispatch]);
 
     useEffect(() => {
-        fetchInitialData();
-    }, [fetchInitialData]);
+        // Only fetch on mount if we don't have data
+        if (!counts) {
+            fetchInitialData();
+        }
+    }, [fetchInitialData, counts]);
+
+    const refreshDashboard = () => {
+        fetchInitialData(true);
+    };
 
     return {
         loading,
         counts,
         activeStudents,
         activeStudentDateRange,
-        setActiveStudentDateRange,
+        setActiveStudentDateRange: (range: any) => dispatch(setActiveStudentDateRange(range)),
         fetchActiveStudents,
         userEntityData,
         userEntityDateRange,
-        setUserEntityDateRange,
+        setUserEntityDateRange: (range: any) => dispatch(setUserEntityDateRange(range)),
         fetchUserEntityData,
         onlinePayments,
         onlinePaymentDateRange,
-        setOnlinePaymentDateRange,
+        setOnlinePaymentDateRange: (range: any) => dispatch(setOnlinePaymentDateRange(range)),
         fetchOnlinePayments,
         communicationReport,
         communicationDateRange,
-        setCommunicationDateRange,
+        setCommunicationDateRange: (range: any) => dispatch(setCommunicationDateRange(range)),
         fetchCommunicationReport,
         entityModuleCounts,
         entityLocationCounts,
         selectedLocation,
-        setSelectedLocation,
-        fetchEntityLocationCounts
+        setSelectedLocation: (loc: string) => dispatch(setSelectedLocation(loc)),
+        fetchEntityLocationCounts,
+        refreshDashboard // Exposed function
     };
 };

@@ -32,8 +32,16 @@ export const useMenu = () => {
         // Determine which section to use based on user role/type
         // For now assuming 'admin' or 'entity' based on existence of entityPreferences
         // In real app, check user.role or userType
-        if (user?.role === 'superadmin' || user?.role === 'od1') {
-            rawItems = menuConfig.adminAside?.items || [];
+        if (user?.role === 'superadmin' || user?.role === 'od1' || user?.userType === 'od1') {
+            // User requested to see BOTH admin and entity lists combined
+            const adminItems = menuConfig.adminAside?.items || [];
+            const entityItems = menuConfig.entityAside?.items || [];
+
+            // Deduplicate based on title (prefer Admin items)
+            const adminTitles = new Set(adminItems.map((item: ConfigMenuItem) => item.title));
+            const filteredEntityItems = entityItems.filter((item: ConfigMenuItem) => !adminTitles.has(item.title));
+
+            rawItems = [...adminItems, ...filteredEntityItems];
         } else if (entityPreferences) { // If logged in as entity
             rawItems = menuConfig.entityAside?.items || [];
         }
@@ -48,7 +56,7 @@ export const useMenu = () => {
         for (const item of items) {
             // 1. Check Permissions
             let hasPermission = true;
-            const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'od1';
+            const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'od1' || user?.userType === 'od1';
 
             if (!isSuperAdmin) {
                 if (item.entPermission) {

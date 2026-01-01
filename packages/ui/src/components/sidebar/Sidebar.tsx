@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMenu } from '@od-erp/store';
@@ -68,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                                             key={`${index}-${isActive}-${isHovered}`}
                                             src={iconSrc}
                                             trigger="hover"
-                                            colors={`primary:${(isActive || isHovered) ? '#5d78ff' : '#b8bac3'}`}
+                                            colors={`primary:${isActive || isHovered ? '#5d78ff' : '#b8bac3'}`}
                                             style={{ width: '25px', height: '25px' }}
                                         />
                                     ) : (

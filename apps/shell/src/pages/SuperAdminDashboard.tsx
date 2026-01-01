@@ -59,7 +59,9 @@ export const SuperAdminDashboard: React.FC = () => {
         entityLocationCounts,
         selectedLocation,
         setSelectedLocation,
-        fetchEntityLocationCounts
+
+        fetchEntityLocationCounts,
+        refreshDashboard
     } = useSuperAdminDashboard();
 
     if (loading && !counts) {
@@ -68,7 +70,17 @@ export const SuperAdminDashboard: React.FC = () => {
 
     return (
         <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-            <Title as="h1" variant="pageTitle">Dashboard</Title>
+            <div className="flex justify-between items-center">
+                <Title as="h1" variant="pageTitle">Dashboard</Title>
+                <button
+                    onClick={refreshDashboard}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-white text-gray-600 rounded-lg hover:bg-gray-50 border border-gray-200 shadow-sm transition-all text-sm font-medium disabled:opacity-50"
+                >
+                    <Loader2 className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    {loading ? 'Refreshing...' : 'Refresh Data'}
+                </button>
+            </div>
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -86,8 +98,8 @@ export const SuperAdminDashboard: React.FC = () => {
                         <DateRangeFilter
                             startDate={activeStudentDateRange.start}
                             endDate={activeStudentDateRange.end}
-                            onStartChange={(d) => setActiveStudentDateRange(prev => ({ ...prev, start: d }))}
-                            onEndChange={(d) => setActiveStudentDateRange(prev => ({ ...prev, end: d }))}
+                            onStartChange={(d) => setActiveStudentDateRange({ ...activeStudentDateRange, start: d })}
+                            onEndChange={(d) => setActiveStudentDateRange({ ...activeStudentDateRange, end: d })}
                             onGo={fetchActiveStudents}
                         />
                     }
@@ -105,8 +117,8 @@ export const SuperAdminDashboard: React.FC = () => {
                         <DateRangeFilter
                             startDate={userEntityDateRange.start}
                             endDate={userEntityDateRange.end}
-                            onStartChange={(d) => setUserEntityDateRange(prev => ({ ...prev, start: d }))}
-                            onEndChange={(d) => setUserEntityDateRange(prev => ({ ...prev, end: d }))}
+                            onStartChange={(d) => setUserEntityDateRange({ ...userEntityDateRange, start: d })}
+                            onEndChange={(d) => setUserEntityDateRange({ ...userEntityDateRange, end: d })}
                             onGo={fetchUserEntityData}
                         />
                     }
@@ -127,8 +139,8 @@ export const SuperAdminDashboard: React.FC = () => {
                         <DateRangeFilter
                             startDate={onlinePaymentDateRange.start}
                             endDate={onlinePaymentDateRange.end}
-                            onStartChange={(d) => setOnlinePaymentDateRange(prev => ({ ...prev, start: d }))}
-                            onEndChange={(d) => setOnlinePaymentDateRange(prev => ({ ...prev, end: d }))}
+                            onStartChange={(d) => setOnlinePaymentDateRange({ ...onlinePaymentDateRange, start: d })}
+                            onEndChange={(d) => setOnlinePaymentDateRange({ ...onlinePaymentDateRange, end: d })}
                             onGo={fetchOnlinePayments}
                         />
                     }
@@ -146,8 +158,8 @@ export const SuperAdminDashboard: React.FC = () => {
                         <DateRangeFilter
                             startDate={communicationDateRange.start}
                             endDate={communicationDateRange.end}
-                            onStartChange={(d) => setCommunicationDateRange(prev => ({ ...prev, start: d }))}
-                            onEndChange={(d) => setCommunicationDateRange(prev => ({ ...prev, end: d }))}
+                            onStartChange={(d) => setCommunicationDateRange({ ...communicationDateRange, start: d })}
+                            onEndChange={(d) => setCommunicationDateRange({ ...communicationDateRange, end: d })}
                             onGo={fetchCommunicationReport}
                         />
                     }

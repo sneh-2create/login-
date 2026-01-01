@@ -224,7 +224,7 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
         <div
             className={`
                 fixed left-[100px] top-[80px] bottom-0 ${containerWidthClass}
-                bg-white border-r border-[var(--sidebar-border)] shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-10 
+                bg-white border-r border-[var(--sidebar-border)] shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-50 
                 overflow-y-auto py-[18px] transition-all duration-300 ease-in-out
                 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
                 ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}

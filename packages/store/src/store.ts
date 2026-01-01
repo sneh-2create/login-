@@ -6,18 +6,21 @@ import sessionReducer from './slices/sessionSlice';
 import uiReducer from './slices/uiSlice';
 import configReducer from './slices/configSlice';
 
+import dashboardReducer from './slices/dashboardSlice';
+
 const rootReducer = combineReducers({
     auth: authReducer,
     session: sessionReducer,
     ui: uiReducer,
     config: configReducer,
+    dashboard: dashboardReducer,
 });
 
 const persistConfig = {
     key: 'root',
     version: 1,
     storage,
-    whitelist: ['auth', 'session', 'ui'], // Persist these slices
+    whitelist: ['auth', 'session', 'ui', 'dashboard'], // Persist these slices
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
