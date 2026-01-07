@@ -14,21 +14,32 @@ export const admissionService = {
         if (isLeet) {
             queryParams += `&isLEET=${isLeet}`;
         }
-        // Angular: this.URLAddress('/list/course?entity=' +queryParams) -> /admission/list/course...
+        // Angular: URLAddress('/list/course?entity=' +queryParams)
+        // Reverting to /list/course as /admission/list/course 404'd
         const response = await apiClient.get(`/list/course?${queryParams}`);
         return response.data;
     },
 
     viewAdmissionSummaryReport: async (formData: AdmissionSummaryReportParams) => {
-        // Angular: this.URLAddress('/admissionSummary/admissionReports') -> /admission/admissionSummary/admissionReports
+        // Angular: URLAddress('/admissionSummary/admissionReports')
         const response = await apiClient.post(`/admissionSummary/admissionReports`, formData);
         return response.data;
     },
 
     getSessionList: async (entityId: string) => {
-        // Angular: this.http.get<UserData[]>(this.URLAddress('/list/session?entity=' +entityId))
-        // -> /admission/list/session?entity=...
+        // Angular: URLAddress('/list/session?entity=' +entityId)
         const response = await apiClient.get(`/list/session?entity=${entityId}`);
+        return response.data;
+    },
+
+    getVacantSeatsReport: async (entityId: string, session: string, course?: string, stream?: string, batch?: string) => {
+        // Angular: URLAddress('/subjectCombinationReport/admissionReports?entity='...)
+        let queryParams = `entity=${entityId}&session=${session}`;
+        if (course) queryParams += `&course=${encodeURIComponent(course)}`;
+        if (stream) queryParams += `&stream=${stream}`;
+        if (batch) queryParams += `&batch=${batch}`;
+
+        const response = await apiClient.get(`/subjectCombinationReport/admissionReports?${queryParams}`);
         return response.data;
     }
 };

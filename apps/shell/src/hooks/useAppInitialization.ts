@@ -83,14 +83,17 @@ export const useAppInitialization = () => {
                     // The user specifically requested: api/getWhiteLabellingByURL -> src/app/app.component.ts
                     // This might overlap with getEntityWebsiteConfig, but we'll call it as requested.
                     const currentUrl = window.location.hostname;
-                    promises.push(commonService.getWhiteLabellingByURL(currentUrl).then(res => {
-                        if (res) {
-                            // If this returns white label config, we update it.
-                            // It might overwrite getEntityWebsiteConfig result if both map to same store.
-                            // We'll prioritize this as it's URL based (tenant specific).
-                            dispatch(setWhiteLabelConfig(res));
-                        }
-                    }));
+                    // Skip for localhost to avoid 409
+                    if (currentUrl !== 'localhost' && currentUrl !== '127.0.0.1') {
+                        promises.push(commonService.getWhiteLabellingByURL(currentUrl).then(res => {
+                            if (res) {
+                                dispatch(setWhiteLabelConfig(res));
+                            }
+                        }).catch(err => {
+                            console.warn('White Labelling fetch failed', err);
+                            // Suppress error so Promise.all doesn't fail
+                        }));
+                    }
 
                     // 5. Mess Management Dashboard (Always call on init)
                     if (!messDashboardData) {
