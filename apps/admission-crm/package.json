@@ -18,6 +18,10 @@
         "@od-erp/theme": "workspace:*",
         "@od-erp/ui": "workspace:*",
         "@od-erp/utils": "workspace:*",
+        "@od-erp/types": "workspace:*",
+        "@tanstack/react-table": "^8.21.3",
+        "lucide-react": "^0.562.0",
+        "xlsx": "^0.18.5",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.20.0"
