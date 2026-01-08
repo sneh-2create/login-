@@ -13,6 +13,7 @@ export default defineConfig({
             name: 'admission_crm',
             filename: 'remoteEntry.js',
             // Modules to expose
+
             exposes: {
                 './App': './src/App.tsx',
             },
@@ -34,6 +35,7 @@ export default defineConfig({
     },
     server: {
         port: 3001, // Admission CRM on port 3001
+        cors: { origin: "*", methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] },
         proxy: {
             '/api': {
                 target: 'https://staging.odpay.in',

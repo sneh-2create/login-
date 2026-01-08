@@ -1,27 +1,17 @@
 import { useEffect, useState } from 'react';
-import { admissionService } from '@od-erp/api-client';
+import { VacantSeatsReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-
-interface TableRow {
-    position: number;
-    course: string;
-    stream: string;
-    batch?: string;
-    name: string;
-    seats: number;
-    availableSeats: number;
-    filledSeats: number;
-    pendingApplications: number;
-}
+import { VacantSeatsReportTableRow } from '@od-erp/types';
+import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
 
 const VacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<TableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<TableRow>[]>([]);
+    const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
 
     // Filters
     const [courses, setCourses] = useState<any[]>([]);
@@ -63,7 +53,7 @@ const VacantSeatsReport = () => {
 
     const setupColumns = () => {
         console.log("Setting up columns. ShowBatch:", showBatch);
-        const cols: ColumnDef<TableRow>[] = [
+        const cols: ColumnDef<VacantSeatsReportTableRow>[] = [
             { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() },
             { accessorKey: 'course', header: displayNames.course },
             { accessorKey: 'stream', header: displayNames.stream },
@@ -88,7 +78,7 @@ const VacantSeatsReport = () => {
         try {
             if (!entityId) return;
             // passing undefined for isLeet as per angular code
-            const res = await admissionService.getCourseList(entityId, session);
+            const res = await VacantSeatsReportService.getCourseList(entityId, session);
             setCourses(res || []);
             // Select first course by default if desired, following Angular logic:
             // if (res && res.length > 0) handleCourseChange(res[0]);
@@ -118,7 +108,7 @@ const VacantSeatsReport = () => {
             const streamName = selectedStream || undefined;
             const batchName = selectedBatch || undefined;
 
-            const res = await admissionService.getVacantSeatsReport(entityId, session, courseName, streamName, batchName);
+            const res = await VacantSeatsReportService.getVacantSeatsReport(entityId, session, courseName, streamName, batchName);
 
             console.log("VacantSeatsReport response:", res);
 
@@ -133,39 +123,7 @@ const VacantSeatsReport = () => {
                 }
             }
 
-            if (!resultData || resultData.length === 0) {
-                setData([]);
-                return;
-            }
-
-            // Calculate totals
-            const totalRow: TableRow = {
-                position: 0, // identifying total row
-                course: 'Total',
-                stream: '',
-                batch: '',
-                name: '',
-                seats: 0,
-                availableSeats: 0,
-                filledSeats: 0,
-                pendingApplications: 0
-            };
-
-            const processedData = resultData.map((item: any, index: number) => {
-                totalRow.seats += (item.seats || 0);
-                totalRow.availableSeats += (item.availableSeats || 0);
-                totalRow.filledSeats += (item.filledSeats || 0);
-                totalRow.pendingApplications += (item.pendingApplications || 0);
-
-                return {
-                    position: index + 1,
-                    ...item
-                };
-            });
-
-            // Append total row
-            processedData.push(totalRow);
-
+            const processedData = processVacantSeatsReportData(resultData);
             setData(processedData);
 
         } catch (err) {
@@ -180,22 +138,7 @@ const VacantSeatsReport = () => {
         setExportLoading(true);
         try {
             // Prepare data suitable for export
-            const exportData = data.map(row => {
-                const newRow: any = {
-                    'S.No': row.position || '',
-                    [displayNames.course]: row.course,
-                    [displayNames.stream]: row.stream,
-                };
-                if (showBatch) {
-                    newRow[displayNames.batch] = row.batch;
-                }
-                newRow['Name'] = row.name;
-                newRow['Seats'] = row.seats;
-                newRow['Available Seats'] = row.availableSeats;
-                newRow['Filled Seats'] = row.filledSeats;
-                newRow['Pending Applications'] = row.pendingApplications;
-                return newRow;
-            });
+            const exportData = transformVacantSeatsForExport(data, displayNames, showBatch);
 
             const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();

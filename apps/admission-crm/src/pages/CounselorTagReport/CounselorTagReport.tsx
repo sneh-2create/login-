@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react';
-import { admissionService } from '@od-erp/api-client';
+import { CounselorTagReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-
-interface TableRow {
-    position: number;
-    counselorName: string;
-    totalCount: number;
-    [key: string]: any;
-}
+import { CounselorTagReportTableRow } from '@od-erp/types';
+import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
 
 const CounselorTagReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<TableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<TableRow>[]>([]);
+    const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<CounselorTagReportTableRow>[]>([]);
 
     // Filters
     const [counselors, setCounselors] = useState<any[]>([]);
@@ -43,16 +38,13 @@ const CounselorTagReport = () => {
     const loadInitialData = async () => {
         try {
             // Load tags and admission master data
-            const masterRes = await admissionService.viewAdmissionMaster(entityId, session);
+            const masterRes = await CounselorTagReportService.viewAdmissionMaster(entityId, session);
             if (masterRes && masterRes.tags) {
                 setTags(masterRes.tags.map((t: any) => t.tag));
             }
 
             // Load counselors logic
-            // Check if user is admission admin (mocking permission check from localStorage or context)
-            // For now, assuming admin logic to list all employees or based on teams
-            // Mirroring Angular logical flow roughly:
-            const empRes = await admissionService.listEmployee(entityId, 'counselor');
+            const empRes = await CounselorTagReportService.listEmployee(entityId, 'counselor');
             if (empRes) {
                 setCounselors(empRes);
             }
@@ -63,7 +55,7 @@ const CounselorTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<TableRow>[] = [
+        const cols: ColumnDef<CounselorTagReportTableRow>[] = [
             { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() },
             { accessorKey: 'counselorName', header: 'Counselor Name' },
             { accessorKey: 'totalCount', header: 'Total Count' },
@@ -85,45 +77,9 @@ const CounselorTagReport = () => {
         try {
             const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : undefined;
             const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : undefined;
-            const res = await admissionService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
+            const res = await CounselorTagReportService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
 
-            if (!res || res.length === 0) {
-                setData([]);
-                return;
-            }
-
-            // Calculate totals row
-            const totalRow: any = {
-                position: 0,
-                counselorName: 'Total',
-                totalCount: 0
-            };
-
-            tags.forEach(tag => totalRow[tag] = 0);
-
-            const processedData = res.map((item: any, index: number) => {
-                // Sum up counts for this counselor across tags if needed, 
-                // or use existing totalCount from API if provided.
-                // Angular code: keys.forEach(key => total[key] += item[key])
-
-                // However, Angular code also calculates column totals:
-                tags.forEach(tag => {
-                    const val = item[tag] ? Number(item[tag]) : 0;
-                    totalRow[tag] += val;
-                    // Note: item.totalCount usually comes from API or sum of tags? 
-                    // Angular View: {{row.totalCount}}
-                    // Let's assume API gives it, or we sum it?
-                });
-
-                totalRow.totalCount += (item.totalCount || 0);
-
-                return {
-                    position: index + 1,
-                    ...item
-                };
-            });
-
-            processedData.push(totalRow);
+            const processedData = processCounselorTagData(res, tags);
             setData(processedData);
 
         } catch (err) {
@@ -137,17 +93,7 @@ const CounselorTagReport = () => {
     const handleExport = () => {
         setExportLoading(true);
         try {
-            const exportData = data.map(row => {
-                const newRow: any = {
-                    'S.No': row.position === 0 ? '' : row.position,
-                    'Counselor Name': row.counselorName,
-                    'Total Count': row.totalCount
-                };
-                tags.forEach(tag => {
-                    newRow[tag] = row[tag] || 0;
-                });
-                return newRow;
-            });
+            const exportData = transformCounselorTagForExport(data, tags);
 
             const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();

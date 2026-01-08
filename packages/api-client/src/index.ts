@@ -4,4 +4,7 @@ export { commonService } from './services/common.service';
 export { calendarService } from './services/calendar.service';
 export { dashboardService } from './services/dashboard.service';
 export { admissionService } from './services/admission.service';
+export { AdmissionSummaryReportService } from './services/AdmissionCrmServices/AdmissionSummaryReport.service';
+export { CounselorTagReportService } from './services/AdmissionCrmServices/CounselorTagReport.service';
+export { VacantSeatsReportService } from './services/AdmissionCrmServices/VacantSeatsReport.service';
 export { default as apiClient } from './client';

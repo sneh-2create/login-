@@ -8,3 +8,6 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
         currency,
     }).format(amount);
 };
+
+export * from './admission';
+

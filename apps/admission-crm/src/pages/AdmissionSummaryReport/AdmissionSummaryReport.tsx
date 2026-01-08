@@ -1,28 +1,21 @@
 import { useEffect, useState } from 'react';
 // import { useSearchParams } from 'react-router-dom';
 import * as xlsx from 'xlsx';
-import { admissionService } from '@od-erp/api-client';
+import { AdmissionSummaryReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, Input } from '@od-erp/ui';
 import { DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Search } from 'lucide-react';
+import { AdmissionSummaryTableRow } from '@od-erp/types';
+import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
 // import Cookies from 'js-cookie';
-
-interface TableRow {
-    position: number;
-    course: string;
-    stream: string;
-    total: number;
-    totalOpen: number;
-    [key: string]: any;
-}
 
 const AdmissionSummaryReport = () => {
     // const [searchParams] = useSearchParams(); // Unused
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<TableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<TableRow>[]>([]);
+    const [data, setData] = useState<AdmissionSummaryTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
     const [sessionList, setSessionList] = useState<any[]>([]);
 
     // Filters
@@ -50,7 +43,7 @@ const AdmissionSummaryReport = () => {
     const loadSessions = async () => {
         try {
             if (!entityId) return;
-            const res = await admissionService.getSessionList(entityId);
+            const res = await AdmissionSummaryReportService.getSessionList(entityId);
             setSessionList(res || []);
         } catch (err) {
             console.error(err);
@@ -79,8 +72,27 @@ const AdmissionSummaryReport = () => {
                 payload.session = selectedSession;
             }
 
-            const res = await admissionService.viewAdmissionSummaryReport(payload);
-            processData(res);
+            const res = await AdmissionSummaryReportService.viewAdmissionSummaryReport(payload);
+            const { processedRows, dynamicColumns } = processAdmissionSummaryData(res);
+
+            // Define Table Columns
+            const tableCols: ColumnDef<AdmissionSummaryTableRow>[] = [
+                { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() || '' },
+                { accessorKey: 'course', header: displayNames.course },
+                { accessorKey: 'stream', header: displayNames.stream },
+            ];
+
+            // Add dynamic columns
+            dynamicColumns.forEach((col: string) => {
+                tableCols.push({ accessorKey: col, header: col });
+            });
+
+            tableCols.push({ accessorKey: 'totalOpen', header: 'Total Open' });
+            tableCols.push({ accessorKey: 'total', header: 'Total' });
+
+            setColumns(tableCols);
+            setData(processedRows);
+
         } catch (err) {
             console.error(err);
             setData([]); // Clear data on error
@@ -89,101 +101,12 @@ const AdmissionSummaryReport = () => {
         }
     };
 
-    const processData = (rawData: any[]) => {
-        if (!rawData || rawData.length === 0) {
-            setData([]);
-            return;
-        }
-
-        // 1. Get courses list for sequencing (simulated as we don't have this.courses loaded yet, 
-        // leveraging rawData order or sequence if available). 
-        // In React port, we might skip re-sorting by sequence if not critical or fetch courses if needed.
-        // For now, using data as returned.
-
-        let processedRows: TableRow[] = [];
-        let dynamicColumns: Set<string> = new Set();
-        let totalStats: any = { course: 'Total', total: 0, totalOpen: 0 };
-
-        rawData.forEach((row: any, index: number) => {
-            let newRow: any = {
-                position: index + 1,
-                course: row.course,
-                stream: row.stream,
-                total: row.total,
-                totalOpen: row.totalOpen,
-                ...row // Keep original for reference
-            };
-
-            // Process data array for dynamic columns
-            if (Array.isArray(row.data)) {
-                row.data.forEach((item: any) => {
-                    let colName = item.name;
-                    if (typeof colName === 'boolean') colName = String(colName);
-
-                    newRow[colName] = item.value;
-                    dynamicColumns.add(colName);
-
-                    // Accumulate totals
-                    totalStats[colName] = (totalStats[colName] || 0) + (item.value || 0);
-                });
-            }
-
-            totalStats.total += row.total;
-            totalStats.totalOpen += row.totalOpen;
-            processedRows.push(newRow);
-        });
-
-        // Add Total Row
-        processedRows.push(totalStats);
-
-        // Sorting if needed (skipped for now)
-
-        // Define Table Columns
-        const tableCols: ColumnDef<TableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() || '' },
-            { accessorKey: 'course', header: displayNames.course },
-            { accessorKey: 'stream', header: displayNames.stream },
-        ];
-
-        // Add dynamic columns in specific order if possible, else alphabetical/insertion order
-        // Prioritizing specific columns as per legacy code logic
-        // const priorityCols = ["Applied", "Registered", "Admitted"]; // Example priority - Unused
-        const specialCols = ["Approved", "Rejected", "Withdrawn"];
-
-        // Add gathered dynamic columns excluding special ones first
-        Array.from(dynamicColumns).forEach(col => {
-            if (!specialCols.includes(col)) {
-                tableCols.push({ accessorKey: col, header: col });
-            }
-        });
-
-        // Add special columns if they exist
-        specialCols.forEach(col => {
-            if (dynamicColumns.has(col)) {
-                tableCols.push({ accessorKey: col, header: col });
-            }
-        });
-
-        tableCols.push({ accessorKey: 'totalOpen', header: 'Total Open' });
-        tableCols.push({ accessorKey: 'total', header: 'Total' });
-
-        setColumns(tableCols);
-        setData(processedRows);
-    };
 
     const handleExport = () => {
         setExportLoading(true);
         try {
-            // Transform data for export to match table structure
-            const exportData = data.map(row => {
-                const rowData: any = {};
-                columns.forEach((col: any) => {
-                    if (col.accessorKey) {
-                        rowData[col.header as string] = row[col.accessorKey];
-                    }
-                });
-                return rowData;
-            });
+            // Transform data for export
+            const exportData = transformAdmissionSummaryForExport(data, columns);
 
             const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();
