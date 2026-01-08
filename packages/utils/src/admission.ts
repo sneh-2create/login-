@@ -1,0 +1,160 @@
+
+import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow } from '@od-erp/types';
+
+// Admission Summary Report Utils
+
+export const processAdmissionSummaryData = (rawData: any[]) => {
+    if (!rawData || rawData.length === 0) {
+        return { processedRows: [], dynamicColumns: [] };
+    }
+
+    let processedRows: AdmissionSummaryTableRow[] = [];
+    let dynamicColumns: Set<string> = new Set();
+    let totalStats: any = { course: 'Total', total: 0, totalOpen: 0 };
+
+    rawData.forEach((row: any, index: number) => {
+        let newRow: any = {
+            position: index + 1,
+            course: row.course,
+            stream: row.stream,
+            total: row.total,
+            totalOpen: row.totalOpen,
+            ...row
+        };
+
+        if (Array.isArray(row.data)) {
+            row.data.forEach((item: any) => {
+                let colName = item.name;
+                if (typeof colName === 'boolean') colName = String(colName);
+
+                newRow[colName] = item.value;
+                dynamicColumns.add(colName);
+                totalStats[colName] = (totalStats[colName] || 0) + (item.value || 0);
+            });
+        }
+
+        totalStats.total += row.total;
+        totalStats.totalOpen += row.totalOpen;
+        processedRows.push(newRow);
+    });
+
+    processedRows.push(totalStats);
+
+    const specialCols = ["Approved", "Rejected", "Withdrawn"];
+    const validDynamicCols = Array.from(dynamicColumns).filter(col => !specialCols.includes(col));
+    const validSpecialCols = specialCols.filter(col => dynamicColumns.has(col));
+
+    return {
+        processedRows,
+        dynamicColumns: [...validDynamicCols, ...validSpecialCols]
+    };
+};
+
+export const transformAdmissionSummaryForExport = (data: AdmissionSummaryTableRow[], columns: any[]) => {
+    return data.map(row => {
+        const rowData: any = {};
+        columns.forEach((col: any) => {
+            if (col.accessorKey) {
+                rowData[col.header as string] = row[col.accessorKey];
+            }
+        });
+        return rowData;
+    });
+};
+
+// Counselor Tag Report Utils
+
+export const processCounselorTagData = (res: any[], tags: string[]) => {
+    if (!res || res.length === 0) return [];
+
+    const totalRow: any = {
+        position: 0,
+        counselorName: 'Total',
+        totalCount: 0
+    };
+
+    tags.forEach(tag => totalRow[tag] = 0);
+
+    const processedData = res.map((item: any, index: number) => {
+        tags.forEach(tag => {
+            const val = item[tag] ? Number(item[tag]) : 0;
+            totalRow[tag] += val;
+        });
+
+        totalRow.totalCount += (item.totalCount || 0);
+
+        return {
+            position: index + 1,
+            ...item
+        };
+    });
+
+    processedData.push(totalRow);
+    return processedData;
+};
+
+export const transformCounselorTagForExport = (data: CounselorTagReportTableRow[], tags: string[]) => {
+    return data.map(row => {
+        const newRow: any = {
+            'S.No': row.position === 0 ? '' : row.position,
+            'Counselor Name': row.counselorName,
+            'Total Count': row.totalCount
+        };
+        tags.forEach(tag => {
+            newRow[tag] = row[tag] || 0;
+        });
+        return newRow;
+    });
+};
+
+// Vacant Seats Report Utils
+
+export const processVacantSeatsReportData = (resultData: any[]) => {
+    if (!resultData || resultData.length === 0) return [];
+
+    const totalRow: VacantSeatsReportTableRow = {
+        position: 0,
+        course: 'Total',
+        stream: '',
+        batch: '',
+        name: '',
+        seats: 0,
+        availableSeats: 0,
+        filledSeats: 0,
+        pendingApplications: 0
+    };
+
+    const processedData = resultData.map((item: any, index: number) => {
+        totalRow.seats += (item.seats || 0);
+        totalRow.availableSeats += (item.availableSeats || 0);
+        totalRow.filledSeats += (item.filledSeats || 0);
+        totalRow.pendingApplications += (item.pendingApplications || 0);
+
+        return {
+            position: index + 1,
+            ...item
+        };
+    });
+
+    processedData.push(totalRow);
+    return processedData;
+};
+
+export const transformVacantSeatsForExport = (data: VacantSeatsReportTableRow[], displayNames: any, showBatch: boolean) => {
+    return data.map(row => {
+        const newRow: any = {
+            'S.No': row.position || '',
+            [displayNames.course]: row.course,
+            [displayNames.stream]: row.stream,
+        };
+        if (showBatch) {
+            newRow[displayNames.batch] = row.batch;
+        }
+        newRow['Name'] = row.name;
+        newRow['Seats'] = row.seats;
+        newRow['Available Seats'] = row.availableSeats;
+        newRow['Filled Seats'] = row.filledSeats;
+        newRow['Pending Applications'] = row.pendingApplications;
+        return newRow;
+    });
+};
