@@ -10,17 +10,28 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.7",
+        "@mui/material": "^7.3.7",
+        "@mui/x-date-pickers": "^8.23.0",
         "@od-erp/api-client": "workspace:*",
         "@od-erp/auth": "workspace:*",
         "@od-erp/constants": "workspace:*",
         "@od-erp/query": "workspace:*",
         "@od-erp/store": "workspace:*",
         "@od-erp/theme": "workspace:*",
+        "@od-erp/types": "workspace:*",
         "@od-erp/ui": "workspace:*",
         "@od-erp/utils": "workspace:*",
+        "@tanstack/react-query": "^5.90.16",
+        "@tanstack/react-table": "^8.21.3",
+        "date-fns": "^4.1.0",
+        "lucide-react": "^0.562.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
-        "react-router-dom": "^6.20.0"
+        "react-router-dom": "^6.20.0",
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {
         "@originjs/vite-plugin-federation": "^1.4.1",

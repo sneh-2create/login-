@@ -1,7 +1,7 @@
 import apiClient from '../../client';
 import { AdmissionSummaryReportParams } from '@od-erp/types';
 
-export const AdmissionSummaryReportService = {
+export const admissionSummaryReportService = {
     getSessionList: async (entityId: string) => {
         const response = await apiClient.get(`/list/session?entity=${entityId}`);
         return response.data;

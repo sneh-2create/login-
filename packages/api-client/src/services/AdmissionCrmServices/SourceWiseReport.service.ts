@@ -1,6 +1,6 @@
 import apiClient from '../../client';
 
-export const SourceWiseReportService = {
+export const sourceWiseReportService = {
     sourceLeadReport: async (
         entityId: string,
         session: string,
