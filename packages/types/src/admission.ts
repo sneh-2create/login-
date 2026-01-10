@@ -22,6 +22,17 @@ export interface CounselorTagReportTableRow {
     [key: string]: any;
 }
 
+export interface SourceWiseReportData {
+    source: string;
+    totalLeadCount: number;
+    totalApplicationCount: number;
+    [key: string]: any; // For dynamic tags
+}
+
+export interface SourceWiseReportTableRow extends SourceWiseReportData {
+    position: number;
+}
+
 export interface VacantSeatsReportTableRow {
     position: number;
     course: string;

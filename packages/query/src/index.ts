@@ -10,3 +10,4 @@ export const queryClient = new QueryClient({
 });
 
 export * from '@tanstack/react-query';
+export * from './admission';

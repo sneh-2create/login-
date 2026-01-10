@@ -7,4 +7,5 @@ export { admissionService } from './services/admission.service';
 export { AdmissionSummaryReportService } from './services/AdmissionCrmServices/AdmissionSummaryReport.service';
 export { CounselorTagReportService } from './services/AdmissionCrmServices/CounselorTagReport.service';
 export { VacantSeatsReportService } from './services/AdmissionCrmServices/VacantSeatsReport.service';
+export { SourceWiseReportService } from './services/AdmissionCrmServices/SourceWiseReport.service';
 export { default as apiClient } from './client';
