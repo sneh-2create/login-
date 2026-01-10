@@ -1,5 +1,5 @@
 
-import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow, CourseWiseTagReportTableRow } from '@od-erp/types';
+import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow, CourseWiseTagReportTableRow, NepSubjectReportTableRow } from '@od-erp/types';
 
 // Admission Summary Report Utils
 
@@ -204,5 +204,52 @@ export const transformCourseWiseTagForExport = (data: CourseWiseTagReportTableRo
             newRow[tag] = row[tag] || 0;
         });
         return newRow;
+    });
+};
+
+// Nep Subject Report Utils
+
+export const processNepSubjectReportData = (resultData: any) => {
+    // Handle case where resultData is wrapped in an object (e.g. { data: [...] })
+    let dataToProcess = Array.isArray(resultData) ? resultData : (Array.isArray(resultData?.data) ? resultData.data : []);
+
+    if (!dataToProcess || dataToProcess.length === 0) return [];
+
+    const totalRow: NepSubjectReportTableRow = {
+        position: 0,
+        name: 'Total',
+        seats: 0,
+        availableSeats: 0,
+        filledSeats: 0,
+        pendingApplications: 0
+    };
+
+    const processedData = dataToProcess.map((item: any, index: number) => {
+        totalRow.seats += (item.seats || 0);
+        totalRow.availableSeats += (item.availableSeats || 0);
+        totalRow.filledSeats += (item.filledSeats || 0);
+        totalRow.pendingApplications += (item.pendingApplications || 0);
+
+        return {
+            position: index + 1,
+            ...item
+        };
+    });
+
+    processedData.push(totalRow);
+    return processedData;
+};
+
+export const transformNepSubjectReportForExport = (data: NepSubjectReportTableRow[]) => {
+    return data.map(row => {
+        return {
+            'S.No': row.position || '',
+            'Name': row.name,
+            'Code': row.code || '',
+            'Seats': row.seats,
+            'Available Seats': row.availableSeats,
+            'Filled Seats': row.filledSeats,
+            'Pending Applications': row.pendingApplications
+        };
     });
 };

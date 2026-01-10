@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData } from '@od-erp/types';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -43,6 +43,31 @@ export const useCourseWiseTagReport = (
             counselorId,
             startDate,
             endDate
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useNepSubjectReport = (
+    entityId: string,
+    session: string,
+    course?: string,
+    stream?: string,
+    batch?: string,
+    subjectGroupValue?: string, // e.g. 'mdcCode'
+    subjectGroupName?: string // e.g. 'MDC'
+) => {
+    return useQuery<NepSubjectReportData[]>({
+        queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
+        queryFn: () => nepSubjectReportService.getNepSubjectReport(
+            entityId,
+            session,
+            course,
+            stream,
+            batch,
+            subjectGroupValue,
+            subjectGroupName
         ),
         enabled: !!entityId && !!session,
         staleTime: 30000,

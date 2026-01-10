@@ -9,4 +9,5 @@ export { counselorTagReportService } from './services/admissionCrmServices/couns
 export { vacantSeatsReportService } from './services/admissionCrmServices/vacantSeatsReport.service';
 export { sourceWiseReportService } from './services/admissionCrmServices/sourceWiseReport.service';
 export { courseWiseTagReportService } from './services/admissionCrmServices/courseWiseTagReport.service';
+export { nepSubjectReportService } from './services/admissionCrmServices/nepSubjectReport.service';
 export { default as apiClient } from './client';

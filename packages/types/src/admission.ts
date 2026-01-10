@@ -55,3 +55,16 @@ export interface CourseWiseTagReportData {
 export interface CourseWiseTagReportTableRow extends CourseWiseTagReportData {
     position: number;
 }
+
+export interface NepSubjectReportData {
+    name: string;
+    code?: string;
+    seats: number;
+    availableSeats: number;
+    filledSeats: number;
+    pendingApplications: number;
+}
+
+export interface NepSubjectReportTableRow extends NepSubjectReportData {
+    position: number;
+}

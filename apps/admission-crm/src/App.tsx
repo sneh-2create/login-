@@ -8,6 +8,8 @@ import SourceWiseReport from './pages/sourceWiseReport';
 import PrintSourceWiseReport from './pages/sourceWiseReport/printSourceWiseReport';
 import CourseWiseTagReport from './pages/courseWiseTagReport/courseWiseTagReport';
 import PrintCourseWiseTagReport from './pages/courseWiseTagReport/printCourseWiseTagReport';
+import NepSubjectReport from './pages/NepSubjectReport/NepSubjectReport';
+import PrintNepSubjectReport from './pages/NepSubjectReport/PrintNepSubjectReport';
 import { QueryClientProvider, queryClient } from '@od-erp/query';
 
 function App() {
@@ -24,6 +26,8 @@ function App() {
                     <Route path="/print/sourceWiseReport" element={<PrintSourceWiseReport />} />
                     <Route path="/courseWiseTagReport" element={<CourseWiseTagReport />} />
                     <Route path="/print/courseWiseTagReport" element={<PrintCourseWiseTagReport />} />
+                    <Route path="/nepSubjectReport" element={<NepSubjectReport />} />
+                    <Route path="/print/nepSubjectReport" element={<PrintNepSubjectReport />} />
                     <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
                 </Routes>
             </BrowserRouter>
