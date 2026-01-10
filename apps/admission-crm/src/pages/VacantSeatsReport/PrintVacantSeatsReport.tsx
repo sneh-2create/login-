@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const PrintVacantSeatsReport = () => {
+const printVacantSeatsReport = () => {
     const [data, setData] = useState<any[]>([]);
 
     const entityName = localStorage.getItem('entityName') || 'Entity Name';
@@ -92,4 +92,4 @@ const PrintVacantSeatsReport = () => {
     );
 };
 
-export default PrintVacantSeatsReport;
+export default printVacantSeatsReport;

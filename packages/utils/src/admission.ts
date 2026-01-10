@@ -1,5 +1,5 @@
 
-import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow } from '@od-erp/types';
+import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow, CourseWiseTagReportTableRow } from '@od-erp/types';
 
 // Admission Summary Report Utils
 
@@ -155,6 +155,54 @@ export const transformVacantSeatsForExport = (data: VacantSeatsReportTableRow[],
         newRow['Available Seats'] = row.availableSeats;
         newRow['Filled Seats'] = row.filledSeats;
         newRow['Pending Applications'] = row.pendingApplications;
+        return newRow;
+    });
+};
+
+// Course Wise Tag Report Utils
+
+export const processCourseWiseTagData = (res: any[], tags: string[]) => {
+    if (!res || res.length === 0) return [];
+
+    const totalRow: any = {
+        position: 0,
+        course: 'Total',
+        stream: '',
+        total: 0
+    };
+
+    tags.forEach(tag => totalRow[tag] = 0);
+
+    const processedData = res.map((item: any, index: number) => {
+        tags.forEach(tag => {
+            const val = item[tag] ? Number(item[tag]) : 0;
+            totalRow[tag] += val;
+        });
+
+        const itemTotal = item.total ? Number(item.total) : 0;
+        totalRow.total += itemTotal;
+
+        return {
+            position: index + 1,
+            ...item
+        };
+    });
+
+    processedData.push(totalRow);
+    return processedData;
+};
+
+export const transformCourseWiseTagForExport = (data: CourseWiseTagReportTableRow[], tags: string[]) => {
+    return data.map(row => {
+        const newRow: any = {
+            'S.No': row.position === 0 ? '' : row.position,
+            'Course': row.course,
+            'Stream': row.stream,
+            'Total': row.total
+        };
+        tags.forEach(tag => {
+            newRow[tag] = row[tag] || 0;
+        });
         return newRow;
     });
 };

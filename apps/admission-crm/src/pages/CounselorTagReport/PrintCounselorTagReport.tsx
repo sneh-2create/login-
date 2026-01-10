@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const PrintCounselorTagReport = () => {
+const printCounselorTagReport = () => {
     const [data, setData] = useState<any[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
 
@@ -81,4 +81,4 @@ const PrintCounselorTagReport = () => {
     );
 };
 
-export default PrintCounselorTagReport;
+export default printCounselorTagReport;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SourceWiseReportTableRow } from '@od-erp/types';
 
-const PrintSourceWiseReport = () => {
+const printSourceWiseReport = () => {
     const [data, setData] = useState<SourceWiseReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
 
@@ -84,4 +84,4 @@ const PrintSourceWiseReport = () => {
     );
 };
 
-export default PrintSourceWiseReport;
+export default printSourceWiseReport;

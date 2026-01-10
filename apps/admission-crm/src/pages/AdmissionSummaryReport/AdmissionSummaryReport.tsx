@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 // import { useSearchParams } from 'react-router-dom';
 import * as xlsx from 'xlsx';
-import { AdmissionSummaryReportService } from '@od-erp/api-client';
+import { admissionSummaryReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, Input } from '@od-erp/ui';
 import { DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
@@ -10,7 +10,7 @@ import { AdmissionSummaryTableRow } from '@od-erp/types';
 import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
 // import Cookies from 'js-cookie';
 
-const AdmissionSummaryReport = () => {
+const admissionSummaryReport = () => {
     // const [searchParams] = useSearchParams(); // Unused
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
@@ -43,7 +43,7 @@ const AdmissionSummaryReport = () => {
     const loadSessions = async () => {
         try {
             if (!entityId) return;
-            const res = await AdmissionSummaryReportService.getSessionList(entityId);
+            const res = await admissionSummaryReportService.getSessionList(entityId);
             setSessionList(res || []);
         } catch (err) {
             console.error(err);
@@ -72,7 +72,7 @@ const AdmissionSummaryReport = () => {
                 payload.session = selectedSession;
             }
 
-            const res = await AdmissionSummaryReportService.viewAdmissionSummaryReport(payload);
+            const res = await admissionSummaryReportService.viewAdmissionSummaryReport(payload);
             const { processedRows, dynamicColumns } = processAdmissionSummaryData(res);
 
             // Define Table Columns
@@ -210,4 +210,4 @@ const AdmissionSummaryReport = () => {
     );
 };
 
-export default AdmissionSummaryReport;
+export default admissionSummaryReport;

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CounselorTagReportService } from '@od-erp/api-client';
+import { counselorTagReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
@@ -7,7 +7,7 @@ import * as xlsx from 'xlsx';
 import { CounselorTagReportTableRow } from '@od-erp/types';
 import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
 
-const CounselorTagReport = () => {
+const counselorTagReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
@@ -38,13 +38,13 @@ const CounselorTagReport = () => {
     const loadInitialData = async () => {
         try {
             // Load tags and admission master data
-            const masterRes = await CounselorTagReportService.viewAdmissionMaster(entityId, session);
+            const masterRes = await counselorTagReportService.viewAdmissionMaster(entityId, session);
             if (masterRes && masterRes.tags) {
                 setTags(masterRes.tags.map((t: any) => t.tag));
             }
 
             // Load counselors logic
-            const empRes = await CounselorTagReportService.listEmployee(entityId, 'counselor');
+            const empRes = await counselorTagReportService.listEmployee(entityId, 'counselor');
             if (empRes) {
                 setCounselors(empRes);
             }
@@ -77,7 +77,7 @@ const CounselorTagReport = () => {
         try {
             const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : undefined;
             const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : undefined;
-            const res = await CounselorTagReportService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
+            const res = await counselorTagReportService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
 
             const processedData = processCounselorTagData(res, tags);
             setData(processedData);
@@ -189,4 +189,4 @@ const CounselorTagReport = () => {
     );
 };
 
-export default CounselorTagReport;
+export default counselorTagReport;

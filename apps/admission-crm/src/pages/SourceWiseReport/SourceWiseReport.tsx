@@ -8,7 +8,7 @@ import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { SourceWiseReportTableRow } from '@od-erp/types';
 
-const SourceWiseReport = () => {
+const sourceWiseReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<SourceWiseReportTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<SourceWiseReportTableRow>[]>([]);
@@ -228,4 +228,4 @@ const SourceWiseReport = () => {
     );
 };
 
-export default SourceWiseReport;
+export default sourceWiseReport;

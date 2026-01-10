@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { VacantSeatsReportService } from '@od-erp/api-client';
+import { vacantSeatsReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
@@ -7,7 +7,7 @@ import * as xlsx from 'xlsx';
 import { VacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
 
-const VacantSeatsReport = () => {
+const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
@@ -78,7 +78,7 @@ const VacantSeatsReport = () => {
         try {
             if (!entityId) return;
             // passing undefined for isLeet as per angular code
-            const res = await VacantSeatsReportService.getCourseList(entityId, session);
+            const res = await vacantSeatsReportService.getCourseList(entityId, session);
             setCourses(res || []);
             // Select first course by default if desired, following Angular logic:
             // if (res && res.length > 0) handleCourseChange(res[0]);
@@ -108,7 +108,7 @@ const VacantSeatsReport = () => {
             const streamName = selectedStream || undefined;
             const batchName = selectedBatch || undefined;
 
-            const res = await VacantSeatsReportService.getVacantSeatsReport(entityId, session, courseName, streamName, batchName);
+            const res = await vacantSeatsReportService.getVacantSeatsReport(entityId, session, courseName, streamName, batchName);
 
             console.log("VacantSeatsReport response:", res);
 
@@ -242,4 +242,4 @@ const VacantSeatsReport = () => {
     );
 };
 
-export default VacantSeatsReport;
+export default vacantSeatsReport;

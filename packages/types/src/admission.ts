@@ -44,3 +44,14 @@ export interface VacantSeatsReportTableRow {
     filledSeats: number;
     pendingApplications: number;
 }
+
+export interface CourseWiseTagReportData {
+    course: string;
+    stream: string;
+    total: number;
+    [key: string]: any; // For dynamic tags
+}
+
+export interface CourseWiseTagReportTableRow extends CourseWiseTagReportData {
+    position: number;
+}
