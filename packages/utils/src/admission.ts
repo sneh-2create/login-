@@ -1,5 +1,5 @@
 
-import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow, CourseWiseTagReportTableRow, NepSubjectReportTableRow } from '@od-erp/types';
+import { AdmissionSummaryTableRow, CounselorTagReportTableRow, VacantSeatsReportTableRow, CourseWiseTagReportTableRow, NepSubjectReportTableRow, CounselorProductivityReportTableRow } from '@od-erp/types';
 
 // Admission Summary Report Utils
 
@@ -251,5 +251,105 @@ export const transformNepSubjectReportForExport = (data: NepSubjectReportTableRo
             'Filled Seats': row.filledSeats,
             'Pending Applications': row.pendingApplications
         };
+    });
+};
+
+// Counselor Productivity Report Utils
+
+// Counselor Productivity Report Utils
+
+export const processCounselorProductivityReportData = (resultData: any, stageType: 'lead' | 'application') => {
+    let dataToProcess = Array.isArray(resultData) ? resultData : (Array.isArray(resultData?.data) ? resultData.data : []);
+
+    if (!dataToProcess) dataToProcess = [];
+
+    const dynamicColumns = new Set<string>();
+
+    // Add default columns based on stageType
+    if (stageType === 'lead') {
+        dynamicColumns.add('INTERESTED');
+        dynamicColumns.add('ADMISSION TAKEN SOMEWHERE ELSE');
+    } else {
+        dynamicColumns.add('INTERESTED');
+        dynamicColumns.add('ADMISSION TAKEN SOMEWHERE ELSE');
+        dynamicColumns.add('Duplicate');
+        dynamicColumns.add('No Tag');
+    }
+
+    const totalRow: CounselorProductivityReportTableRow = {
+        position: 0,
+        counselorName: 'Total',
+        totalCount: 0,
+        engagedCount: 0,
+        untouchedCount: 0,
+        completeFollowUp: 0,
+        overDueFollowUp: 0,
+        tags: []
+    };
+
+    if (dataToProcess.length === 0) {
+        return {
+            processedRows: [totalRow],
+            dynamicColumns: Array.from(dynamicColumns)
+        };
+    }
+
+    const processedData = dataToProcess.map((item: any, index: number) => {
+        const itemTags = item.tags || [];
+
+        // Aggregate totals
+        totalRow.totalCount += (item.totalCount || 0);
+        totalRow.engagedCount += (item.engagedCount || 0);
+        totalRow.untouchedCount += (item.untouchedCount || 0);
+        totalRow.completeFollowUp += (item.completeFollowUp || 0);
+        totalRow.overDueFollowUp += (item.overDueFollowUp || 0);
+
+        // Process tags
+        itemTags.forEach((tagItem: any) => {
+            if (tagItem.tag) {
+                dynamicColumns.add(tagItem.tag);
+
+                // Add to total row tags
+                const existingTagIndex = totalRow.tags.findIndex(t => t.tag === tagItem.tag);
+                if (existingTagIndex !== -1) {
+                    totalRow.tags[existingTagIndex].count += (tagItem.count || 0);
+                } else {
+                    totalRow.tags.push({ tag: tagItem.tag, count: tagItem.count || 0 });
+                }
+            }
+        });
+
+        return {
+            position: index + 1,
+            ...item
+        };
+    });
+
+    processedData.push(totalRow);
+
+    return {
+        processedRows: processedData,
+        dynamicColumns: Array.from(dynamicColumns)
+    };
+};
+
+export const transformCounselorProductivityReportForExport = (data: CounselorProductivityReportTableRow[], dynamicColumns: string[], stageType: string) => {
+    return data.map(row => {
+        const rowData: any = {
+            'S.No': row.position === 0 ? '' : row.position,
+            'Counselor Name': row.counselorName,
+            [stageType === 'lead' ? 'Total Leads' : 'Application Count']: row.totalCount,
+            'Engaged Leads': row.engagedCount,
+            'Untouched Leads': row.untouchedCount,
+            "Today's Follow Up Done": row.completeFollowUp,
+            'Pending Follow Ups': row.overDueFollowUp
+        };
+
+        dynamicColumns.forEach(col => {
+            const tagObj = row.tags?.find(t => t.tag === col);
+            rowData[col] = tagObj ? tagObj.count : 0;
+        });
+
+        return rowData;
     });
 };

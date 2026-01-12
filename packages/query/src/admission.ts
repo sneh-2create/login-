@@ -1,7 +1,6 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData } from '@od-erp/types';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -49,6 +48,7 @@ export const useCourseWiseTagReport = (
     });
 };
 
+
 export const useNepSubjectReport = (
     entityId: string,
     session: string,
@@ -71,5 +71,46 @@ export const useNepSubjectReport = (
         ),
         enabled: !!entityId && !!session,
         staleTime: 30000,
+    });
+};
+
+export const useCounselorProductivityReport = (
+    entityId: string,
+    session: string,
+    stageType: 'lead' | 'application',
+    startDate: number,
+    endDate: number,
+    counselorId?: string
+) => {
+    return useQuery<CounselorProductivityReportData[]>({
+        queryKey: ['counselorProductivityReport', entityId, session, stageType, startDate, endDate, counselorId],
+        queryFn: () => counselorProductivityReportService.getCounselorProductivityReport(
+            entityId,
+            session,
+            stageType,
+            startDate,
+            endDate,
+            counselorId
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useCounselors = (entityId: string, role?: string) => {
+    return useQuery<any[]>({
+        queryKey: ['counselors', entityId, role],
+        queryFn: () => counselorTagReportService.listEmployee(entityId, role),
+        enabled: !!entityId,
+        staleTime: 60000 * 5, // 5 minutes cache
+    });
+};
+
+export const useAdmissionLeadLogs = (payload: AdmissionLeadLogPayload) => {
+    return useQuery<AdmissionLeadLogResponse>({
+        queryKey: ['admissionLeadLogs', payload],
+        queryFn: () => admissionLeadLogsService.listAdmissionLeadLogs(payload),
+        enabled: !!payload.entity && !!payload.session,
+        placeholderData: keepPreviousData,
     });
 };

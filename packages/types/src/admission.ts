@@ -68,3 +68,72 @@ export interface NepSubjectReportData {
 export interface NepSubjectReportTableRow extends NepSubjectReportData {
     position: number;
 }
+
+export interface CounselorProductivityReportData {
+    counselorName: string;
+    totalCount: number;
+    engagedCount: number;
+    untouchedCount: number;
+    completeFollowUp: number;
+    overDueFollowUp: number;
+    tags: { tag: string; count: number }[];
+    [key: string]: any;
+}
+
+export interface CounselorProductivityReportTableRow extends CounselorProductivityReportData {
+    position: number;
+}
+
+export interface AdmissionLeadLog {
+    _id: string;
+    name: string;
+    phone: string;
+    email: string;
+    course: string;
+    stream: string;
+    batch?: string;
+    source: string;
+    status: string;
+    date: number; // timestamp
+    dob?: number; // timestamp
+    counselorName?: string;
+    counselorEmail?: string;
+    counselorPhone?: string;
+    remark?: string;
+    officialRemark?: string;
+    followUpDate?: number;
+    followUpQuery?: string;
+    callDetails?: {
+        callStatus: string;
+        callDuration: string;
+        callTimestamp: number;
+        callRecordingLink: string;
+    };
+    studentData?: {
+        applicationNumber?: string;
+    };
+    tags?: string[];
+    updatedByUserName?: string;
+    updatedAt?: number;
+    applicationNumber?: string;
+    sourceId?: string; // If converted
+}
+
+export interface AdmissionLeadLogPayload {
+    entity: string;
+    session: string;
+    counselorId?: string;
+    startDate?: number;
+    endDate?: number;
+    source?: string;
+    status?: string[];
+    callStatus?: string;
+    pageSize: number;
+    pageNumber: number;
+    memberDetails?: boolean;
+}
+
+export interface AdmissionLeadLogResponse {
+    data: AdmissionLeadLog[];
+    count: number;
+}

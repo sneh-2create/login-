@@ -10,6 +10,9 @@ import CourseWiseTagReport from './pages/courseWiseTagReport/courseWiseTagReport
 import PrintCourseWiseTagReport from './pages/courseWiseTagReport/printCourseWiseTagReport';
 import NepSubjectReport from './pages/NepSubjectReport/NepSubjectReport';
 import PrintNepSubjectReport from './pages/NepSubjectReport/PrintNepSubjectReport';
+import CounselorProductivityReport from './pages/CounselorProductivityReport/CounselorProductivityReport';
+import PrintCounselorProductivityReport from './pages/CounselorProductivityReport/PrintCounselorProductivityReport';
+import AdmissionLeadLogs from './pages/AdmissionLeadLogs/AdmissionLeadLogs';
 import { QueryClientProvider, queryClient } from '@od-erp/query';
 
 function App() {
@@ -28,6 +31,9 @@ function App() {
                     <Route path="/print/courseWiseTagReport" element={<PrintCourseWiseTagReport />} />
                     <Route path="/nepSubjectReport" element={<NepSubjectReport />} />
                     <Route path="/print/nepSubjectReport" element={<PrintNepSubjectReport />} />
+                    <Route path="/counselorProductivityReport" element={<CounselorProductivityReport />} />
+                    <Route path="/print/counselorProductivityReport" element={<PrintCounselorProductivityReport />} />
+                    <Route path="/admissionLeadLogs" element={<AdmissionLeadLogs />} />
                     <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
                 </Routes>
             </BrowserRouter>
