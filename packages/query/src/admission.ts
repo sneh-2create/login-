@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload } from '@od-erp/types';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -22,8 +22,8 @@ export const useSourceWiseReport = (
             source,
             counselorId
         ),
-        enabled: !!entityId && !!session, // Only fetch if essential params are present
-        staleTime: 30000, // 30 seconds refresh as requested
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
     });
 };
 
@@ -55,8 +55,8 @@ export const useNepSubjectReport = (
     course?: string,
     stream?: string,
     batch?: string,
-    subjectGroupValue?: string, // e.g. 'mdcCode'
-    subjectGroupName?: string // e.g. 'MDC'
+    subjectGroupValue?: string,
+    subjectGroupName?: string
 ) => {
     return useQuery<NepSubjectReportData[]>({
         queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
@@ -102,7 +102,7 @@ export const useCounselors = (entityId: string, role?: string) => {
         queryKey: ['counselors', entityId, role],
         queryFn: () => counselorTagReportService.listEmployee(entityId, role),
         enabled: !!entityId,
-        staleTime: 60000 * 5, // 5 minutes cache
+        staleTime: 60000 * 5,
     });
 };
 
@@ -112,5 +112,22 @@ export const useAdmissionLeadLogs = (payload: AdmissionLeadLogPayload) => {
         queryFn: () => admissionLeadLogsService.listAdmissionLeadLogs(payload),
         enabled: !!payload.entity && !!payload.session,
         placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdmissionFollowUp = (payload: AdmissionFollowUpPayload) => {
+    return useQuery<AdmissionFollowUp[]>({
+        queryKey: ['admissionFollowUp', payload],
+        queryFn: () => admissionFollowUpService.listFollowUp(payload),
+        enabled: !!payload.entity,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdmissionFollowUpStats = (payload: AdmissionFollowUpPayload) => {
+    return useQuery<AdmissionFollowUpStats>({
+        queryKey: ['admissionFollowUpStats', payload],
+        queryFn: () => admissionFollowUpService.getFilterCountFollowUp(payload),
+        enabled: !!payload.entity,
     });
 };

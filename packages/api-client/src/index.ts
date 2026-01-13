@@ -12,4 +12,5 @@ export { courseWiseTagReportService } from './services/admissionCrmServices/cour
 export { nepSubjectReportService } from './services/admissionCrmServices/nepSubjectReport.service';
 export { counselorProductivityReportService } from './services/admissionCrmServices/counselorProductivityReport.service';
 export { admissionLeadLogsService } from './services/admissionCrmServices/admissionLeadLogs.service';
+export { admissionFollowUpService } from './services/admissionCrmServices/admissionFollowUp.service';
 export { default as apiClient } from './client';

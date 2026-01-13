@@ -137,3 +137,42 @@ export interface AdmissionLeadLogResponse {
     data: AdmissionLeadLog[];
     count: number;
 }
+
+export interface AdmissionFollowUp {
+    _id: string;
+    applicationNumber?: string;
+    studentData?: {
+        name: string;
+        phone: string;
+        date: number;
+        course: string;
+        stream: string;
+        _id: string; // Used for navigation
+    };
+    counselorName: string;
+    createdAt: number;
+    followUpQuery: string;
+    followUpDate: number;
+    status: string;
+    completionRemark?: string;
+}
+
+export interface AdmissionFollowUpPayload {
+    entity: string;
+    session?: string;
+    counselorId?: string;
+    startDate?: number;
+    endDate?: number;
+    status?: string | string[]; // Can be single ('pending') or possibly array if expanded
+    pageSize?: number;
+    pageNumber?: number;
+}
+
+
+export interface AdmissionFollowUpStats {
+    total: number;
+    todayFollowUps: number;
+    upcomingFollowUps: number;
+    overdueFollowUps: number;
+    completedFollowUps: number;
+}

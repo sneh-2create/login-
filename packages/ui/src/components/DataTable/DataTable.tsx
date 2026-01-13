@@ -36,7 +36,7 @@ export function DataTable<TData, TValue>({
     });
 
     return (
-        <div className={`overflow-auto ${maxHeight ? maxHeight : ''} border rounded-md`}>
+        <div className={`w-full overflow-x-auto ${maxHeight ? maxHeight : ''} border rounded-md`}>
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-[#f2ebf8] sticky top-0 z-10 w-full">
                     {table.getHeaderGroups().map((headerGroup) => (
