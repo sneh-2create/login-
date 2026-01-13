@@ -14,6 +14,7 @@ import CounselorProductivityReport from './pages/CounselorProductivityReport/Cou
 import PrintCounselorProductivityReport from './pages/CounselorProductivityReport/PrintCounselorProductivityReport';
 import AdmissionLeadLogs from './pages/AdmissionLeadLogs/AdmissionLeadLogs';
 import AdmissionFollowUps from './pages/AdmissionFollowUps/AdmissionFollowUps';
+import AdmissionLeads from './pages/AdmissionLeads/AdmissionLeads';
 import { QueryClientProvider, queryClient } from '@od-erp/query';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
                     <Route path="/print/counselorProductivityReport" element={<PrintCounselorProductivityReport />} />
                     <Route path="/admissionLeadLogs" element={<AdmissionLeadLogs />} />
                     <Route path="/followUps" element={<AdmissionFollowUps />} />
+                    <Route path="/admissionLeads" element={<AdmissionLeads />} />
                     <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
                 </Routes>
             </BrowserRouter>

@@ -13,4 +13,6 @@ export { nepSubjectReportService } from './services/admissionCrmServices/nepSubj
 export { counselorProductivityReportService } from './services/admissionCrmServices/counselorProductivityReport.service';
 export { admissionLeadLogsService } from './services/admissionCrmServices/admissionLeadLogs.service';
 export { admissionFollowUpService } from './services/admissionCrmServices/admissionFollowUp.service';
+export { admissionLeadService } from './services/admissionCrmServices/admissionLead.service';
+export { sessionService } from './services/session.service';
 export { default as apiClient } from './client';

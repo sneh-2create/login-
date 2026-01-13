@@ -176,3 +176,36 @@ export interface AdmissionFollowUpStats {
     overdueFollowUps: number;
     completedFollowUps: number;
 }
+
+export interface AdmissionLead {
+    _id: string;
+    entityId: string;
+    session: string;
+    name: string;
+    phone: string;
+    email?: string;
+    alternatePhone?: string;
+    course?: string; // Class
+    stream?: string;
+    applicationNumber?: string;
+    source?: string;
+    campusVisited?: string; // 'yes' | 'no'
+    counselorId?: string;
+    counselorName?: string;
+    tags?: { tag: string; date: number }[];
+    date: number;
+    status?: string;
+}
+
+export interface AdmissionLeadPayload {
+    entity: string;
+    session: string;
+    pageNumber: number;
+    pageSize: number;
+    search?: string;
+    searchType?: string; // 'name', 'phone', 'applicationNumber', 'fatherName', 'references'
+    counselorId?: string;
+    startDate?: number;
+    endDate?: number;
+}
+

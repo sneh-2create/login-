@@ -1,5 +1,13 @@
 import { ReactNode } from 'react';
 // --- Auth Types ---
+export interface Session {
+    _id: string;
+    name: string;
+    status: string;
+    startDate: string;
+    endDate: string;
+}
+
 export interface User {
     id: string;
     name: string;

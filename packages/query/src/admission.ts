@@ -1,6 +1,6 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats } from '@od-erp/types';
+import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -129,5 +129,35 @@ export const useAdmissionFollowUpStats = (payload: AdmissionFollowUpPayload) => 
         queryKey: ['admissionFollowUpStats', payload],
         queryFn: () => admissionFollowUpService.getFilterCountFollowUp(payload),
         enabled: !!payload.entity,
+    });
+};
+
+
+export const useAdmissionLeads = (payload: AdmissionLeadPayload) => {
+    return useQuery<{ data: AdmissionLead[]; totalCount: number }>({
+        queryKey: ['admissionLeads', payload],
+        queryFn: () => admissionLeadService.listAdmissionLeads(payload),
+        enabled: !!payload.entity,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddAdmissionLead = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.addAdmissionLead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useUpdateAdmissionLead = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.updateAdmissionLead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
     });
 };
