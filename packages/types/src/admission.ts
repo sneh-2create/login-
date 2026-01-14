@@ -195,6 +195,8 @@ export interface AdmissionLead {
     tags?: { tag: string; date: number }[];
     date: number;
     status?: string;
+    currentStage?: string;
+    fatherName?: string;
 }
 
 export interface AdmissionLeadPayload {
@@ -209,3 +211,101 @@ export interface AdmissionLeadPayload {
     endDate?: number;
 }
 
+export interface AdmissionStudentDataPayload {
+    entity: string;
+    session: string;
+    stage?: string;
+    course?: string[];
+    stream?: string[];
+    batch?: string[];
+    engagementStatus?: string[];
+    startDate?: number;
+    endDate?: number;
+    updatedAtStartDate?: number;
+    updatedAtEndDate?: number;
+    counselorId?: string;
+    tag?: string[];
+    source?: string[];
+    searchBy?: string;
+    search?: string;
+    pageSize?: number;
+    pageNumber?: number;
+    noCounselor?: boolean;
+    memberDetails?: boolean;
+}
+
+export interface AdmissionStageSetup {
+    _id: string;
+    entity: string;
+    session: string;
+    stage: string;
+    sequence: number;
+    txnRequired: boolean;
+    fields: any[];
+    currentStage?: string; // Mapped property
+}
+
+export interface AdmissionStageCount {
+    stage: string;
+    count: number;
+    currentStage?: string; // keeping for backward compatibility if any
+}
+
+export interface AdmissionTransaction {
+    _id: string;
+    receiptId: string;
+    studentRegNo?: string;
+    studentData: {
+        name: string;
+        phone: string;
+        fatherName?: string;
+    };
+    applicationDetails: {
+        course: string;
+        stream: string;
+        batch?: string;
+        section?: string;
+        oldNew?: string;
+        category?: string;
+        applicationNumber?: string;
+    };
+    paymentDetails: {
+        refId?: string;
+        date: number;
+        bankName?: string;
+        paymentMode: string;
+        totalPaybleAmount: number;
+        paidAmount: number;
+        paymentDetails?: any;
+    };
+    totalPaidAmount: number;
+    date: number;
+    status: string; // 'confirmed' | 'cancelled'
+    remark?: string;
+    editRemark?: string;
+    admissionHeads?: string[];
+    [key: string]: any; // Allow dynamic fee heads
+}
+
+export interface AdmissionTransactionPayload {
+    entity: string;
+    session: string;
+    startDate?: number;
+    endDate?: number;
+    status?: string; // 'confirmed' | 'cancelled'
+    selectedStatus?: string; // API param from angular 'apiStatusList' (True/False values?)
+    search?: string;
+    pageNumber?: number;
+    pageSize?: number;
+}
+
+
+export interface AdmissionDailyCollectionReportParams {
+    entity: string;
+    session?: string[]; // Angular uses selectedSession array
+    startDate: number;
+    endDate: number;
+    status?: string;
+    paymentMode?: string;
+    courses?: string[];
+}

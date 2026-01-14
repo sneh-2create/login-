@@ -12,7 +12,10 @@ export { courseWiseTagReportService } from './services/admissionCrmServices/cour
 export { nepSubjectReportService } from './services/admissionCrmServices/nepSubjectReport.service';
 export { counselorProductivityReportService } from './services/admissionCrmServices/counselorProductivityReport.service';
 export { admissionLeadLogsService } from './services/admissionCrmServices/admissionLeadLogs.service';
+export { admissionStudentDataService } from './services/admissionCrmServices/admissionStudentData.service';
 export { admissionFollowUpService } from './services/admissionCrmServices/admissionFollowUp.service';
 export { admissionLeadService } from './services/admissionCrmServices/admissionLead.service';
+export { admissionTransactionService } from './services/admissionCrmServices/admissionTransaction.service';
+export { dailyCollectionReportService } from './services/admissionCrmServices/dailyCollectionReport.service';
 export { sessionService } from './services/session.service';
 export { default as apiClient } from './client';
