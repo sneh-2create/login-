@@ -1,6 +1,6 @@
 import apiClient from '../../client';
 
-export const CounselorTagReportService = {
+export const counselorTagReportService = {
     viewAdmissionMaster: async (entityId: string, session: string) => {
         const response = await apiClient.get(`/view/admissionMaster?entity=${entityId}&session=${session}`);
         return response.data;

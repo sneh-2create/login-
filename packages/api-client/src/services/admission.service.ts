@@ -65,5 +65,5 @@ export const admissionService = {
 
         const response = await apiClient.get(`/counselorTagReport/admissionReports?${queryParams}`);
         return response.data;
-    }
+    },
 };

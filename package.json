@@ -18,9 +18,11 @@
         "dev:templates": "pnpm --filter document-template-angular dev"
     },
     "devDependencies": {
-        "typescript": "^5.3.3",
+        "@vitejs/plugin-react": "4.2.1",
+        "eslint": "^8.56.0",
         "prettier": "^3.1.1",
-        "eslint": "^8.56.0"
+        "typescript": "^5.3.3",
+        "vite": "4.5.5"
     },
     "engines": {
         "node": ">=18",

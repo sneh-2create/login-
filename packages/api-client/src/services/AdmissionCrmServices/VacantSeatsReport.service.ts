@@ -1,6 +1,6 @@
 import apiClient from '../../client';
 
-export const VacantSeatsReportService = {
+export const vacantSeatsReportService = {
     getCourseList: async (entityId: string, session: string, isLeet: boolean = false) => {
         let queryParams = `entity=${entityId}&session=${session}`;
         if (isLeet) {

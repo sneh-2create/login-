@@ -9,5 +9,5 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
     }).format(amount);
 };
 
-export * from './admission';
+export * from './reports';
 
