@@ -54,7 +54,7 @@ const vacantSeatsReport = () => {
     const setupColumns = () => {
         console.log("Setting up columns. ShowBatch:", showBatch);
         const cols: ColumnDef<VacantSeatsReportTableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() },
+            { accessorKey: 'position', header: 'S.No', cell: (info: any) => info.getValue() },
             { accessorKey: 'course', header: displayNames.course },
             { accessorKey: 'stream', header: displayNames.stream },
         ];
