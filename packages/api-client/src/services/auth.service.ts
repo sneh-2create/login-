@@ -21,7 +21,9 @@ export const authService = {
         const response = await apiClient.post(loginUrl, credentials);
         if (response.data.token) {
             const isSecure = window.location.protocol === 'https:';
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
+            const hostname = window.location.hostname;
+            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
         }
         return response.data;
     },
@@ -35,7 +37,9 @@ export const authService = {
         const response = await apiClient.get(`/verify/otp`, { params: { mobile, otp, source } });
         if (response.data.token) {
             const isSecure = window.location.protocol === 'https:';
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
+            const hostname = window.location.hostname;
+            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
         }
         return response.data;
     },
@@ -55,7 +59,9 @@ export const authService = {
         const response = await apiClient.post('/auth/student/login', credentials);
         if (response.data.token) {
             const isSecure = window.location.protocol === 'https:';
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
+            const hostname = window.location.hostname;
+            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
         }
         return response.data;
     },
@@ -74,7 +80,9 @@ export const authService = {
         const response = await apiClient.post('/auth/refresh-token');
         if (response.data.token) {
             const isSecure = window.location.protocol === 'https:';
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'strict' });
+            const hostname = window.location.hostname;
+            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
         }
         return response.data;
     },

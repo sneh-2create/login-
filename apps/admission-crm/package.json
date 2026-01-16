@@ -28,8 +28,6 @@
         "@tanstack/react-table": "^8.21.3",
         "date-fns": "^4.1.0",
         "lucide-react": "^0.562.0",
-        "@od-erp/types": "workspace:*",
-        "xlsx": "^0.18.5",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "react-router-dom": "^6.20.0",

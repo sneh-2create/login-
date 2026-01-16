@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@od-erp/api-client';
 import { useAppDispatch } from '@od-erp/store';
@@ -112,6 +113,15 @@ export const Login: React.FC = () => {
             preferences: response.userPreferences || null,
             entityDetails: entityDetails
         }));
+
+        // WORKAROUND: Store credentials for micro-frontends to re-login (requested by user)
+        const isSecure = window.location.protocol === 'https:';
+        // Determine root domain dynamically
+        const hostname = window.location.hostname;
+        const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+
+        if (mobile) Cookies.set('login_mobile', mobile, { path: '/', secure: isSecure, sameSite: 'Lax', domain });
+        if (password) Cookies.set('login_password', password, { path: '/', secure: isSecure, sameSite: 'Lax', domain });
 
         if (response.entity) {
             dispatch(setEntity({

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar, Header } from '@od-erp/ui';
 import {
     useAppDispatch,
@@ -47,6 +47,17 @@ export const Layout: React.FC = () => {
     //     dispatch(logout());
     // };
 
+    const location = useLocation();
+    const isPrint = location.pathname.includes('/print/');
+
+    if (isPrint) {
+        return (
+            <div className="min-h-screen bg-white w-full">
+                <Outlet />
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
             {/* Header (Fixed Top) */}
@@ -56,9 +67,9 @@ export const Layout: React.FC = () => {
             <Sidebar />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col pt-[80px] ml-[100px] h-full transition-all duration-300">
+            <div className="flex-1 min-w-0 flex flex-col pt-[80px] ml-[100px] h-full transition-all duration-300">
                 {/* Page Content */}
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6">
                     <Outlet />
                 </main>
             </div>

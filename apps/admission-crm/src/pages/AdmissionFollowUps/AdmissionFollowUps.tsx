@@ -6,6 +6,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { Eye, Trash2 } from 'lucide-react';
 import { admissionFollowUpService } from '@od-erp/api-client';
+import { useAppSelector } from '@od-erp/store';
 
 const AdmissionFollowUps = () => {
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
@@ -15,8 +16,8 @@ const AdmissionFollowUps = () => {
     const [activeTab, setActiveTab] = useState('All');
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-    const entityId = '5e95a8d3eac1df35dd2d007f';
-    const session = '2022-23';
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const permission = localStorage.getItem('permissions') || '';
     const isAdmissionAdmin = permission.includes('isAdmissionAdmin');
     const loggedInCounselorId = localStorage.getItem('employee') || '';
@@ -167,7 +168,7 @@ const AdmissionFollowUps = () => {
     );
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="w-full max-w-full min-w-0 p-6 space-y-6 bg-gray-50 min-h-screen font-sans">
             <div className="flex justify-between items-center">
                 <div>
                     <Title variant="pageTitle">Follow Ups</Title>
@@ -179,43 +180,53 @@ const AdmissionFollowUps = () => {
 
             {/* Filters */}
             <Card className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                     {isAdmissionAdmin && (
-                        <Select
-                            label="Counselor"
-                            placeholder="Select Counselor"
-                            options={counselors?.map(c => ({ label: c.name, value: c._id })) || []}
-                            value={selectedCounselor}
-                            onChange={(e) => setSelectedCounselor(e.target.value)}
-                        />
+                        <div>
+                            <Select
+                                label="Counselor"
+                                placeholder="Select Counselor"
+                                options={counselors?.map(c => ({ label: c.name, value: c._id })) || []}
+                                value={selectedCounselor}
+                                onChange={(e) => setSelectedCounselor(e.target.value)}
+                            />
+                        </div>
                     )}
 
-                    <Input
-                        type="date"
-                        label="Start Date"
-                        value={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                        disabled={activeTab !== 'All'}
-                    />
-                    <Input
-                        type="date"
-                        label="End Date"
-                        value={dateRange.end}
-                        min={dateRange.start}
-                        onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                        disabled={activeTab !== 'All'}
-                    />
+                    <div>
+                        <Input
+                            type="date"
+                            label="Start Date"
+                            value={dateRange.start}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                            disabled={activeTab !== 'All'}
+                        />
+                    </div>
+                    <div>
+                        <Input
+                            type="date"
+                            label="End Date"
+                            value={dateRange.end}
+                            min={dateRange.start}
+                            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                            disabled={activeTab !== 'All'}
+                        />
+                    </div>
 
-                    <Select
-                        label="Status"
-                        placeholder="Status"
-                        options={[{ label: 'PENDING', value: 'pending' }, { label: 'COMPLETED', value: 'completed' }]}
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        disabled={activeTab !== 'All'}
-                    />
+                    <div>
+                        <Select
+                            label="Status"
+                            placeholder="Status"
+                            options={[{ label: 'PENDING', value: 'pending' }, { label: 'COMPLETED', value: 'completed' }]}
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            disabled={activeTab !== 'All'}
+                        />
+                    </div>
                     {activeTab === 'All' && (
-                        <Button onClick={() => refetch()} className="mb-1">Go</Button>
+                        <div>
+                            <Button onClick={() => refetch()} className="mb-1 w-full">Go</Button>
+                        </div>
                     )}
                 </div>
             </Card>
@@ -251,11 +262,13 @@ const AdmissionFollowUps = () => {
             </div>
 
             <Card className="overflow-hidden">
-                <DataTable
-                    data={data || []}
-                    columns={columns}
-                    isLoading={isLoading}
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        data={data || []}
+                        columns={columns}
+                        isLoading={isLoading}
+                    />
+                </div>
             </Card>
 
             <div className="flex items-center justify-between mt-4">

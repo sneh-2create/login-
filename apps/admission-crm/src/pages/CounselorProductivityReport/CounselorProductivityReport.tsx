@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCounselorProductivityReport, useCounselors } from '@od-erp/query';
+import { useAppSelector } from '@od-erp/store';
 import { processCounselorProductivityReportData, transformCounselorProductivityReportForExport } from '@od-erp/utils';
 import { Button, Title, Card, DataTable, Input, Select } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
@@ -15,8 +16,8 @@ const CounselorProductivityReport = () => {
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
 
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // Hardcoded for migration
-    const session = '2022-23'; // Hardcoded for migration
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
     // Date Filter
     const [startDate, setStartDate] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
@@ -49,7 +50,7 @@ const CounselorProductivityReport = () => {
     );
 
     useEffect(() => {
-        if (reportData) {
+        if (reportData && Array.isArray(reportData)) {
             const { processedRows, dynamicColumns: dynCols } = processCounselorProductivityReportData(reportData, stageType);
             setData(processedRows);
             setDynamicColumns(dynCols);
@@ -184,7 +185,7 @@ const CounselorProductivityReport = () => {
             </Card>
 
             <div className="flex-1 min-h-0 min-w-0 w-full overflow-hidden rounded-lg shadow-sm border border-gray-200 bg-white flex flex-col">
-                <div className="flex-1 w-full overflow-auto">
+                <div className="flex-1 w-full max-w-full overflow-auto">
                     <DataTable
                         columns={columns}
                         data={data}

@@ -5,6 +5,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { AdmissionLeadLog } from '@od-erp/types';
 import { Phone, Eye, Trash2 } from 'lucide-react';
 import { admissionLeadLogsService } from '@od-erp/api-client';
+import { useAppSelector } from '@od-erp/store';
 
 const AdmissionLeadLogs = () => {
     // State for Filters
@@ -21,8 +22,8 @@ const AdmissionLeadLogs = () => {
     const showMemberDetails = false;
 
     // Hardcoded Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f';
-    const session = '2022-23';
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
     const getStartTimestamp = () => {
         if (!startDate) return undefined;
@@ -264,7 +265,7 @@ const AdmissionLeadLogs = () => {
             </Card>
 
             <div className="flex-1 min-h-0 min-w-0 w-full overflow-hidden rounded-lg shadow-sm border border-gray-200 bg-white flex flex-col">
-                <div className="flex-1 w-full overflow-auto">
+                <div className="flex-1 w-full max-w-full overflow-auto">
                     <DataTable
                         columns={columns}
                         data={reportData?.data || []}

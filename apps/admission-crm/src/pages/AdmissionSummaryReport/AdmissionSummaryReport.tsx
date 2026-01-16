@@ -8,7 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Download, Search } from 'lucide-react';
 import { AdmissionSummaryTableRow } from '@od-erp/types';
 import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
-// import Cookies from 'js-cookie';
+import { useAppSelector } from '@od-erp/store';
 
 const admissionSummaryReport = () => {
     // const [searchParams] = useSearchParams(); // Unused
@@ -25,9 +25,10 @@ const admissionSummaryReport = () => {
     const [excludeUnpaid, setExcludeUnpaid] = useState(false);
     const [searchText, setSearchText] = useState('');
 
-    // const entityId = Cookies.get('entityId') || localStorage.getItem('entityId') || '';
-    const entityId = '5e95a8d3eac1df35dd2d007f';
-    // const session = Cookies.get('session') || localStorage.getItem('session') || ''; // Unused
+
+
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id);
+
     const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
 
     // Display names from preferences
@@ -73,6 +74,13 @@ const admissionSummaryReport = () => {
             }
 
             const res = await admissionSummaryReportService.viewAdmissionSummaryReport(payload);
+
+            if (!res || !Array.isArray(res)) {
+                console.warn('AdmissionSummaryReport: Invalid response format', res);
+                setData([]);
+                return;
+            }
+
             const { processedRows, dynamicColumns } = processAdmissionSummaryData(res);
 
             // Define Table Columns
@@ -130,7 +138,7 @@ const admissionSummaryReport = () => {
     });
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -201,11 +209,13 @@ const admissionSummaryReport = () => {
                 </div>
             </div>
 
-            <DataTable
-                columns={columns}
-                data={filteredData}
-                isLoading={loading}
-            />
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={filteredData}
+                    isLoading={loading}
+                />
+            </div>
         </div>
     );
 };

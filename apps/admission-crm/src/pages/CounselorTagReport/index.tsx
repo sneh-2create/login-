@@ -1,1 +1,1 @@
-export { default } from './counselorTagReport';
+export { default } from './CounselorTagReport';

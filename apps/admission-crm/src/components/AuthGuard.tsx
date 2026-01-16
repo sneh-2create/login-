@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { setCredentials, useAppDispatch, useAppSelector } from '@od-erp/store';
 
-const LOGIN_URL = 'http://localhost:3000/login'; // TODO: Move to env var
+const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || 'https://login.oderp.in/login';
 
 export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const dispatch = useAppDispatch();
@@ -68,50 +68,69 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                         }
                     }
 
-                    // 3. Hydrate Permissions via API if missing in Token (Cross-Port / Full Profile Fetch)
+                    // 3. Hydrate Permissions & Entity via Re-Login (Workaround)
                     let finalPermissions = decoded.permissions || [];
-                    console.log('[AuthGuard] Permissions from Token:', finalPermissions);
+                    let finalEntityDetails = undefined;
 
-                    if (finalPermissions.length === 0) {
-                        console.warn('[AuthGuard] Permissions missing in Token. Using Hardcoded Fallback (Dev Mode)...');
-                        // Fallback for 'od2' or development
-                        if (userRole === 'od2' || userRole === 'admin') {
-                            finalPermissions = [
-                                'viewSuperAdminDashboard',
-                                'viewEntityDashboard',
-                                'profileDashboard',
-                                'admissionModule',
-                                'studentModule',
-                                'feeModule',
-                                'accountingModule',
-                                'viewExpenseManagementList',
-                                'attendanceModule',
-                                'examinationModule',
-                                'viewFeedbackMaster',
-                                'viewSchoolDiaryList',
-                                'learningManagementModule',
-                                'viewLessonPlanList',
-                                'hrmModule',
-                                'viewUser',
-                                'libraryModule',
-                                'communicationModule',
-                                'viewTransportReport',
-                                'hostelModule',
-                                'viewAdvancedList',
-                                'analyticsModule',
-                                'viewBulkUpdate',
-                                'viewSharePointList',
-                                'viewSocialMediaList',
-                                'naacModule',
-                                'viewGalleryList'
-                            ];
-                            console.log('[AuthGuard] Applied Hardcoded Permissions:', finalPermissions);
+                    const loginMobile = Cookies.get('login_mobile');
+                    const loginPassword = Cookies.get('login_password');
+
+                    if (loginMobile && loginPassword) {
+                        try {
+                            console.log('[AuthGuard] Re-authenticating with stored credentials to fetch full profile...');
+                            const { authService } = await import('@od-erp/api-client');
+                            const loginResponse = await authService.login({ mobile: loginMobile, password: loginPassword });
+
+                            if (loginResponse) {
+                                console.log('[AuthGuard] Re-login successful. Hydrating from fresh response.');
+
+                                // Extract Permissions
+                                if (loginResponse.permissions && Array.isArray(loginResponse.permissions)) {
+                                    console.log('[AuthGuard] Permissions found:', loginResponse.permissions);
+                                    finalPermissions = loginResponse.permissions;
+                                } else {
+                                    console.warn('[AuthGuard] No permissions array in login response:', loginResponse);
+                                }
+
+                                // Extract Entity Details
+                                if (loginResponse.entity) {
+                                    finalEntityDetails = {
+                                        id: loginResponse.entity._id,
+                                        logo: loginResponse.entity.logo,
+                                        displayName: loginResponse.entity.displayName || loginResponse.entity.name,
+                                        type: loginResponse.entity.entityType,
+                                        qac: loginResponse.entity.qac,
+                                        activeSession: loginResponse.entity.activeSession,
+                                        entityPreferences: loginResponse.entity.entityPreferences
+                                    };
+                                }
+                            }
+                        } catch (reLoginError) {
+                            console.error('[AuthGuard] Re-login failed:', reLoginError);
+                            // Fallback to token data if re-login fails
                         }
+                    } else {
+                        console.warn('[AuthGuard] No stored credentials found for re-login. Using Token data only.');
+                    }
+
+                    // Fallback: If re-login failed or didn't happen, use Token Data for Entity ID
+                    if (!finalEntityDetails && entityId) {
+                        console.log('[AuthGuard] Using Token Data for Entity Details fallback');
+                        finalEntityDetails = {
+                            id: entityId,
+                            displayName: decoded.entityName || 'Entity',
+                            // Add minimal required fields or defaults
+                            logo: '',
+                            type: 'School', // Default
+                            qac: false,
+                            activeSession: '',
+                            entityPreferences: null
+                        };
                     }
 
                     const credentials = {
                         user: {
-                            id: decoded.id || decoded.userId || decoded.sub || decoded._id, // Add _id backup
+                            id: decoded.id || decoded.userId || decoded.sub || decoded._id,
                             name: decoded.name || decoded.username || decoded.email || 'User',
                             email: decoded.email || '',
                             role: userRole,
@@ -120,8 +139,8 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                             permissions: finalPermissions
                         },
                         token: token,
-                        preferences: fetchedPreferences, // Pass here if needed by auth slice, though we set setEntityPreferences separately
-                        entityDetails: undefined
+                        preferences: fetchedPreferences,
+                        entityDetails: finalEntityDetails
                     };
 
                     console.log('[AuthGuard] Dispatching credentials to store:', credentials);

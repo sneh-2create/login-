@@ -7,6 +7,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { NepSubjectReportTableRow } from '@od-erp/types';
+import { useAppSelector } from '@od-erp/store';
 
 const NepSubjectReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
@@ -31,8 +32,8 @@ const NepSubjectReport = () => {
     const [selectedGroup, setSelectedGroup] = useState(groupByOptions[0]);
 
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // Hardcoded for migration
-    const session = '2022-23'; // Hardcoded for migration
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
     // Query Hook parameters
     const { data: reportData, isLoading, refetch } = useNepSubjectReport(
@@ -86,6 +87,11 @@ const NepSubjectReport = () => {
     };
 
     const processData = (rawData: any[]) => {
+        if (!rawData || !Array.isArray(rawData)) {
+            console.warn('NepSubjectReport: Received invalid data', rawData);
+            setData([]);
+            return;
+        }
         const processed = processNepSubjectReportData(rawData);
         setData(processed);
     };
@@ -125,7 +131,7 @@ const NepSubjectReport = () => {
     ];
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -205,11 +211,13 @@ const NepSubjectReport = () => {
                 </div>
             </Card>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={isLoading}
-            />
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={isLoading}
+                />
+            </div>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Sidebar, Header } from '@od-erp/ui'
 import { store, useAppDispatch, setMenuConfig } from '@od-erp/store'
 import { menuConfig } from '@od-erp/constants'
@@ -21,12 +21,23 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
         }
     }, [dispatch]);
 
+    const location = useLocation();
+    const isPrint = location.pathname.includes('/print/');
+
+    if (isPrint) {
+        return (
+            <div className="min-h-screen bg-white">
+                {children}
+            </div>
+        );
+    }
+
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
             <Header />
             <Sidebar />
-            <div className="flex-1 flex flex-col pt-[80px] ml-[100px] h-full transition-all duration-300">
-                <main className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 min-w-0 flex flex-col pt-[80px] ml-[100px] h-full transition-all duration-300">
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6">
                     {children}
                 </main>
             </div>
@@ -38,11 +49,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <Provider store={store}>
             <BrowserRouter>
-                <StandaloneLayout>
-                    <AuthGuard>
-                        <App />
-                    </AuthGuard>
-                </StandaloneLayout>
+                <Routes>
+                    <Route path="/admission/*" element={
+                        <StandaloneLayout>
+                            <AuthGuard>
+                                <App />
+                            </AuthGuard>
+                        </StandaloneLayout>
+                    } />
+                    <Route path="*" element={<Navigate to="/admission" replace />} />
+                </Routes>
             </BrowserRouter>
         </Provider>
     </React.StrictMode>

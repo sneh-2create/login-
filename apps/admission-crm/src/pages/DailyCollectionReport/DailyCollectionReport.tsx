@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Select } from '@od-erp/ui';
 import { useSessions, useDailyCollectionReport } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction } from '@od-erp/types';
@@ -6,12 +6,13 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { useAppSelector } from '@od-erp/store';
 
 const DailyCollectionReportPage = () => {
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // TODO: Dynamic
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     // State
-    const [session, setSession] = useState('');
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const [startDate, setStartDate] = useState<number>(new Date().setHours(0, 0, 0, 0));
     const [endDate, setEndDate] = useState<number>(new Date().setHours(23, 59, 59, 999));
     const [statusFilter, setStatusFilter] = useState('confirmed');
@@ -19,11 +20,7 @@ const DailyCollectionReportPage = () => {
     // Queries
     const { data: sessions } = useSessions(entityId);
 
-    useEffect(() => {
-        if (sessions && sessions.length > 0 && !session) {
-            setSession(sessions[0].name);
-        }
-    }, [sessions, session]);
+
 
     const payload: AdmissionDailyCollectionReportParams = useMemo(() => ({
         entity: entityId,
@@ -114,7 +111,7 @@ const DailyCollectionReportPage = () => {
     ], []);
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="w-full max-w-full min-w-0 p-6 bg-gray-50 min-h-screen font-sans">
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Daily Collection Report</h1>
@@ -123,7 +120,7 @@ const DailyCollectionReportPage = () => {
                         <select
                             className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
                             value={session}
-                            onChange={(e) => setSession(e.target.value)}
+                            disabled
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>
@@ -191,11 +188,13 @@ const DailyCollectionReportPage = () => {
             </Card>
 
             <div className="bg-white rounded-lg shadow">
-                <DataTable
-                    columns={columns}
-                    data={reportData || []}
-                    isLoading={isLoading}
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={reportData || []}
+                        isLoading={isLoading}
+                    />
+                </div>
             </div>
         </div>
     );

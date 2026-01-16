@@ -6,6 +6,7 @@ import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { VacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
+import { useAppSelector } from '@od-erp/store';
 
 const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
@@ -26,9 +27,9 @@ const vacantSeatsReport = () => {
     // Metadata
     // Note: In a real app, these might come from context or a hook
     // const entityId = localStorage.getItem('entityId') || '5e95a8d3eac1df35dd2d007f';
-    const entityId = '5e95a8d3eac1df35dd2d007f';
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     // const session = localStorage.getItem('session') || '2025-2026';
-    const session = '2022-23';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
 
     const displayNames = {
@@ -157,7 +158,7 @@ const vacantSeatsReport = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -233,11 +234,15 @@ const vacantSeatsReport = () => {
                 </div>
             </Card>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={loading}
-            />
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                    />
+                </div>
+            </div>
         </div>
     );
 };

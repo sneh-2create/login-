@@ -35,10 +35,12 @@ apiClient.interceptors.response.use(
     (error) => {
         // Check for specific session expired message or 401 status
         const isSessionExpiredMessage = error.response?.data?.message === "Session Expired, Please Login again";
-
-        if (error.response?.status === 401 || isSessionExpiredMessage) {
+        if (isSessionExpiredMessage) {
             handleSessionExpiration();
         }
+        // if (error.response?.status === 401 || isSessionExpiredMessage) {
+        //     handleSessionExpiration();
+        // }
         return Promise.reject(error);
     }
 );

@@ -13,9 +13,9 @@ export default defineConfig({
             name: 'shell',
             remotes: {
                 // In production, this URL should be loaded from env or window config
-                admission_crm: 'http://localhost:3001/assets/remoteEntry.js',
+                admission_crm: process.env.VITE_ADMISSION_URL || 'http://localhost:3001/assets/remoteEntry.js',
             },
-            shared: ['react', 'react-dom']
+            shared: ['react', 'react-dom', 'react-router-dom', 'react-redux']
         })
     ],
     build: {

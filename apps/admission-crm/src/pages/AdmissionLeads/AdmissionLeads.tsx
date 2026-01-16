@@ -1,24 +1,19 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useAdmissionLeads, useAddAdmissionLead, useCounselors, useSessions } from '@od-erp/query';
 import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { Filter, Plus, Settings, Edit } from 'lucide-react';
+import { useAppSelector } from '@od-erp/store';
 
 const AdmissionLeads = () => {
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f';
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     // State
-    const [session, setSession] = useState('2022-23');
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const { data: sessions } = useSessions(entityId);
-
-    useEffect(() => {
-        if (sessions && sessions.length > 0 && !session) {
-            setSession(sessions[0].name); // Assuming 'name' is the value to use, e.g., "2022-23"
-        }
-    }, [sessions, session]);
     const [showAddForm, setShowAddForm] = useState(false);
     const [globalSearch, setGlobalSearch] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -146,7 +141,7 @@ const AdmissionLeads = () => {
     );
 
     return (
-        <div className="p-6 space-y-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="w-full max-w-full min-w-0 p-6 space-y-6 bg-gray-50 h-full overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-start">
                 <div>
@@ -156,7 +151,7 @@ const AdmissionLeads = () => {
                         <select
                             className="ml-2 border-none bg-transparent font-semibold text-gray-700 focus:ring-0"
                             value={session}
-                            onChange={(e) => setSession(e.target.value)}
+                            disabled
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>
@@ -296,7 +291,7 @@ const AdmissionLeads = () => {
 
             {/* Table */}
             <Card className="overflow-hidden shadow-sm border border-gray-200">
-                <div className="w-full overflow-x-auto">
+                <div className="w-full max-w-full overflow-x-auto">
                     <DataTable
                         data={data?.data || []}
                         columns={columns}

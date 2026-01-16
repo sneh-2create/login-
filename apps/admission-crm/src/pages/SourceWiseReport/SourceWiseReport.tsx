@@ -7,6 +7,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { SourceWiseReportTableRow } from '@od-erp/types';
+import { useAppSelector } from '@od-erp/store';
 
 const sourceWiseReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
@@ -25,8 +26,8 @@ const sourceWiseReport = () => {
     const [tags, setTags] = useState<string[]>([]);
 
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // Hardcoded for migration
-    const session = '2022-23'; // Hardcoded for migration
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
     // Query Hook
     const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : undefined;
@@ -56,7 +57,7 @@ const sourceWiseReport = () => {
     }, [tags]);
 
     useEffect(() => {
-        if (reportData) {
+        if (reportData && Array.isArray(reportData)) {
             processData(reportData);
         }
     }, [reportData]);
@@ -97,6 +98,11 @@ const sourceWiseReport = () => {
     };
 
     const processData = (rawData: any[]) => {
+        if (!rawData || !Array.isArray(rawData)) {
+            console.warn('SourceWiseReport: Received invalid data', rawData);
+            setData([]);
+            return;
+        }
         const processed = calculateReportTotals(
             rawData,
             tags,
@@ -143,7 +149,7 @@ const sourceWiseReport = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -219,11 +225,13 @@ const sourceWiseReport = () => {
                 </div>
             </Card>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={isLoading}
-            />
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={isLoading}
+                />
+            </div>
         </div>
     );
 };

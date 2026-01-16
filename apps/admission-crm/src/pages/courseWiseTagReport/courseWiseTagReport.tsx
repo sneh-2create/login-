@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { admissionService } from '@od-erp/api-client';
 import { useCourseWiseTagReport } from '@od-erp/query'; // Hook I created
 import { processCourseWiseTagData, transformCourseWiseTagForExport } from '@od-erp/utils';
+import { useAppSelector } from '@od-erp/store';
 import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
@@ -23,8 +24,9 @@ const courseWiseTagReport = () => {
     const [tags, setTags] = useState<string[]>([]);
 
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // Hardcoded for migration
-    const session = '2022-23'; // Hardcoded for migration
+    // Metadata
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
     // Query Hook parameters
     const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : undefined;
@@ -47,7 +49,7 @@ const courseWiseTagReport = () => {
     }, [tags]);
 
     useEffect(() => {
-        if (reportData) {
+        if (reportData && Array.isArray(reportData)) {
             processData(reportData);
         }
     }, [reportData, tags]); // Depend on tags too
@@ -87,6 +89,11 @@ const courseWiseTagReport = () => {
     };
 
     const processData = (rawData: any[]) => {
+        if (!rawData || !Array.isArray(rawData)) {
+            console.warn('courseWiseTagReport: Received invalid data', rawData);
+            setData([]);
+            return;
+        }
         const processed = processCourseWiseTagData(rawData, tags);
         setData(processed);
     };
@@ -120,7 +127,7 @@ const courseWiseTagReport = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -185,11 +192,13 @@ const courseWiseTagReport = () => {
                 </div>
             </Card>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={isLoading}
-            />
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={isLoading}
+                />
+            </div>
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData } from '@od-erp/query';
 import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
@@ -9,13 +9,14 @@ import AddStudentModal from './components/AddStudentModal';
 import FilterModal from './components/FilterModal';
 import UploadExcelModal from './components/UploadExcelModal';
 import * as XLSX from 'xlsx';
+import { useAppSelector } from '@od-erp/store';
 
 const AdmissionStudentData = () => {
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f';
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     // State
-    const [session, setSession] = useState('');
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const [selectedStage, setSelectedStage] = useState('Total');
     const [searchTerm, setSearchTerm] = useState('');
     const [pageNumber, setPageNumber] = useState(1);
@@ -33,11 +34,7 @@ const AdmissionStudentData = () => {
     const { data: sessions } = useSessions(entityId);
 
     // Set default session
-    useEffect(() => {
-        if (sessions && sessions.length > 0 && !session) {
-            setSession(sessions[0].name);
-        }
-    }, [sessions, session]);
+
 
     const { data: stageSetup } = useAdmissionStageSetup(entityId, session);
     const { data: stageCounts, refetch: refetchStages } = useAdmissionStages(entityId, session);
@@ -261,7 +258,7 @@ const AdmissionStudentData = () => {
 
 
     return (
-        <div className="p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="w-full max-w-full min-w-0 p-6 bg-gray-50 min-h-screen font-sans">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
@@ -271,7 +268,7 @@ const AdmissionStudentData = () => {
                         <select
                             className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
                             value={session}
-                            onChange={(e) => setSession(e.target.value)}
+                            disabled
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>
@@ -346,11 +343,13 @@ const AdmissionStudentData = () => {
                     APPLICATIONS
                 </div>
 
-                <DataTable
-                    columns={columns}
-                    data={data?.data || []}
-                    isLoading={isLoading}
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data?.data || []}
+                        isLoading={isLoading}
+                    />
+                </div>
 
                 {/* Pagination Footer */}
                 <div className="p-3 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600">

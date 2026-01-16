@@ -6,6 +6,7 @@ import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { CounselorTagReportTableRow } from '@od-erp/types';
 import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
+import { useAppSelector } from '@od-erp/store';
 
 const counselorTagReport = () => {
     const [loading, setLoading] = useState(false);
@@ -20,8 +21,8 @@ const counselorTagReport = () => {
     const [endDate, setEndDate] = useState<string>('');
 
     // Metadata
-    const entityId = '5e95a8d3eac1df35dd2d007f'; // Hardcoded for migration as per context
-    const session = '2022-23'; // Hardcoded for migration as per context
+    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
 
 
     // Dynamic Tags
@@ -79,6 +80,12 @@ const counselorTagReport = () => {
             const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : undefined;
             const res = await counselorTagReportService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
 
+            if (!res || !Array.isArray(res)) {
+                console.warn('CounselorTagReport: Invalid response', res);
+                setData([]);
+                return;
+            }
+
             const processedData = processCounselorTagData(res, tags);
             setData(processedData);
 
@@ -113,7 +120,7 @@ const counselorTagReport = () => {
     };
 
     return (
-        <div className="flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -180,11 +187,15 @@ const counselorTagReport = () => {
                 </div>
             </Card>
 
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={loading}
-            />
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                    />
+                </div>
+            </div>
         </div>
     );
 };
