@@ -1,6 +1,6 @@
 import apiClient from '../client';
 
-export interface EntityWebsiteConfig {
+export interface entityWebsiteConfig {
     _id: string;
     entity: string;
     websiteName: string;
@@ -12,7 +12,7 @@ export interface EntityWebsiteConfig {
     // Add other fields as needed
 }
 
-export interface WhiteLabelConfig {
+export interface whiteLabelConfig {
     logo: string;
     favicon: string;
     primaryColor: string;

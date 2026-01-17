@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import { courseWiseTagReportTableRow } from '@od-erp/types';
 import PrintLayout from '../../components/printLayout';
 
 const printCourseWiseTagReport = () => {
-    const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
+    const [data, setData] = useState<courseWiseTagReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
     const [reportName, setReportName] = useState('Course Wise Tag Report');
 

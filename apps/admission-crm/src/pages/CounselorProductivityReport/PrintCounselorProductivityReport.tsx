@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { CounselorProductivityReportTableRow } from '@od-erp/types';
+import { counselorProductivityReportTableRow } from '@od-erp/types';
 import PrintLayout from '../../components/printLayout';
 import { DataTable } from '@od-erp/ui';
 
 const PrintCounselorProductivityReport = () => {
-    const [data, setData] = useState<CounselorProductivityReportTableRow[]>([]);
+    const [data, setData] = useState<counselorProductivityReportTableRow[]>([]);
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [stageType, setStageType] = useState<string>('lead');
 
@@ -25,7 +25,7 @@ const PrintCounselorProductivityReport = () => {
         }
     }, []);
 
-    const columns: ColumnDef<CounselorProductivityReportTableRow>[] = [
+    const columns: ColumnDef<counselorProductivityReportTableRow>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'counselorName', header: 'Counselor Name' },
         { accessorKey: 'totalCount', header: stageType === 'lead' ? 'Total Leads' : 'Application Count' },
@@ -41,7 +41,7 @@ const PrintCounselorProductivityReport = () => {
             header: tag,
             cell: info => {
                 const row = info.row.original;
-                const tagObj = row.tags?.find(t => t.tag === tag);
+                const tagObj = row.tags?.find((t: any) => t.tag === tag);
                 return tagObj ? tagObj.count : 0;
             }
         });

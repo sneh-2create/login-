@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 // --- Auth Types ---
-export interface Session {
+export interface session {
     _id: string;
     name: string;
     status: string;
@@ -8,7 +8,7 @@ export interface Session {
     endDate: string;
 }
 
-export interface User {
+export interface user {
     id: string;
     name: string;
     email: string;
@@ -18,7 +18,7 @@ export interface User {
     permissions?: string[];
 }
 
-export interface EntityDetails {
+export interface entityDetails {
     id: string;
     logo?: string;
     displayName?: string;
@@ -29,17 +29,17 @@ export interface EntityDetails {
     entityPreferences?: any;
 }
 
-export interface AuthState {
-    user: User | null;
+export interface authState {
+    user: user | null;
     token: string | null;
     isAuthenticated: boolean;
     permissions: string[];
     preferences: any | null;
-    entityDetails: EntityDetails | null;
+    entityDetails: entityDetails | null;
 }
 
 // --- Dashboard Types ---
-export interface TabConfig {
+export interface tabConfig {
     id: string;
     label: string;
     component: React.FC;
@@ -47,11 +47,11 @@ export interface TabConfig {
 }
 
 // --- UI / Menu Types ---
-export interface MenuItem {
+export interface menuItem {
     title: string;
     icon?: ReactNode | string; // Updated to allow string (legacy flaticon) or Node
     page?: string;
-    submenu?: SubMenuItem[];
+    submenu?: subMenuItem[];
     root?: boolean; // Legacy
     bullet?: string; // Legacy
     permission?: string; // Generic permission
@@ -59,9 +59,9 @@ export interface MenuItem {
     admPermission?: string; // Admin permission
 }
 
-export interface SubMenuItem {
+export interface subMenuItem {
     title: string;
-    submenu?: SubSubMenuItem[];
+    submenu?: subSubMenuItem[];
     page?: string;
     fav?: boolean;
     bullet?: string;
@@ -69,7 +69,7 @@ export interface SubMenuItem {
     entPermission?: string;
 }
 
-export interface SubSubMenuItem {
+export interface subSubMenuItem {
     title: string;
     page: string;
     fav?: boolean;

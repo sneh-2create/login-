@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { Button, Select } from '@od-erp/ui';
 import { X } from 'lucide-react';
-import { AdmissionStudentDataPayload } from '@od-erp/types';
+import { admissionStudentDataPayload } from '@od-erp/types';
 
 interface FilterModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onApply: (filters: Partial<AdmissionStudentDataPayload>) => void;
-    currentFilters: Partial<AdmissionStudentDataPayload>;
+    onApply: (filters: Partial<admissionStudentDataPayload>) => void;
+    currentFilters: Partial<admissionStudentDataPayload>;
 }
 
 const FilterModal = ({ isOpen, onClose, onApply, currentFilters }: FilterModalProps) => {
-    const [filters, setFilters] = useState<Partial<AdmissionStudentDataPayload>>(currentFilters);
+    const [filters, setFilters] = useState<Partial<admissionStudentDataPayload>>(currentFilters);
 
-    const handleChange = (field: keyof AdmissionStudentDataPayload, value: any) => {
+    const handleChange = (field: keyof admissionStudentDataPayload, value: any) => {
         setFilters(prev => ({ ...prev, [field]: value }));
     };
 

@@ -1,21 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MenuItem, SubMenuItem } from './types';
+import { menuItem, subMenuItem } from './types';
 import { useAppSelector, useAppDispatch, updatePreferences } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
 
 interface SidebarExpansionPanelProps {
-    item: MenuItem | null;
+    item: menuItem | null;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
 }
 
 // Helper component for rendering a column of submenu items
 const SubMenuColumn: React.FC<{
-    items: SubMenuItem[];
+    items: subMenuItem[];
     isActive: (path?: string) => boolean;
     onLinkClick: () => void;
-    onFavorite: (e: React.MouseEvent, item: SubMenuItem) => void;
+    onFavorite: (e: React.MouseEvent, item: subMenuItem) => void;
 }> = ({ items, isActive, onLinkClick, onFavorite }) => {
     return (
         <div className="flex flex-col gap-6 flex-1 min-w-0">

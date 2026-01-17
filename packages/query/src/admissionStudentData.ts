@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { admissionStudentDataService } from '@od-erp/api-client';
-import { AdmissionStudentDataPayload, AdmissionLead, AdmissionStageSetup, AdmissionStageCount } from '@od-erp/types';
+import { admissionStudentDataPayload, admissionLead, admissionStageSetup, admissionStageCount } from '@od-erp/types';
 
-export const useAdmissionStudentData = (payload: AdmissionStudentDataPayload) => {
-    return useQuery<{ data: AdmissionLead[]; totalCount: number }>({
+export const useAdmissionStudentData = (payload: admissionStudentDataPayload) => {
+    return useQuery<{ data: admissionLead[]; totalCount: number }>({
         queryKey: ['admissionStudentData', payload],
         queryFn: () => admissionStudentDataService.listAdmissionStudentData(payload),
         enabled: !!payload.entity && !!payload.session,
@@ -12,7 +12,7 @@ export const useAdmissionStudentData = (payload: AdmissionStudentDataPayload) =>
 };
 
 export const useAdmissionStageSetup = (entityId: string, session: string) => {
-    return useQuery<AdmissionStageSetup[]>({
+    return useQuery<admissionStageSetup[]>({
         queryKey: ['admissionStageSetup', entityId, session],
         queryFn: () => admissionStudentDataService.listAdmissionStageSetup(entityId, session),
         enabled: !!entityId && !!session,
@@ -21,7 +21,7 @@ export const useAdmissionStageSetup = (entityId: string, session: string) => {
 };
 
 export const useAdmissionStages = (entityId: string, session: string) => {
-    return useQuery<AdmissionStageCount[]>({
+    return useQuery<admissionStageCount[]>({
         queryKey: ['admissionStages', entityId, session],
         queryFn: () => admissionStudentDataService.listStages(entityId, session),
         enabled: !!entityId && !!session,

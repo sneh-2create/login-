@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData } from '@od-erp/query';
-import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
+import { admissionLead, admissionStudentDataPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
@@ -25,7 +25,7 @@ const AdmissionStudentData = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
+    const [currentFilters, setCurrentFilters] = useState<Partial<admissionStudentDataPayload>>({});
 
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
@@ -40,8 +40,8 @@ const AdmissionStudentData = () => {
     const { data: stageCounts, refetch: refetchStages } = useAdmissionStages(entityId, session);
 
     // Payload for student data
-    const payload: AdmissionStudentDataPayload = useMemo(() => {
-        const p: AdmissionStudentDataPayload = {
+    const payload: admissionStudentDataPayload = useMemo(() => {
+        const p: admissionStudentDataPayload = {
             entity: entityId,
             session: session,
             pageNumber,
@@ -101,7 +101,7 @@ const AdmissionStudentData = () => {
         window.open('/admission/print/admissionStudentData', '_blank');
     };
 
-    const handleApplyFilters = (filters: Partial<AdmissionStudentDataPayload>) => {
+    const handleApplyFilters = (filters: Partial<admissionStudentDataPayload>) => {
         setCurrentFilters(filters);
         setIsFilterModalOpen(false);
         setPageNumber(1);
@@ -134,7 +134,7 @@ const AdmissionStudentData = () => {
 
 
     // Columns
-    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
+    const columns = useMemo<ColumnDef<admissionLead>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

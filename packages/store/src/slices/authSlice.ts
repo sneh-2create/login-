@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { User, EntityDetails, AuthState } from '@od-erp/types';
+import { user, entityDetails, authState } from '@od-erp/types';
 
-const initialState: AuthState = {
+const initialState: authState = {
     user: null,
     token: null,
     isAuthenticated: false,
@@ -14,7 +14,7 @@ const authSlice = createSlice({
     name: 'auth',
     initialState,
     reducers: {
-        setCredentials: (state, action: PayloadAction<{ user: User; token: string; permissions?: string[]; preferences?: any; entityDetails?: EntityDetails }>) => {
+        setCredentials: (state, action: PayloadAction<{ user: user; token: string; permissions?: string[]; preferences?: any; entityDetails?: entityDetails }>) => {
             state.user = action.payload.user;
             state.token = action.payload.token;
             state.permissions = action.payload.permissions || action.payload.user.permissions || [];
@@ -30,7 +30,7 @@ const authSlice = createSlice({
             state.entityDetails = null;
             state.isAuthenticated = false;
         },
-        updateUser: (state, action: PayloadAction<Partial<User>>) => {
+        updateUser: (state, action: PayloadAction<Partial<user>>) => {
             if (state.user) {
                 state.user = { ...state.user, ...action.payload };
             }
@@ -38,7 +38,7 @@ const authSlice = createSlice({
         updatePreferences: (state, action: PayloadAction<any>) => {
             state.preferences = action.payload;
         },
-        updateEntityDetails: (state, action: PayloadAction<Partial<EntityDetails>>) => {
+        updateEntityDetails: (state, action: PayloadAction<Partial<entityDetails>>) => {
             if (state.entityDetails) {
                 state.entityDetails = { ...state.entityDetails, ...action.payload };
             }

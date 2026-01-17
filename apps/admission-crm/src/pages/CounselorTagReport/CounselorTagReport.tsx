@@ -4,15 +4,15 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { CounselorTagReportTableRow } from '@od-erp/types';
+import { counselorTagReportTableRow } from '@od-erp/types';
 import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
 
 const counselorTagReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<CounselorTagReportTableRow>[]>([]);
+    const [data, setData] = useState<counselorTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<counselorTagReportTableRow>[]>([]);
 
     // Filters
     const [counselors, setCounselors] = useState<any[]>([]);
@@ -56,7 +56,7 @@ const counselorTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<CounselorTagReportTableRow>[] = [
+        const cols: ColumnDef<counselorTagReportTableRow>[] = [
             { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() },
             { accessorKey: 'counselorName', header: 'Counselor Name' },
             { accessorKey: 'totalCount', header: 'Total Count' },

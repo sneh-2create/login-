@@ -1,4 +1,4 @@
-export interface AdmissionSummaryReportParams {
+export interface admissionSummaryReportParams {
     entity: string;
     session?: string[];
     startDate: number;
@@ -6,7 +6,7 @@ export interface AdmissionSummaryReportParams {
     excludeUnpaid?: boolean;
 }
 
-export interface AdmissionSummaryTableRow {
+export interface admissionSummaryTableRow {
     position: number;
     course: string;
     stream: string;
@@ -15,25 +15,25 @@ export interface AdmissionSummaryTableRow {
     [key: string]: any;
 }
 
-export interface CounselorTagReportTableRow {
+export interface counselorTagReportTableRow {
     position: number;
     counselorName: string;
     totalCount: number;
     [key: string]: any;
 }
 
-export interface SourceWiseReportData {
+export interface sourceWiseReportData {
     source: string;
     totalLeadCount: number;
     totalApplicationCount: number;
     [key: string]: any; // For dynamic tags
 }
 
-export interface SourceWiseReportTableRow extends SourceWiseReportData {
+export interface sourceWiseReportTableRow extends sourceWiseReportData {
     position: number;
 }
 
-export interface VacantSeatsReportTableRow {
+export interface vacantSeatsReportTableRow {
     position: number;
     course: string;
     stream: string;
@@ -45,18 +45,18 @@ export interface VacantSeatsReportTableRow {
     pendingApplications: number;
 }
 
-export interface CourseWiseTagReportData {
+export interface courseWiseTagReportData {
     course: string;
     stream: string;
     total: number;
     [key: string]: any; // For dynamic tags
 }
 
-export interface CourseWiseTagReportTableRow extends CourseWiseTagReportData {
+export interface courseWiseTagReportTableRow extends courseWiseTagReportData {
     position: number;
 }
 
-export interface NepSubjectReportData {
+export interface nepSubjectReportData {
     name: string;
     code?: string;
     seats: number;
@@ -65,11 +65,11 @@ export interface NepSubjectReportData {
     pendingApplications: number;
 }
 
-export interface NepSubjectReportTableRow extends NepSubjectReportData {
+export interface nepSubjectReportTableRow extends nepSubjectReportData {
     position: number;
 }
 
-export interface CounselorProductivityReportData {
+export interface counselorProductivityReportData {
     counselorName: string;
     totalCount: number;
     engagedCount: number;
@@ -80,11 +80,11 @@ export interface CounselorProductivityReportData {
     [key: string]: any;
 }
 
-export interface CounselorProductivityReportTableRow extends CounselorProductivityReportData {
+export interface counselorProductivityReportTableRow extends counselorProductivityReportData {
     position: number;
 }
 
-export interface AdmissionLeadLog {
+export interface admissionLeadLog {
     _id: string;
     name: string;
     phone: string;
@@ -119,7 +119,7 @@ export interface AdmissionLeadLog {
     sourceId?: string; // If converted
 }
 
-export interface AdmissionLeadLogPayload {
+export interface admissionLeadLogPayload {
     entity: string;
     session: string;
     counselorId?: string;
@@ -133,12 +133,12 @@ export interface AdmissionLeadLogPayload {
     memberDetails?: boolean;
 }
 
-export interface AdmissionLeadLogResponse {
-    data: AdmissionLeadLog[];
+export interface admissionLeadLogResponse {
+    data: admissionLeadLog[];
     count: number;
 }
 
-export interface AdmissionFollowUp {
+export interface admissionFollowUp {
     _id: string;
     applicationNumber?: string;
     studentData?: {
@@ -157,7 +157,7 @@ export interface AdmissionFollowUp {
     completionRemark?: string;
 }
 
-export interface AdmissionFollowUpPayload {
+export interface admissionFollowUpPayload {
     entity: string;
     session?: string;
     counselorId?: string;
@@ -169,7 +169,7 @@ export interface AdmissionFollowUpPayload {
 }
 
 
-export interface AdmissionFollowUpStats {
+export interface admissionFollowUpStats {
     total: number;
     todayFollowUps: number;
     upcomingFollowUps: number;
@@ -177,7 +177,7 @@ export interface AdmissionFollowUpStats {
     completedFollowUps: number;
 }
 
-export interface AdmissionLead {
+export interface admissionLead {
     _id: string;
     entityId: string;
     session: string;
@@ -199,7 +199,7 @@ export interface AdmissionLead {
     fatherName?: string;
 }
 
-export interface AdmissionLeadPayload {
+export interface admissionLeadPayload {
     entity: string;
     session: string;
     pageNumber: number;
@@ -211,7 +211,7 @@ export interface AdmissionLeadPayload {
     endDate?: number;
 }
 
-export interface AdmissionStudentDataPayload {
+export interface admissionStudentDataPayload {
     entity: string;
     session: string;
     stage?: string;
@@ -234,7 +234,7 @@ export interface AdmissionStudentDataPayload {
     memberDetails?: boolean;
 }
 
-export interface AdmissionStageSetup {
+export interface admissionStageSetup {
     _id: string;
     entity: string;
     session: string;
@@ -245,13 +245,13 @@ export interface AdmissionStageSetup {
     currentStage?: string; // Mapped property
 }
 
-export interface AdmissionStageCount {
+export interface admissionStageCount {
     stage: string;
     count: number;
     currentStage?: string; // keeping for backward compatibility if any
 }
 
-export interface AdmissionTransaction {
+export interface admissionTransaction {
     _id: string;
     receiptId: string;
     studentRegNo?: string;
@@ -287,7 +287,7 @@ export interface AdmissionTransaction {
     [key: string]: any; // Allow dynamic fee heads
 }
 
-export interface AdmissionTransactionPayload {
+export interface admissionTransactionPayload {
     entity: string;
     session: string;
     startDate?: number;
@@ -300,7 +300,7 @@ export interface AdmissionTransactionPayload {
 }
 
 
-export interface AdmissionDailyCollectionReportParams {
+export interface admissionDailyCollectionReportParams {
     entity: string;
     session?: string[]; // Angular uses selectedSession array
     startDate: number;

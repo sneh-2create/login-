@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useAdmissionLeadLogs, useCounselors } from '@od-erp/query';
 import { Button, Title, Card, DataTable, Input, Select } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { AdmissionLeadLog } from '@od-erp/types';
+import { admissionLeadLog } from '@od-erp/types';
 import { Phone, Eye, Trash2 } from 'lucide-react';
 import { admissionLeadLogsService } from '@od-erp/api-client';
 import { useAppSelector } from '@od-erp/store';
@@ -128,7 +128,7 @@ const AdmissionLeadLogs = () => {
     };
 
     // Columns
-    const columns: ColumnDef<AdmissionLeadLog>[] = [
+    const columns: ColumnDef<admissionLeadLog>[] = [
         {
             accessorKey: 'position',
             header: 'S.No',

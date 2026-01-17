@@ -1,14 +1,14 @@
 import apiClient from '../../client';
-import { AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats } from '@od-erp/types';
+import { admissionFollowUp, admissionFollowUpPayload, admissionFollowUpStats } from '@od-erp/types';
 
 export const admissionFollowUpService = {
-    listFollowUp: async (payload: AdmissionFollowUpPayload) => {
-        const response = await apiClient.post<AdmissionFollowUp[]>('/list/admissionFollowUp', payload);
+    listFollowUp: async (payload: admissionFollowUpPayload) => {
+        const response = await apiClient.post<admissionFollowUp[]>('/list/admissionFollowUp', payload);
         return response.data;
     },
 
-    getFilterCountFollowUp: async (payload: AdmissionFollowUpPayload) => {
-        const response = await apiClient.post<AdmissionFollowUpStats>('/filterCount/admissionFollowUp', payload);
+    getFilterCountFollowUp: async (payload: admissionFollowUpPayload) => {
+        const response = await apiClient.post<admissionFollowUpStats>('/filterCount/admissionFollowUp', payload);
         return response.data;
     },
 

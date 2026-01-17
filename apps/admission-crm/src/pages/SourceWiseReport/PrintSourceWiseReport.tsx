@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { SourceWiseReportTableRow } from '@od-erp/types';
+import { sourceWiseReportTableRow } from '@od-erp/types';
 import PrintLayout from '../../components/printLayout';
 
 const printSourceWiseReport = () => {
-    const [data, setData] = useState<SourceWiseReportTableRow[]>([]);
+    const [data, setData] = useState<sourceWiseReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
 
     useEffect(() => {

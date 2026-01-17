@@ -3,10 +3,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DataTable } from '@od-erp/ui';
 import PrintLayout from '../../components/printLayout';
-import { AdmissionTransaction } from '@od-erp/types';
+import { admissionTransaction } from '@od-erp/types';
 
 const PrintDailyCollectionReport = () => {
-    const [data, setData] = useState<AdmissionTransaction[]>([]);
+    const [data, setData] = useState<admissionTransaction[]>([]);
     const [totalAmount, setTotalAmount] = useState<number>(0);
 
     useEffect(() => {
@@ -21,7 +21,7 @@ const PrintDailyCollectionReport = () => {
         }
     }, []);
 
-    const columns = useMemo<ColumnDef<AdmissionTransaction>[]>(() => [
+    const columns = useMemo<ColumnDef<admissionTransaction>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

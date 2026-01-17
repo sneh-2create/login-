@@ -7,12 +7,12 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import { courseWiseTagReportTableRow } from '@od-erp/types';
 
 const courseWiseTagReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<CourseWiseTagReportTableRow>[]>([]);
+    const [data, setData] = useState<courseWiseTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<courseWiseTagReportTableRow>[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
@@ -70,7 +70,7 @@ const courseWiseTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<CourseWiseTagReportTableRow>[] = [
+        const cols: ColumnDef<courseWiseTagReportTableRow>[] = [
             { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
             { accessorKey: 'course', header: 'Course' },
             { accessorKey: 'stream', header: 'Stream', cell: info => info.getValue() || '-' }, // Stream might be optional or empty

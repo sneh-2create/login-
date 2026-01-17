@@ -3,10 +3,10 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DataTable } from '@od-erp/ui';
 import PrintLayout from '../../components/printLayout';
-import { AdmissionLead } from '@od-erp/types';
+import { admissionLead } from '@od-erp/types';
 
 const PrintAdmissionStudentData = () => {
-    const [data, setData] = useState<AdmissionLead[]>([]);
+    const [data, setData] = useState<admissionLead[]>([]);
 
     useEffect(() => {
         const storedData = localStorage.getItem('admissionStudentData');
@@ -15,7 +15,7 @@ const PrintAdmissionStudentData = () => {
         }
     }, []);
 
-    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
+    const columns = useMemo<ColumnDef<admissionLead>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

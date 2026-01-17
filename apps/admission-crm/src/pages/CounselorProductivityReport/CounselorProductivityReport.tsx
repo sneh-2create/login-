@@ -6,11 +6,11 @@ import { Button, Title, Card, DataTable, Input, Select } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { CounselorProductivityReportTableRow } from '@od-erp/types';
+import { counselorProductivityReportTableRow } from '@od-erp/types';
 
 const CounselorProductivityReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<CounselorProductivityReportTableRow[]>([]);
+    const [data, setData] = useState<counselorProductivityReportTableRow[]>([]);
     const [stageType, setStageType] = useState<'lead' | 'application'>('lead');
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
@@ -87,7 +87,7 @@ const CounselorProductivityReport = () => {
         window.open('/admission/print/counselorProductivityReport', '_blank');
     };
 
-    const columns: ColumnDef<CounselorProductivityReportTableRow>[] = [
+    const columns: ColumnDef<counselorProductivityReportTableRow>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'counselorName', header: 'Counselor Name' },
         { accessorKey: 'totalCount', header: stageType === 'lead' ? 'Total Leads' : 'Application Count' },
@@ -104,7 +104,7 @@ const CounselorProductivityReport = () => {
             header: tag,
             cell: info => {
                 const row = info.row.original;
-                const tagObj = row.tags?.find(t => t.tag === tag);
+                const tagObj = row.tags?.find((t: any) => t.tag === tag);
                 return tagObj ? tagObj.count : 0;
             }
         });

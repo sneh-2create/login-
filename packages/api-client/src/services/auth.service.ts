@@ -1,13 +1,7 @@
 import apiClient from '../client';
 import Cookies from 'js-cookie';
 
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    permissions: string[];
-    userType: string;
-}
+import { user } from '@od-erp/types';
 
 export const authService = {
     // Legacy support (optional, can be removed if strictly following student login)
@@ -72,7 +66,7 @@ export const authService = {
         // Clear local storage
         localStorage.clear();
     },
-    getProfile: async (): Promise<User> => {
+    getProfile: async (): Promise<user> => {
         const response = await apiClient.get('/auth/profile');
         return response.data;
     },

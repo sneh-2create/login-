@@ -1,8 +1,8 @@
 import apiClient from '../../client';
-import { AdmissionTransaction, AdmissionTransactionPayload } from '@od-erp/types';
+import { admissionTransaction, admissionTransactionPayload } from '@od-erp/types';
 
 export const admissionTransactionService = {
-    listAdmissionTransaction: async (payload: AdmissionTransactionPayload) => {
+    listAdmissionTransaction: async (payload: admissionTransactionPayload) => {
         // Angular: this.service.listAdmissionTransaction(this.entityId, this.selectedSession, startDate, endDate, this.status,this.selectedStatus,this.search)
         // It seems the Angular service accepted individual args, but our new pattern prefers a payload object.
         // However, I need to check the actual API signature. 
@@ -25,12 +25,12 @@ export const admissionTransactionService = {
             if (!params.get(key)) params.delete(key);
         });
 
-        const response = await apiClient.get<AdmissionTransaction[]>(`/list/admissionTransaction?${params.toString()}`);
+        const response = await apiClient.get<admissionTransaction[]>(`/list/admissionTransaction?${params.toString()}`);
         return response.data;
     },
 
     viewAdmissionTransaction: async (id: string) => {
-        const response = await apiClient.get<AdmissionTransaction>(`/view/admissionTransaction/${id}`);
+        const response = await apiClient.get<admissionTransaction>(`/view/admissionTransaction/${id}`);
         return response.data;
     },
 
