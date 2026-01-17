@@ -5,9 +5,9 @@ import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
-import AddStudentModal from './components/AddStudentModal';
-import FilterModal from './components/FilterModal';
-import UploadExcelModal from './components/UploadExcelModal';
+import AddStudentModal from './components/addStudentModal';
+import FilterModal from './components/filterModal';
+import UploadExcelModal from './components/uploadExcelModal';
 import * as XLSX from 'xlsx';
 import { useAppSelector } from '@od-erp/store';
 
@@ -96,7 +96,9 @@ const AdmissionStudentData = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+        if (!data?.data) return;
+        localStorage.setItem('admissionStudentData', JSON.stringify(data.data));
+        window.open('/admission/print/admissionStudentData', '_blank');
     };
 
     const handleApplyFilters = (filters: Partial<AdmissionStudentDataPayload>) => {

@@ -56,7 +56,10 @@ const DailyCollectionReportPage = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+        if (!reportData) return;
+        localStorage.setItem('dailyCollectionData', JSON.stringify(reportData));
+        localStorage.setItem('dailyCollectionTotal', totalAmount.toString());
+        window.open('/admission/print/dailyCollectionReport', '_blank');
     };
 
     const columns = useMemo<ColumnDef<AdmissionTransaction>[]>(() => [

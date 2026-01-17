@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
+import App from './app'
 import '@od-erp/theme/index.css'; // Import shared styles + Tailwind
 import './index.css'
 import { PersistGate } from 'redux-persist/integration/react';

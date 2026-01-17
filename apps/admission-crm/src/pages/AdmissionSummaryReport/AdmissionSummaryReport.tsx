@@ -5,7 +5,7 @@ import { admissionSummaryReportService } from '@od-erp/api-client';
 import { Button, Select, Title, Card, Input } from '@od-erp/ui';
 import { DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Search } from 'lucide-react';
+import { Download, Search, Printer } from 'lucide-react';
 import { AdmissionSummaryTableRow } from '@od-erp/types';
 import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
@@ -137,6 +137,20 @@ const admissionSummaryReport = () => {
         );
     });
 
+    const handlePrint = () => {
+        // Serialize columns to just keeping headers and keys for reproduction
+        // We can't serialize functions, so we extract the config
+        const serializableColumns = columns.map(col => ({
+            accessorKey: (col as any).accessorKey,
+            header: (col as any).header ? String((col as any).header) : '',
+            // If we have custom cells, they are lost, but for print usually text is fine
+        }));
+
+        localStorage.setItem('admissionSummaryData', JSON.stringify(data));
+        localStorage.setItem('admissionSummaryColumns', JSON.stringify(serializableColumns));
+        window.open('/admission/print/admissionSummaryReport', '_blank');
+    };
+
     return (
         <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
             <div className="flex justify-between items-center">
@@ -146,14 +160,23 @@ const admissionSummaryReport = () => {
                     </div>
                     <Title variant="pageTitle">Admission Summary Report</Title>
                 </div>
-                <Button
-                    variant="outline"
-                    onClick={handleExport}
-                    isLoading={exportLoading}
-                    leftIcon={<Download size={16} />}
-                >
-                    Excel
-                </Button>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handlePrint}
+                        leftIcon={<Printer size={16} />}
+                    >
+                        Print
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handleExport}
+                        isLoading={exportLoading}
+                        leftIcon={<Download size={16} />}
+                    >
+                        Excel
+                    </Button>
+                </div>
             </div>
 
             <Card className="p-4">

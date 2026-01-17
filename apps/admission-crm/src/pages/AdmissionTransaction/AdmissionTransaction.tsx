@@ -74,7 +74,9 @@ const AdmissionTransactionPage = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+        if (!transactions) return;
+        localStorage.setItem('admissionTransactionData', JSON.stringify(transactions));
+        window.open('/admission/print/admissionTransaction', '_blank');
     };
 
     const handleRefresh = () => {

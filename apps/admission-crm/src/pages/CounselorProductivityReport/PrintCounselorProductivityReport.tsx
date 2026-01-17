@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Title, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { CounselorProductivityReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/printLayout';
+import { DataTable } from '@od-erp/ui';
 
 const PrintCounselorProductivityReport = () => {
     const [data, setData] = useState<CounselorProductivityReportTableRow[]>([]);
@@ -46,26 +47,16 @@ const PrintCounselorProductivityReport = () => {
         });
     });
 
-    useEffect(() => {
-        if (data.length > 0) {
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        }
-    }, [data]);
-
     return (
-        <div className="flex flex-col h-full bg-white p-6 gap-6">
-            <div className="text-center mb-6">
-                <Title variant="pageTitle">Counselor Wise Productivity {stageType === 'lead' ? 'Lead' : 'Application'} Report</Title>
+        <PrintLayout reportName={`Counselor Wise Productivity ${stageType === 'lead' ? 'Lead' : 'Application'} Report`}>
+            <div className="w-full">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={false}
+                />
             </div>
-
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={false}
-            />
-        </div>
+        </PrintLayout>
     );
 };
 

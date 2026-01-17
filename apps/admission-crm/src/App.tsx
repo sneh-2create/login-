@@ -1,23 +1,27 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AdmissionSummaryReport from './pages/AdmissionSummaryReport/AdmissionSummaryReport';
-import VacantSeatsReport from './pages/VacantSeatsReport/VacantSeatsReport';
-import PrintVacantSeatsReport from './pages/VacantSeatsReport/PrintVacantSeatsReport';
-import CounselorTagReport from './pages/CounselorTagReport';
-import PrintCounselorTagReport from './pages/CounselorTagReport/PrintCounselorTagReport';
-import SourceWiseReport from './pages/SourceWiseReport/SourceWiseReport';
-import PrintSourceWiseReport from './pages/SourceWiseReport/PrintSourceWiseReport';
+import AdmissionSummaryReport from './pages/admissionSummaryReport/admissionSummaryReport';
+import PrintAdmissionSummaryReport from './pages/admissionSummaryReport/printAdmissionSummaryReport';
+import VacantSeatsReport from './pages/vacantSeatsReport/vacantSeatsReport';
+import PrintVacantSeatsReport from './pages/vacantSeatsReport/printVacantSeatsReport';
+import CounselorTagReport from './pages/counselorTagReport';
+import PrintCounselorTagReport from './pages/counselorTagReport/printCounselorTagReport';
+import SourceWiseReport from './pages/sourceWiseReport/sourceWiseReport';
+import PrintSourceWiseReport from './pages/sourceWiseReport/printSourceWiseReport';
 import CourseWiseTagReport from './pages/courseWiseTagReport/courseWiseTagReport';
 import PrintCourseWiseTagReport from './pages/courseWiseTagReport/printCourseWiseTagReport';
-import NepSubjectReport from './pages/NepSubjectReport/NepSubjectReport';
-import PrintNepSubjectReport from './pages/NepSubjectReport/PrintNepSubjectReport';
-import CounselorProductivityReport from './pages/CounselorProductivityReport/CounselorProductivityReport';
-import PrintCounselorProductivityReport from './pages/CounselorProductivityReport/PrintCounselorProductivityReport';
-import AdmissionLeadLogs from './pages/AdmissionLeadLogs/AdmissionLeadLogs';
-import AdmissionFollowUps from './pages/AdmissionFollowUps/AdmissionFollowUps';
-import AdmissionLeads from './pages/AdmissionLeads/AdmissionLeads';
-import AdmissionStudentData from './pages/AdmissionStudentData/AdmissionStudentData';
-import AdmissionTransactionPage from './pages/AdmissionTransaction/AdmissionTransaction';
-import DailyCollectionReportPage from './pages/DailyCollectionReport/DailyCollectionReport';
+import NepSubjectReport from './pages/nepSubjectReport/nepSubjectReport';
+import PrintNepSubjectReport from './pages/nepSubjectReport/printNepSubjectReport';
+import CounselorProductivityReport from './pages/counselorProductivityReport/counselorProductivityReport';
+import PrintCounselorProductivityReport from './pages/counselorProductivityReport/printCounselorProductivityReport';
+import AdmissionLeadLogs from './pages/admissionLeadLogs/admissionLeadLogs';
+import AdmissionFollowUps from './pages/admissionFollowUps/admissionFollowUps';
+import AdmissionLeads from './pages/admissionLeads/admissionLeads';
+import AdmissionStudentData from './pages/admissionStudentData/admissionStudentData';
+import AdmissionTransactionPage from './pages/admissionTransaction/admissionTransaction';
+import DailyCollectionReportPage from './pages/dailyCollectionReport/dailyCollectionReport';
+import PrintDailyCollectionReport from './pages/dailyCollectionReport/printDailyCollectionReport';
+import PrintAdmissionTransaction from './pages/admissionTransaction/printAdmissionTransaction';
+import PrintAdmissionStudentData from './pages/admissionStudentData/printAdmissionStudentData';
 import { QueryClientProvider, queryClient } from '@od-erp/query';
 
 function App() {
@@ -25,6 +29,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <Routes>
                 <Route path="/admissionSummaryReports" element={<AdmissionSummaryReport />} />
+                <Route path="/print/admissionSummaryReport" element={<PrintAdmissionSummaryReport />} />
                 <Route path="/vacentSeats" element={<VacantSeatsReport />} />
                 <Route path="/counselorTagReport" element={<CounselorTagReport />} />
                 <Route path="/print/vacantSeats" element={<PrintVacantSeatsReport />} />
@@ -41,8 +46,11 @@ function App() {
                 <Route path="/followUps" element={<AdmissionFollowUps />} />
                 <Route path="/admissionLeads" element={<AdmissionLeads />} />
                 <Route path="/studentData" element={<AdmissionStudentData />} />
+                <Route path="/print/admissionStudentData" element={<PrintAdmissionStudentData />} />
                 <Route path="/transaction" element={<AdmissionTransactionPage />} />
+                <Route path="/print/admissionTransaction" element={<PrintAdmissionTransaction />} />
                 <Route path="/dailyCollectionReport" element={<DailyCollectionReportPage />} />
+                <Route path="/print/dailyCollectionReport" element={<PrintDailyCollectionReport />} />
                 <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
             </Routes>
         </QueryClientProvider>
