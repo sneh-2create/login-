@@ -28,13 +28,17 @@ const counselorTagReport = () => {
     // Dynamic Tags
     const [tags, setTags] = useState<string[]>([]);
 
+    // Pagination
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize] = useState(10);
+
     useEffect(() => {
         loadInitialData();
     }, []);
 
     useEffect(() => {
         setupColumns();
-    }, [tags]);
+    }, [tags, pageNumber, pageSize]);
 
     const loadInitialData = async () => {
         try {
@@ -57,7 +61,11 @@ const counselorTagReport = () => {
 
     const setupColumns = () => {
         const cols: ColumnDef<counselorTagReportTableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() },
+            {
+                accessorKey: 'position',
+                header: 'S.No',
+                cell: info => (pageNumber - 1) * pageSize + info.row.index + 1
+            },
             { accessorKey: 'counselorName', header: 'Counselor Name' },
             { accessorKey: 'totalCount', header: 'Total Count' },
         ];
@@ -114,7 +122,8 @@ const counselorTagReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('counselorWiseLeadData', JSON.stringify(data));
+        const paginatedData = data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+        localStorage.setItem('counselorWiseLeadData', JSON.stringify(paginatedData));
         localStorage.setItem('tableHeads', JSON.stringify(tags));
         window.open('/admission/print/counselorTagReport', '_blank');
     };
@@ -147,7 +156,7 @@ const counselorTagReport = () => {
                 </div>
             </div>
 
-            <Card className="p-4">
+            <Card className="p-4 !overflow-visible">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label className="text-xs font-semibold text-gray-500 mb-1 block">Select Counselor</label>
@@ -191,9 +200,28 @@ const counselorTagReport = () => {
                 <div className="w-full max-w-full overflow-x-auto">
                     <DataTable
                         columns={columns}
-                        data={data}
+                        data={data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize)}
                         isLoading={loading}
                     />
+                </div>
+                <div className="p-4 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600 rounded-b-lg">
+                    <span>Showing {Math.min((pageNumber - 1) * pageSize + 1, data.length)} to {Math.min(pageNumber * pageSize, data.length)} of {data.length} entries</span>
+                    <div className="flex gap-2">
+                        <button
+                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                            disabled={pageNumber === 1}
+                            onClick={() => setPageNumber(p => p - 1)}
+                        >
+                            Previous
+                        </button>
+                        <button
+                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                            disabled={pageNumber * pageSize >= data.length}
+                            onClick={() => setPageNumber(p => p + 1)}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
