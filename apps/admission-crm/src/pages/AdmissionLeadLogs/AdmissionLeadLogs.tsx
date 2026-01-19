@@ -40,7 +40,7 @@ const AdmissionLeadLogs = () => {
     };
 
     // Queries
-    const { data: counselors } = useCounselors(entityId, 'Counselor');
+    const { data: counselors } = useCounselors(entityId, 'counselor');
 
     // Construct Query Payload
     const queryPayload = useMemo(() => ({
@@ -61,7 +61,7 @@ const AdmissionLeadLogs = () => {
 
     // Options
     const counselorOptions = counselors?.map((c: any) => ({
-        label: `${c.firstName} ${c.lastName || ''}`.trim(),
+        label: c.name,
         value: c._id
     })) || [];
     counselorOptions.unshift({ label: 'All Counselors', value: '' });
