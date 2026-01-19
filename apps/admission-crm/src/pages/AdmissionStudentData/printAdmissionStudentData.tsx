@@ -8,10 +8,20 @@ import { admissionLead } from '@od-erp/types';
 const PrintAdmissionStudentData = () => {
     const [data, setData] = useState<admissionLead[]>([]);
 
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+
     useEffect(() => {
         const storedData = localStorage.getItem('admissionStudentData');
         if (storedData) {
-            setData(JSON.parse(storedData));
+            const parsed = JSON.parse(storedData);
+            if (Array.isArray(parsed)) {
+                setData(parsed);
+            } else {
+                setData(parsed.data || []);
+                setPageNumber(parsed.pageNumber || 1);
+                setPageSize(parsed.pageSize || 10);
+            }
         }
     }, []);
 
@@ -19,7 +29,7 @@ const PrintAdmissionStudentData = () => {
         {
             header: 'S.No',
             accessorKey: 'sno',
-            cell: info => info.row.index + 1,
+            cell: info => (pageNumber - 1) * pageSize + info.row.index + 1,
         },
         {
             header: 'Current Stage',
@@ -55,7 +65,7 @@ const PrintAdmissionStudentData = () => {
             accessorKey: 'fatherName',
             cell: info => info.getValue() || '-'
         },
-    ], []);
+    ], [pageNumber, pageSize]);
 
     return (
         <PrintLayout reportName="Application Data Report">

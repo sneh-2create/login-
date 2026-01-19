@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData } from '@od-erp/query';
 import { admissionLead, admissionStudentDataPayload } from '@od-erp/types';
+import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
@@ -9,11 +10,12 @@ import AddStudentModal from './components/addStudentModal';
 import FilterModal from './components/filterModal';
 import UploadExcelModal from './components/uploadExcelModal';
 import * as XLSX from 'xlsx';
-import { useAppSelector } from '@od-erp/store';
+import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
 const AdmissionStudentData = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const dispatch = useAppDispatch();
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
@@ -26,6 +28,7 @@ const AdmissionStudentData = () => {
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<admissionStudentDataPayload>>({});
+    const [isExporting, setIsExporting] = useState(false);
 
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
@@ -58,7 +61,7 @@ const AdmissionStudentData = () => {
         return { ...p, ...currentFilters };
     }, [entityId, session, pageNumber, pageSize, searchTerm, searchBy, selectedStage, currentFilters]);
 
-    const { data, isLoading, refetch } = useAdmissionStudentData(payload);
+    const { data, isLoading, refetch, isFetching } = useAdmissionStudentData(payload);
 
     // Handlers
     const handleAddStudent = async (formData: any) => {
@@ -78,26 +81,48 @@ const AdmissionStudentData = () => {
         }
     };
 
-    const handleExportExcel = () => {
-        if (!data?.data) return;
-        const worksheet = XLSX.utils.json_to_sheet(data.data.map((item, index) => ({
-            'S.No': index + 1,
-            'Name': item.name,
-            'Application No': item.applicationNumber,
-            'Phone': item.phone,
-            'Course': item.course,
-            'Father Name': item.fatherName,
-            'Stage': item.currentStage,
-            'Date': item.date ? format(new Date(item.date), 'dd-MMM-yyyy') : '-'
-        })));
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-        XLSX.writeFile(workbook, `StudentData_${session}.xlsx`);
+    const handleExportExcel = async () => {
+        setIsExporting(true);
+        try {
+            // Create payload to fetch all data
+            const exportPayload: admissionStudentDataPayload = {
+                ...payload,
+                pageNumber: 1,
+                pageSize: 100000, // Fetch all data
+            };
+
+            const response = await admissionStudentDataService.listAdmissionStudentData(exportPayload);
+
+            if (!response?.data) return;
+
+            const worksheet = XLSX.utils.json_to_sheet(response.data.map((item, index) => ({
+                'S.No': index + 1,
+                'Name': item.name,
+                'Application No': item.applicationNumber,
+                'Phone': item.phone,
+                'Course': item.course,
+                'Father Name': item.fatherName,
+                'Stage': item.currentStage,
+                'Date': item.date ? format(new Date(item.date), 'dd-MMM-yyyy') : '-'
+            })));
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+            XLSX.writeFile(workbook, `StudentData_${session}.xlsx`);
+        } catch (error) {
+            console.error('Failed to export excel:', error);
+            alert('Failed to export excel. Please try again.');
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     const handlePrint = () => {
         if (!data?.data) return;
-        localStorage.setItem('admissionStudentData', JSON.stringify(data.data));
+        localStorage.setItem('admissionStudentData', JSON.stringify({
+            data: data.data,
+            pageNumber,
+            pageSize
+        }));
         window.open('/admission/print/admissionStudentData', '_blank');
     };
 
@@ -131,6 +156,10 @@ const AdmissionStudentData = () => {
     const handleNeedHelp = () => {
         alert('For support, please contact admin@okiedokie.com');
     }
+
+    const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        dispatch(setAcademicSession(e.target.value));
+    };
 
 
     // Columns
@@ -270,7 +299,7 @@ const AdmissionStudentData = () => {
                         <select
                             className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
                             value={session}
-                            disabled
+                            onChange={handleSessionChange}
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>
@@ -281,13 +310,15 @@ const AdmissionStudentData = () => {
 
                 <div className="flex space-x-2">
                     <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>Add Application Data</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleExportExcel}><FileSpreadsheet className="mr-1 h-4 w-4" /> Excel</Button>
+                    <Button variant="outline" className="flex items-center" onClick={handleExportExcel} disabled={isExporting}>
+                        <FileSpreadsheet className="mr-1 h-4 w-4" /> {isExporting ? 'Exporting...' : 'Excel'}
+                    </Button>
                     <Button variant="outline" className="flex items-center" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" /> Print</Button>
                     <Button variant="outline" className="flex items-center" onClick={handleGenerateReport}>Generate Report</Button>
                     <Button variant="outline" className="flex items-center" onClick={() => setIsUploadModalOpen(true)}>Upload Excel</Button>
                     <Button variant="outline" className="flex items-center" onClick={() => setIsFilterModalOpen(true)}><Filter className="mr-1 h-4 w-4" /> Filter</Button>
                     <Button variant="outline" className="flex items-center" onClick={handleRefresh}>
-                        <RefreshCw className={`mr-1 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
+                        <RefreshCw className={`mr-1 h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} /> Refresh
                     </Button>
                     <Button variant="outline" className="flex items-center" onClick={handleNeedHelp}>Need Help</Button>
 

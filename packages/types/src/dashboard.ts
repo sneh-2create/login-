@@ -1,20 +1,20 @@
-export interface dashboardCounts {
+export interface DashboardCounts {
     totalEntities: number;
     totalStudents: number;
     totalEmployees: number;
     totalBooks: number;
 }
 
-export interface activeStudentData {
+export interface ActiveStudentData {
     name: string;
-    qac: string;
+    qac: string | number;
     total: number;
     active: number;
     percentage: number;
 }
 
-export interface onlineFeePaymentData {
-    qac: string;
+export interface OnlineFeePaymentData {
+    qac: string | number;
     total: number;
     online: number;
     onlinePercentage: number;
@@ -22,28 +22,28 @@ export interface onlineFeePaymentData {
     odPayPercentage: number;
 }
 
-export interface communicationReportData {
-    qac: string;
+export interface CommunicationReportData {
+    qac: string | number;
     total: number;
     sms: number;
     email: number;
     msTeams: number;
 }
 
-export interface userEntityData {
+export interface UserEntityData {
     name: string;
-    qac: string;
+    qac: string | number;
     total: number;
     active: number;
     percentage: number;
 }
 
-export interface entityModuleCount {
+export interface EntityModuleCount {
     module: string;
     count: number;
 }
 
-export interface entityLocationCount {
+export interface EntityLocationCount {
     name: string;
     count: number;
 }

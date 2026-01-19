@@ -39,7 +39,8 @@ export interface authState {
 }
 
 // --- Dashboard Types ---
-export interface tabConfig {
+// --- Dashboard Types ---
+export interface TabConfig {
     id: string;
     label: string;
     component: React.FC;

@@ -1,6 +1,6 @@
 import {
-    entityModuleCount,
-    entityLocationCount
+    EntityModuleCount,
+    EntityLocationCount
 } from '@od-erp/types';
 import apiClient from '../client';
 
@@ -30,13 +30,13 @@ export const dashboardService = {
         return response.data;
     },
 
-    getEntityCountByModule: async (): Promise<entityModuleCount[]> => {
-        const response = await apiClient.get<entityModuleCount[]>('/getEntityCountByModule/superDashboard');
+    getEntityCountByModule: async (): Promise<EntityModuleCount[]> => {
+        const response = await apiClient.get<EntityModuleCount[]>('/getEntityCountByModule/superDashboard');
         return response.data;
     },
 
-    getEntityCountByLocation: async (location: string): Promise<entityLocationCount[]> => {
-        const response = await apiClient.get<entityLocationCount[]>('/getEntityCountByLocation/superDashboard', {
+    getEntityCountByLocation: async (location: string): Promise<EntityLocationCount[]> => {
+        const response = await apiClient.get<EntityLocationCount[]>('/getEntityCountByLocation/superDashboard', {
             params: { location }
         });
         return response.data;

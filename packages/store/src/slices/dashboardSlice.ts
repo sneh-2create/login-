@@ -1,22 +1,22 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import {
-    dashboardCounts,
-    activeStudentData,
-    onlineFeePaymentData,
-    communicationReportData,
-    userEntityData,
-    entityModuleCount,
-    entityLocationCount
+    DashboardCounts,
+    ActiveStudentData,
+    OnlineFeePaymentData,
+    CommunicationReportData,
+    UserEntityData,
+    EntityModuleCount,
+    EntityLocationCount
 } from '@od-erp/types';
 
 export interface DashboardState {
-    counts: dashboardCounts | null;
-    activeStudents: activeStudentData[];
-    userEntityData: userEntityData[];
-    onlinePayments: onlineFeePaymentData[];
-    communicationReport: communicationReportData[];
-    entityModuleCounts: entityModuleCount[];
-    entityLocationCounts: entityLocationCount[];
+    counts: DashboardCounts | null;
+    activeStudents: ActiveStudentData[];
+    userEntityData: UserEntityData[];
+    onlinePayments: OnlineFeePaymentData[];
+    communicationReport: CommunicationReportData[];
+    entityModuleCounts: EntityModuleCount[];
+    entityLocationCounts: EntityLocationCount[];
 
     // Filters
     activeStudentDateRange: { start: string; end: string };
@@ -58,25 +58,25 @@ const dashboardSlice = createSlice({
     name: 'dashboard',
     initialState,
     reducers: {
-        setCounts: (state, action: PayloadAction<dashboardCounts>) => {
+        setCounts: (state, action: PayloadAction<DashboardCounts>) => {
             state.counts = action.payload;
         },
-        setActiveStudents: (state, action: PayloadAction<activeStudentData[]>) => {
+        setActiveStudents: (state, action: PayloadAction<ActiveStudentData[]>) => {
             state.activeStudents = action.payload;
         },
-        setUserEntityData: (state, action: PayloadAction<userEntityData[]>) => {
+        setUserEntityData: (state, action: PayloadAction<UserEntityData[]>) => {
             state.userEntityData = action.payload;
         },
-        setOnlinePayments: (state, action: PayloadAction<onlineFeePaymentData[]>) => {
+        setOnlinePayments: (state, action: PayloadAction<OnlineFeePaymentData[]>) => {
             state.onlinePayments = action.payload;
         },
-        setCommunicationReport: (state, action: PayloadAction<communicationReportData[]>) => {
+        setCommunicationReport: (state, action: PayloadAction<CommunicationReportData[]>) => {
             state.communicationReport = action.payload;
         },
-        setEntityModuleCounts: (state, action: PayloadAction<entityModuleCount[]>) => {
+        setEntityModuleCounts: (state, action: PayloadAction<EntityModuleCount[]>) => {
             state.entityModuleCounts = action.payload;
         },
-        setEntityLocationCounts: (state, action: PayloadAction<entityLocationCount[]>) => {
+        setEntityLocationCounts: (state, action: PayloadAction<EntityLocationCount[]>) => {
             state.entityLocationCounts = action.payload;
         },
         setActiveStudentDateRange: (state, action: PayloadAction<{ start: string; end: string }>) => {
