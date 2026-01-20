@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
+import PrintLayout from '../../components/printLayout';
+import { counselorTagReportTableRow } from '@od-erp/types';
 
 const printCounselorTagReport = () => {
-    const [data, setData] = useState<any[]>([]);
+    const [data, setData] = useState<counselorTagReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
-
-    const entityName = localStorage.getItem('entityName') || 'OkieDokie'; // Default or from storage
 
     useEffect(() => {
         const storedData = localStorage.getItem('counselorWiseLeadData');
@@ -16,29 +16,10 @@ const printCounselorTagReport = () => {
         if (storedHeads) {
             setTableHeads(JSON.parse(storedHeads));
         }
-
-        // Auto print
-        setTimeout(() => {
-            window.print();
-        }, 500);
     }, []);
 
     return (
-        <div className="p-8 text-black bg-white min-h-screen">
-            <div className="flex justify-end mb-4 print:hidden">
-                <button
-                    onClick={() => window.print()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                    Print
-                </button>
-            </div>
-
-            <div className="text-center mb-8">
-                <h3 className="text-xl font-bold mb-2">{entityName}</h3>
-                <p className="text-lg">Counselor Tag Report</p>
-            </div>
-
+        <PrintLayout reportName="Counselor Tag Report">
             <table className="w-full border-collapse border border-gray-300 text-sm">
                 <thead>
                     <tr className="bg-gray-100">
@@ -53,7 +34,7 @@ const printCounselorTagReport = () => {
                 <tbody>
                     {data.map((row, index) => (
                         <tr key={index} className={row.counselorName === 'Total' ? 'font-bold bg-gray-50' : ''}>
-                            <td className="border border-gray-300 p-2">{row.counselorName === 'Total' ? '' : row.position}</td>
+                            <td className="border border-gray-300 p-2 text-center">{row.counselorName === 'Total' ? '' : row.position}</td>
                             <td className="border border-gray-300 p-2">{row.counselorName}</td>
                             <td className="border border-gray-300 p-2">{row.totalCount}</td>
                             {tableHeads.map((head, i) => (
@@ -72,12 +53,7 @@ const printCounselorTagReport = () => {
                     )}
                 </tbody>
             </table>
-
-            <div className="mt-16 flex justify-between px-16">
-                <div>Principal's Signature</div>
-                <div>Authorised Signature</div>
-            </div>
-        </div>
+        </PrintLayout>
     );
 };
 

@@ -5,13 +5,13 @@ export * from './components/atoms/Button';
 export * from './components/atoms/Input';
 export * from './components/atoms/Select';
 // Dashboard
-export * from './components/SummaryCard/SummaryCard';
-export * from './components/DashboardSection/DashboardSection';
-export * from './components/DataTable/DataTable';
+export * from './components/summaryCard/summaryCard';
+export * from './components/dashboardSection/dashboardSection';
+export * from './components/dataTable/dataTable';
 
 // Molecules
-export * from './components/DateRangeFilter/DateRangeFilter';
-export * from './components/SelectInput/SelectInput';
+export * from './components/dateRangeFilter/dateRangeFilter';
+export * from './components/selectInput/selectInput';
 
 export * from './components/sidebar/Sidebar';
 export * from './components/Header';

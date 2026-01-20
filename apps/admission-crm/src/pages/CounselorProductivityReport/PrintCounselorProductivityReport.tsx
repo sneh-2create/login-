@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Title, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { CounselorProductivityReportTableRow } from '@od-erp/types';
+import { counselorProductivityReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/printLayout';
+import { DataTable } from '@od-erp/ui';
 
 const PrintCounselorProductivityReport = () => {
-    const [data, setData] = useState<CounselorProductivityReportTableRow[]>([]);
+    const [data, setData] = useState<counselorProductivityReportTableRow[]>([]);
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [stageType, setStageType] = useState<string>('lead');
 
@@ -24,7 +25,7 @@ const PrintCounselorProductivityReport = () => {
         }
     }, []);
 
-    const columns: ColumnDef<CounselorProductivityReportTableRow>[] = [
+    const columns: ColumnDef<counselorProductivityReportTableRow>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'counselorName', header: 'Counselor Name' },
         { accessorKey: 'totalCount', header: stageType === 'lead' ? 'Total Leads' : 'Application Count' },
@@ -40,32 +41,22 @@ const PrintCounselorProductivityReport = () => {
             header: tag,
             cell: info => {
                 const row = info.row.original;
-                const tagObj = row.tags?.find(t => t.tag === tag);
+                const tagObj = row.tags?.find((t: any) => t.tag === tag);
                 return tagObj ? tagObj.count : 0;
             }
         });
     });
 
-    useEffect(() => {
-        if (data.length > 0) {
-            setTimeout(() => {
-                window.print();
-            }, 500);
-        }
-    }, [data]);
-
     return (
-        <div className="flex flex-col h-full bg-white p-6 gap-6">
-            <div className="text-center mb-6">
-                <Title variant="pageTitle">Counselor Wise Productivity {stageType === 'lead' ? 'Lead' : 'Application'} Report</Title>
+        <PrintLayout reportName={`Counselor Wise Productivity ${stageType === 'lead' ? 'Lead' : 'Application'} Report`}>
+            <div className="w-full">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={false}
+                />
             </div>
-
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={false}
-            />
-        </div>
+        </PrintLayout>
     );
 };
 

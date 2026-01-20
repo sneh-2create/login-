@@ -6,14 +6,18 @@ import { Button, Title, Card, DataTable, Input, Select } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { CounselorProductivityReportTableRow } from '@od-erp/types';
+import { counselorProductivityReportTableRow } from '@od-erp/types';
 
 const CounselorProductivityReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<CounselorProductivityReportTableRow[]>([]);
+    const [data, setData] = useState<counselorProductivityReportTableRow[]>([]);
     const [stageType, setStageType] = useState<'lead' | 'application'>('lead');
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
+
+    // Pagination
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize] = useState(10);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
@@ -37,7 +41,7 @@ const CounselorProductivityReport = () => {
     };
 
     // Filters
-    const { data: counselors } = useCounselors(entityId, 'Counselor');
+    const { data: counselors } = useCounselors(entityId, 'counselor');
 
     // Query Hook parameters
     const { data: reportData, isLoading, refetch } = useCounselorProductivityReport(
@@ -81,13 +85,14 @@ const CounselorProductivityReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('counselorProductivityData', JSON.stringify(data));
+        const paginatedData = data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+        localStorage.setItem('counselorProductivityData', JSON.stringify(paginatedData));
         localStorage.setItem('counselorProductivityDynamicColumns', JSON.stringify(dynamicColumns));
         localStorage.setItem('counselorProductivityStageType', stageType);
         window.open('/admission/print/counselorProductivityReport', '_blank');
     };
 
-    const columns: ColumnDef<CounselorProductivityReportTableRow>[] = [
+    const columns: ColumnDef<counselorProductivityReportTableRow>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'counselorName', header: 'Counselor Name' },
         { accessorKey: 'totalCount', header: stageType === 'lead' ? 'Total Leads' : 'Application Count' },
@@ -104,14 +109,14 @@ const CounselorProductivityReport = () => {
             header: tag,
             cell: info => {
                 const row = info.row.original;
-                const tagObj = row.tags?.find(t => t.tag === tag);
+                const tagObj = row.tags?.find((t: any) => t.tag === tag);
                 return tagObj ? tagObj.count : 0;
             }
         });
     });
 
     const counselorOptions = counselors?.map((c: any) => ({
-        label: `${c.firstName} ${c.lastName || ''}`.trim(),
+        label: c.name,
         value: c._id
     })) || [];
 
@@ -160,7 +165,7 @@ const CounselorProductivityReport = () => {
                 </button>
             </div>
 
-            <Card className="p-4 shrink-0">
+            <Card className="p-4 shrink-0 !overflow-visible">
                 <div className="flex gap-4 items-end flex-wrap">
                     <div className="min-w-[200px] flex-1 md:flex-none">
                         <label className="text-xs font-semibold text-gray-500 mb-1 block">Counselor</label>
@@ -188,9 +193,28 @@ const CounselorProductivityReport = () => {
                 <div className="flex-1 w-full max-w-full overflow-auto">
                     <DataTable
                         columns={columns}
-                        data={data}
+                        data={data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize)}
                         isLoading={isLoading}
                     />
+                </div>
+                <div className="p-4 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600 rounded-b-lg shrink-0">
+                    <span>Showing {Math.min((pageNumber - 1) * pageSize + 1, data.length)} to {Math.min(pageNumber * pageSize, data.length)} of {data.length} entries</span>
+                    <div className="flex gap-2">
+                        <button
+                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                            disabled={pageNumber === 1}
+                            onClick={() => setPageNumber(p => p - 1)}
+                        >
+                            Previous
+                        </button>
+                        <button
+                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                            disabled={pageNumber * pageSize >= data.length}
+                            onClick={() => setPageNumber(p => p + 1)}
+                        >
+                            Next
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

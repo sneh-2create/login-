@@ -7,14 +7,14 @@ export interface DashboardCounts {
 
 export interface ActiveStudentData {
     name: string;
-    qac: string;
+    qac: string | number;
     total: number;
     active: number;
     percentage: number;
 }
 
 export interface OnlineFeePaymentData {
-    qac: string;
+    qac: string | number;
     total: number;
     online: number;
     onlinePercentage: number;
@@ -23,7 +23,7 @@ export interface OnlineFeePaymentData {
 }
 
 export interface CommunicationReportData {
-    qac: string;
+    qac: string | number;
     total: number;
     sms: number;
     email: number;
@@ -32,7 +32,7 @@ export interface CommunicationReportData {
 
 export interface UserEntityData {
     name: string;
-    qac: string;
+    qac: string | number;
     total: number;
     active: number;
     percentage: number;

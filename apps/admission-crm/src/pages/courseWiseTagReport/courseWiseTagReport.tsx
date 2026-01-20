@@ -7,12 +7,12 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import { courseWiseTagReportTableRow } from '@od-erp/types';
 
 const courseWiseTagReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<CourseWiseTagReportTableRow>[]>([]);
+    const [data, setData] = useState<courseWiseTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<courseWiseTagReportTableRow>[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
@@ -22,6 +22,10 @@ const courseWiseTagReport = () => {
     // Dropdown Data
     const [counselors, setCounselors] = useState<any[]>([]);
     const [tags, setTags] = useState<string[]>([]);
+
+    // Pagination
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize] = useState(10);
 
     // Metadata
     // Metadata
@@ -46,7 +50,7 @@ const courseWiseTagReport = () => {
 
     useEffect(() => {
         setupColumns();
-    }, [tags]);
+    }, [tags, pageNumber, pageSize]);
 
     useEffect(() => {
         if (reportData && Array.isArray(reportData)) {
@@ -70,8 +74,12 @@ const courseWiseTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<CourseWiseTagReportTableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
+        const cols: ColumnDef<courseWiseTagReportTableRow>[] = [
+            {
+                accessorKey: 'position',
+                header: 'S.No',
+                cell: info => info.getValue() === 0 ? '' : (pageNumber - 1) * pageSize + info.row.index + 1
+            },
             { accessorKey: 'course', header: 'Course' },
             { accessorKey: 'stream', header: 'Stream', cell: info => info.getValue() || '-' }, // Stream might be optional or empty
             { accessorKey: 'total', header: 'Total', cell: info => info.getValue() || 0 },
@@ -118,7 +126,8 @@ const courseWiseTagReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('printData', JSON.stringify(data));
+        const paginatedData = data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+        localStorage.setItem('printData', JSON.stringify(paginatedData));
         localStorage.setItem('printColumns', JSON.stringify(tags));
         localStorage.setItem('reportName', 'Course Wise Tag Report');
         // Assuming a generic print page or specific one. 
@@ -154,7 +163,7 @@ const courseWiseTagReport = () => {
                 </div>
             </div>
 
-            <Card className="p-4">
+            <Card className="p-4 !overflow-visible">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
@@ -195,9 +204,29 @@ const courseWiseTagReport = () => {
             <div className="w-full max-w-full overflow-x-auto">
                 <DataTable
                     columns={columns}
-                    data={data}
+                    data={data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize)}
                     isLoading={isLoading}
                 />
+            </div>
+
+            <div className="p-4 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600 rounded-b-lg">
+                <span>Showing {Math.min((pageNumber - 1) * pageSize + 1, data.length)} to {Math.min(pageNumber * pageSize, data.length)} of {data.length} entries</span>
+                <div className="flex gap-2">
+                    <button
+                        className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                        disabled={pageNumber === 1}
+                        onClick={() => setPageNumber(p => p - 1)}
+                    >
+                        Previous
+                    </button>
+                    <button
+                        className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                        disabled={pageNumber * pageSize >= data.length}
+                        onClick={() => setPageNumber(p => p + 1)}
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     );

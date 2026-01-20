@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { sessionService } from '@od-erp/api-client';
-import { Session } from '@od-erp/types';
+import { session } from '@od-erp/types';
 
 export const useSessions = (entityId: string) => {
-    return useQuery<Session[]>({
+    return useQuery<session[]>({
         queryKey: ['sessions', entityId],
         queryFn: () => sessionService.getSessionList(entityId),
         enabled: !!entityId,

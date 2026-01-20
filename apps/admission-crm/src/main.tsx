@@ -5,8 +5,8 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { Sidebar, Header } from '@od-erp/ui'
 import { store, useAppDispatch, setMenuConfig } from '@od-erp/store'
 import { menuConfig } from '@od-erp/constants'
-import { AuthGuard } from './components/AuthGuard'
-import App from './App'
+import { AuthGuard } from './components/authGuard'
+import App from './app'
 import '@od-erp/theme/index.css';
 import './index.css'
 

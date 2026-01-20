@@ -1,5 +1,5 @@
 import apiClient from '../../client';
-import { AdmissionSummaryReportParams } from '@od-erp/types';
+import { admissionSummaryReportParams } from '@od-erp/types';
 
 export const admissionSummaryReportService = {
     getSessionList: async (entityId: string) => {
@@ -7,7 +7,7 @@ export const admissionSummaryReportService = {
         return response.data;
     },
 
-    viewAdmissionSummaryReport: async (formData: AdmissionSummaryReportParams) => {
+    viewAdmissionSummaryReport: async (formData: admissionSummaryReportParams) => {
         const response = await apiClient.post(`/admissionSummary/admissionReports`, formData);
         return response.data;
     }

@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export interface SessionState {
+export interface sessionState {
     entityId: string | null;
     entityName: string | null;
     entityType: string | null;
@@ -9,7 +9,7 @@ export interface SessionState {
     sessionList: any[]; // List of available sessions
 }
 
-const initialState: SessionState = {
+const initialState: sessionState = {
     entityId: null,
     entityName: null,
     entityType: null,

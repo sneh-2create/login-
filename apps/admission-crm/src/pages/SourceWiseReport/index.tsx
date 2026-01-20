@@ -1,1 +1,1 @@
-export { default } from './SourceWiseReport';
+export { default } from './sourceWiseReport';

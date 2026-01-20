@@ -5,24 +5,24 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from '@od-erp/store';
 import { Loader2 } from 'lucide-react';
 
-const Layout = lazy(() => import('./components/Layout').then(module => ({ default: module.Layout })));
-const Login = lazy(() => import('./pages/Login').then(module => ({ default: module.Login })));
-const ProtectedRoute = lazy(() => import('./components/ProtectedRoute').then(module => ({ default: module.ProtectedRoute })));
-const PublicRoute = lazy(() => import('./components/PublicRoute').then(module => ({ default: module.PublicRoute })));
+const Layout = lazy(() => import('./components/layout').then(module => ({ default: module.Layout })));
+const Login = lazy(() => import('./pages/login').then(module => ({ default: module.Login })));
+const ProtectedRoute = lazy(() => import('./components/protectedRoute').then(module => ({ default: module.ProtectedRoute })));
+const PublicRoute = lazy(() => import('./components/publicRoute').then(module => ({ default: module.PublicRoute })));
 
 // Placeholder pages
-const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
-const NotFound = lazy(() => import('./pages/NotFound').then(module => ({ default: module.NotFound })));
-const AdmissionPage = lazy(() => import('./pages/AdmissionPage').then(module => ({ default: module.AdmissionPage })));
-const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard').then(module => ({ default: module.SuperAdminDashboard })));
+const Dashboard = lazy(() => import('./pages/dashboard').then(module => ({ default: module.Dashboard })));
+const NotFound = lazy(() => import('./pages/notFound').then(module => ({ default: module.NotFound })));
+const AdmissionPage = lazy(() => import('./pages/admissionPage').then(module => ({ default: module.AdmissionPage })));
+const SuperAdminDashboard = lazy(() => import('./pages/superAdminDashboard').then(module => ({ default: module.SuperAdminDashboard })));
 
 // Module Pages
-const FeePage = lazy(() => import('./pages/FeePage').then(module => ({ default: module.FeePage })));
-const AcademicPage = lazy(() => import('./pages/AcademicPage').then(module => ({ default: module.AcademicPage })));
-const ExamPage = lazy(() => import('./pages/ExamPage').then(module => ({ default: module.ExamPage })));
-const HRMPage = lazy(() => import('./pages/HRMPage').then(module => ({ default: module.HRMPage })));
-const BackOfficePage = lazy(() => import('./pages/BackOfficePage').then(module => ({ default: module.BackOfficePage })));
-const TemplatesPage = lazy(() => import('./pages/TemplatesPage').then(module => ({ default: module.TemplatesPage })));
+const FeePage = lazy(() => import('./pages/feePage').then(module => ({ default: module.FeePage })));
+const AcademicPage = lazy(() => import('./pages/academicPage').then(module => ({ default: module.AcademicPage })));
+const ExamPage = lazy(() => import('./pages/examPage').then(module => ({ default: module.ExamPage })));
+const HRMPage = lazy(() => import('./pages/hRMPage').then(module => ({ default: module.HRMPage })));
+const BackOfficePage = lazy(() => import('./pages/backOfficePage').then(module => ({ default: module.BackOfficePage })));
+const TemplatesPage = lazy(() => import('./pages/templatesPage').then(module => ({ default: module.TemplatesPage })));
 
 const LoadingState = () => (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">

@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead } from '@od-erp/types';
+import { sourceWiseReportData, courseWiseTagReportData, nepSubjectReportData, counselorProductivityReportData, admissionLeadLogResponse, admissionLeadLogPayload, admissionFollowUp, admissionFollowUpPayload, admissionFollowUpStats, admissionLeadPayload, admissionLead } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -11,7 +11,7 @@ export const useSourceWiseReport = (
     source?: string,
     counselorId?: string
 ) => {
-    return useQuery<SourceWiseReportData[]>({
+    return useQuery<sourceWiseReportData[]>({
         queryKey: ['sourceWiseReport', entityId, session, stageType, startDate, endDate, source, counselorId],
         queryFn: () => sourceWiseReportService.sourceLeadReport(
             entityId,
@@ -34,7 +34,7 @@ export const useCourseWiseTagReport = (
     startDate?: number,
     endDate?: number
 ) => {
-    return useQuery<CourseWiseTagReportData[]>({
+    return useQuery<courseWiseTagReportData[]>({
         queryKey: ['courseWiseTagReport', entityId, session, counselorId, startDate, endDate],
         queryFn: () => courseWiseTagReportService.courseWiseTagReport(
             entityId,
@@ -58,7 +58,7 @@ export const useNepSubjectReport = (
     subjectGroupValue?: string,
     subjectGroupName?: string
 ) => {
-    return useQuery<NepSubjectReportData[]>({
+    return useQuery<nepSubjectReportData[]>({
         queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
         queryFn: () => nepSubjectReportService.getNepSubjectReport(
             entityId,
@@ -82,7 +82,7 @@ export const useCounselorProductivityReport = (
     endDate: number,
     counselorId?: string
 ) => {
-    return useQuery<CounselorProductivityReportData[]>({
+    return useQuery<counselorProductivityReportData[]>({
         queryKey: ['counselorProductivityReport', entityId, session, stageType, startDate, endDate, counselorId],
         queryFn: () => counselorProductivityReportService.getCounselorProductivityReport(
             entityId,
@@ -106,8 +106,8 @@ export const useCounselors = (entityId: string, role?: string) => {
     });
 };
 
-export const useAdmissionLeadLogs = (payload: AdmissionLeadLogPayload) => {
-    return useQuery<AdmissionLeadLogResponse>({
+export const useAdmissionLeadLogs = (payload: admissionLeadLogPayload) => {
+    return useQuery<admissionLeadLogResponse>({
         queryKey: ['admissionLeadLogs', payload],
         queryFn: () => admissionLeadLogsService.listAdmissionLeadLogs(payload),
         enabled: !!payload.entity && !!payload.session,
@@ -115,8 +115,8 @@ export const useAdmissionLeadLogs = (payload: AdmissionLeadLogPayload) => {
     });
 };
 
-export const useAdmissionFollowUp = (payload: AdmissionFollowUpPayload) => {
-    return useQuery<AdmissionFollowUp[]>({
+export const useAdmissionFollowUp = (payload: admissionFollowUpPayload) => {
+    return useQuery<admissionFollowUp[]>({
         queryKey: ['admissionFollowUp', payload],
         queryFn: () => admissionFollowUpService.listFollowUp(payload),
         enabled: !!payload.entity,
@@ -124,8 +124,8 @@ export const useAdmissionFollowUp = (payload: AdmissionFollowUpPayload) => {
     });
 };
 
-export const useAdmissionFollowUpStats = (payload: AdmissionFollowUpPayload) => {
-    return useQuery<AdmissionFollowUpStats>({
+export const useAdmissionFollowUpStats = (payload: admissionFollowUpPayload) => {
+    return useQuery<admissionFollowUpStats>({
         queryKey: ['admissionFollowUpStats', payload],
         queryFn: () => admissionFollowUpService.getFilterCountFollowUp(payload),
         enabled: !!payload.entity,
@@ -133,8 +133,8 @@ export const useAdmissionFollowUpStats = (payload: AdmissionFollowUpPayload) => 
 };
 
 
-export const useAdmissionLeads = (payload: AdmissionLeadPayload) => {
-    return useQuery<{ data: AdmissionLead[]; totalCount: number }>({
+export const useAdmissionLeads = (payload: admissionLeadPayload) => {
+    return useQuery<{ data: admissionLead[]; totalCount: number }>({
         queryKey: ['admissionLeads', payload],
         queryFn: () => admissionLeadService.listAdmissionLeads(payload),
         enabled: !!payload.entity,

@@ -191,6 +191,7 @@ export const transformCounselorProductivityReportForExport = (data: any[], dynam
             'Pending Follow Ups': item.overDueFollowUp
         };
         dynamicColumns.forEach(tag => {
+            if (tag === '0') return;
             const tagObj = item.tags?.find((t: any) => t.tag === tag);
             row[tag] = tagObj ? tagObj.count : 0;
         });

@@ -1,38 +1,20 @@
 import { useEffect, useState } from 'react';
-import { NepSubjectReportTableRow } from '@od-erp/types';
+import { nepSubjectReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/printLayout';
 
 const PrintNepSubjectReport = () => {
-    const [data, setData] = useState<NepSubjectReportTableRow[]>([]);
-
-    const entityName = localStorage.getItem('entityName') || 'OkieDokie';
+    const [data, setData] = useState<nepSubjectReportTableRow[]>([]);
 
     useEffect(() => {
         const storedData = localStorage.getItem('nepSubjectData');
-
-        if (storedData) setData(JSON.parse(storedData));
-
-        // Auto print
-        setTimeout(() => {
-            window.print();
-        }, 500);
+        if (storedData) {
+            setData(JSON.parse(storedData));
+            // localStorage.removeItem('nepSubjectData'); // Optional: clear after read, but keeping it allows refresh
+        }
     }, []);
 
     return (
-        <div className="p-8 text-black bg-white min-h-screen">
-            <div className="flex justify-end mb-4 print:hidden">
-                <button
-                    onClick={() => window.print()}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                    Print
-                </button>
-            </div>
-
-            <div className="text-center mb-8">
-                <h3 className="text-xl font-bold mb-2">{entityName}</h3>
-                <p className="text-lg">Nep Subject Report</p>
-            </div>
-
+        <PrintLayout reportName="NEP Subject Report">
             <table className="w-full border-collapse border border-gray-300 text-sm">
                 <thead>
                     <tr className="bg-gray-100">
@@ -48,7 +30,7 @@ const PrintNepSubjectReport = () => {
                 <tbody>
                     {data.map((row, index) => (
                         <tr key={index} className={row.name === 'Total' ? 'font-bold bg-gray-50' : ''}>
-                            <td className="border border-gray-300 p-2">{row.name === 'Total' ? '' : row.position}</td>
+                            <td className="border border-gray-300 p-2 text-center">{row.name === 'Total' ? '' : row.position}</td>
                             <td className="border border-gray-300 p-2">{row.name}</td>
                             <td className="border border-gray-300 p-2">{row.code || '-'}</td>
                             <td className="border border-gray-300 p-2">{row.seats}</td>
@@ -66,12 +48,7 @@ const PrintNepSubjectReport = () => {
                     )}
                 </tbody>
             </table>
-
-            <div className="mt-16 flex justify-between px-16">
-                <div>Principal's Signature</div>
-                <div>Authorised Signature</div>
-            </div>
-        </div>
+        </PrintLayout>
     );
 };
 

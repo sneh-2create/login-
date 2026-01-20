@@ -1,19 +1,19 @@
 import apiClient from '../../client';
-import { AdmissionLead, AdmissionStudentDataPayload, AdmissionStageSetup, AdmissionStageCount } from '@od-erp/types';
+import { admissionLead, admissionStudentDataPayload, admissionStageSetup, admissionStageCount } from '@od-erp/types';
 
 export const admissionStudentDataService = {
-    listAdmissionStudentData: async (payload: AdmissionStudentDataPayload) => {
-        const response = await apiClient.post<{ data: AdmissionLead[]; totalCount: number }>('/list/admissionStudentData', payload);
+    listAdmissionStudentData: async (payload: admissionStudentDataPayload) => {
+        const response = await apiClient.post<{ data: admissionLead[]; totalCount: number }>('/list/admissionStudentData', payload);
         return response.data;
     },
 
     listAdmissionStageSetup: async (entityId: string, session: string) => {
-        const response = await apiClient.get<AdmissionStageSetup[]>(`/list/admissionStageSetup?entity=${entityId}&session=${session}`);
+        const response = await apiClient.get<admissionStageSetup[]>(`/list/admissionStageSetup?entity=${entityId}&session=${session}`);
         return response.data;
     },
 
     listStages: async (entityId: string, session: string) => {
-        const response = await apiClient.get<AdmissionStageCount[]>(`/getCountByStages/admissionStudentData?entity=${entityId}&session=${session}`);
+        const response = await apiClient.get<admissionStageCount[]>(`/getCountByStages/admissionStudentData?entity=${entityId}&session=${session}`);
         return response.data;
     },
 

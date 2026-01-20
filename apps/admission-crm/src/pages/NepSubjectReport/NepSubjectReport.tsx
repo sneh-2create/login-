@@ -6,12 +6,12 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { NepSubjectReportTableRow } from '@od-erp/types';
+import { nepSubjectReportTableRow } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
 
 const NepSubjectReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<NepSubjectReportTableRow[]>([]);
+    const [data, setData] = useState<nepSubjectReportTableRow[]>([]);
 
     // Dropdown Data
     const [courses, setCourses] = useState<any[]>([]);
@@ -120,7 +120,7 @@ const NepSubjectReport = () => {
         window.open('/admission/print/nepSubjectReport', '_blank');
     };
 
-    const columns: ColumnDef<NepSubjectReportTableRow>[] = [
+    const columns: ColumnDef<nepSubjectReportTableRow>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'name', header: 'Subject Name' },
         { accessorKey: 'code', header: 'Subject Code', cell: info => info.getValue() || '-' },

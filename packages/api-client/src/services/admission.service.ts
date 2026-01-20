@@ -1,6 +1,6 @@
 import apiClient from '../client';
 
-export interface AdmissionSummaryReportParams {
+export interface admissionSummaryReportParams {
     entity: string;
     session?: string[]; // Angular uses selectedSession which is an array
     startDate: number;
@@ -20,7 +20,7 @@ export const admissionService = {
         return response.data;
     },
 
-    viewAdmissionSummaryReport: async (formData: AdmissionSummaryReportParams) => {
+    viewAdmissionSummaryReport: async (formData: admissionSummaryReportParams) => {
         // Angular: URLAddress('/admissionSummary/admissionReports')
         const response = await apiClient.post(`/admissionSummary/admissionReports`, formData);
         return response.data;

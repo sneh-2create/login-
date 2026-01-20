@@ -6,13 +6,13 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { SourceWiseReportTableRow } from '@od-erp/types';
+import { sourceWiseReportTableRow } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
 
 const sourceWiseReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<SourceWiseReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<SourceWiseReportTableRow>[]>([]);
+    const [data, setData] = useState<sourceWiseReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<sourceWiseReportTableRow>[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
@@ -24,6 +24,10 @@ const sourceWiseReport = () => {
     const [sourceList, setSourceList] = useState<string[]>([]);
     const [counselors, setCounselors] = useState<any[]>([]);
     const [tags, setTags] = useState<string[]>([]);
+
+    // Pagination
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize] = useState(10);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
@@ -54,7 +58,7 @@ const sourceWiseReport = () => {
 
     useEffect(() => {
         setupColumns();
-    }, [tags]);
+    }, [tags, pageNumber, pageSize]);
 
     useEffect(() => {
         if (reportData && Array.isArray(reportData)) {
@@ -79,8 +83,12 @@ const sourceWiseReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<SourceWiseReportTableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
+        const cols: ColumnDef<sourceWiseReportTableRow>[] = [
+            {
+                accessorKey: 'position',
+                header: 'S.No',
+                cell: info => info.getValue() === 0 ? '' : (pageNumber - 1) * pageSize + info.row.index + 1
+            },
             { accessorKey: 'source', header: 'Source' },
             { accessorKey: 'totalLeadCount', header: 'Total Lead Count' },
             { accessorKey: 'totalApplicationCount', header: 'Total Application Count' },
@@ -143,7 +151,8 @@ const sourceWiseReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('sourceWiseLeadData', JSON.stringify(data));
+        const paginatedData = data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
+        localStorage.setItem('sourceWiseLeadData', JSON.stringify(paginatedData));
         localStorage.setItem('tableHeads', JSON.stringify(tags));
         window.open('/admission/print/sourceWiseReport', '_blank');
     };
@@ -176,7 +185,7 @@ const sourceWiseReport = () => {
                 </div>
             </div>
 
-            <Card className="p-4">
+            <Card className="p-4 !overflow-visible">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                     <div>
                         <label className="text-xs font-semibold text-gray-500 mb-1 block">Select Source</label>
@@ -228,9 +237,28 @@ const sourceWiseReport = () => {
             <div className="w-full max-w-full overflow-x-auto">
                 <DataTable
                     columns={columns}
-                    data={data}
+                    data={data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize)}
                     isLoading={isLoading}
                 />
+            </div>
+            <div className="p-4 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600 rounded-b-lg">
+                <span>Showing {Math.min((pageNumber - 1) * pageSize + 1, data.length)} to {Math.min(pageNumber * pageSize, data.length)} of {data.length} entries</span>
+                <div className="flex gap-2">
+                    <button
+                        className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                        disabled={pageNumber === 1}
+                        onClick={() => setPageNumber(p => p - 1)}
+                    >
+                        Previous
+                    </button>
+                    <button
+                        className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
+                        disabled={pageNumber * pageSize >= data.length}
+                        onClick={() => setPageNumber(p => p + 1)}
+                    >
+                        Next
+                    </button>
+                </div>
             </div>
         </div>
     );
