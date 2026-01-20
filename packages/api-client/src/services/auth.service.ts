@@ -1,7 +1,27 @@
 import apiClient from '../client';
 import Cookies from 'js-cookie';
 
-import { user } from '@od-erp/types';
+import { User } from '@od-erp/types';
+
+const setAuthCookie = (token: string) => {
+    const isSecure = window.location.protocol === 'https:';
+    const hostname = window.location.hostname;
+    // const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
+
+    // For local, we explicitly set path to '/'. For live (domain exists), we rely on default behavior or explicit path if needed.
+    // User requested: "for local we are giving path and for live not"
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    const options: Cookies.CookieAttributes = { secure: isSecure, sameSite: 'Lax' };
+
+    if (!isLocal) {
+        options.domain = '.oderp.in';
+    } else {
+        options.path = '/';
+    }
+
+    Cookies.set('token', token, options);
+};
 
 export const authService = {
     // Legacy support (optional, can be removed if strictly following student login)
@@ -14,10 +34,7 @@ export const authService = {
 
         const response = await apiClient.post(loginUrl, credentials);
         if (response.data.token) {
-            const isSecure = window.location.protocol === 'https:';
-            const hostname = window.location.hostname;
-            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
+            setAuthCookie(response.data.token);
         }
         return response.data;
     },
@@ -30,10 +47,7 @@ export const authService = {
     verifyOtp: async (mobile: string, otp: string, source: string = 'erp') => {
         const response = await apiClient.get(`/verify/otp`, { params: { mobile, otp, source } });
         if (response.data.token) {
-            const isSecure = window.location.protocol === 'https:';
-            const hostname = window.location.hostname;
-            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
+            setAuthCookie(response.data.token);
         }
         return response.data;
     },
@@ -52,31 +66,34 @@ export const authService = {
     studentLogin: async (credentials: { phone: string; password: string; entity: string; session: string }) => {
         const response = await apiClient.post('/auth/student/login', credentials);
         if (response.data.token) {
-            const isSecure = window.location.protocol === 'https:';
-            const hostname = window.location.hostname;
-            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
+            setAuthCookie(response.data.token);
         }
         return response.data;
     },
 
     logout: async () => {
         // Clear cookies
-        Cookies.remove('token');
+        const hostname = window.location.hostname;
+        const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+        const options: Cookies.CookieAttributes = {};
+
+        if (!isLocal) {
+            options.domain = '.oderp.in';
+        } else {
+            options.path = '/';
+        }
+        Cookies.remove('token', options);
         // Clear local storage
         localStorage.clear();
     },
-    getProfile: async (): Promise<user> => {
+    getProfile: async (): Promise<User> => {
         const response = await apiClient.get('/auth/profile');
         return response.data;
     },
     refreshToken: async () => {
         const response = await apiClient.post('/auth/refresh-token');
         if (response.data.token) {
-            const isSecure = window.location.protocol === 'https:';
-            const hostname = window.location.hostname;
-            const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
-            Cookies.set('token', response.data.token, { secure: isSecure, sameSite: 'Lax', domain });
+            setAuthCookie(response.data.token);
         }
         return response.data;
     },

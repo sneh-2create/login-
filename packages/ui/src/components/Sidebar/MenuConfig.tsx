@@ -12,9 +12,9 @@ import {
     BarChart3,
     Library,
 } from 'lucide-react';
-import { menuItem } from '../../global/types';
+import { MenuItem } from '../../global/types';
 
-export const menuItems: menuItem[] = [
+export const menuItems: MenuItem[] = [
     {
         title: 'Dashboard',
         icon: <LayoutDashboard size={24} />,

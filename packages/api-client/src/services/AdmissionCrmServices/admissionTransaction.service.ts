@@ -1,36 +1,33 @@
 import apiClient from '../../client';
-import { admissionTransaction, admissionTransactionPayload } from '@od-erp/types';
+import { AdmissionTransaction, AdmissionTransactionPayload } from '@od-erp/types';
 
 export const admissionTransactionService = {
-    listAdmissionTransaction: async (payload: admissionTransactionPayload) => {
-        // Angular: this.service.listAdmissionTransaction(this.entityId, this.selectedSession, startDate, endDate, this.status,this.selectedStatus,this.search)
-        // It seems the Angular service accepted individual args, but our new pattern prefers a payload object.
-        // However, I need to check the actual API signature. 
-        // Based on other services, we usually send a POST with payload or GET with query params.
-        // Angular implementation suggests: 
+    listAdmissionTransaction: async (payload: AdmissionTransactionPayload) => {
+        const { entity, session, startDate, endDate, status, selectedStatus, search } = payload;
+
+        let params = new URLSearchParams();
+        if (entity) params.append('entity', entity);
+        if (session) params.append('session', session);
+        if (startDate) params.append('startDate', String(startDate));
+        if (endDate) params.append('endDate', String(endDate));
+        if (status) params.append('status', status);
+        if (selectedStatus) params.append('selectedStatus', selectedStatus);
+        if (search) params.append('search', search);
+
         // return this.http.get(this.url + '/list/admissionTransaction' + '?entity=' + entity + '&session=' + session + '&startDate=' + startDate + '&endDate=' + endDate + '&status=' + status + '&selectedStatus=' + selectedStatus + '&search=' + search);
+        // New Api Client structure
+        // const response = await apiClient.post<{ data: admissionTransaction[]; totalCount: number }>('/list/admissionTransaction', payload);
 
-        const params = new URLSearchParams({
-            entity: payload.entity,
-            session: payload.session,
-            startDate: payload.startDate?.toString() || '',
-            endDate: payload.endDate?.toString() || '',
-            status: payload.status || '',
-            selectedStatus: payload.selectedStatus || '',
-            search: payload.search || ''
-        });
+        // Based on original Angular service, it seems it was a GET request with query params? 
+        // "return this.http.get(this.url + '/list/admissionTransaction'..."
+        // But some services use POST. Verify if this is correct. Keeping GET as per comment trace.
 
-        // Remove empty keys
-        Array.from(params.keys()).forEach(key => {
-            if (!params.get(key)) params.delete(key);
-        });
-
-        const response = await apiClient.get<admissionTransaction[]>(`/list/admissionTransaction?${params.toString()}`);
+        const response = await apiClient.get<AdmissionTransaction[]>(`/list/admissionTransaction?${params.toString()}`);
         return response.data;
     },
 
-    viewAdmissionTransaction: async (id: string) => {
-        const response = await apiClient.get<admissionTransaction>(`/view/admissionTransaction/${id}`);
+    getAdmissionTransactionById: async (id: string) => {
+        const response = await apiClient.get<AdmissionTransaction>(`/view/admissionTransaction/${id}`);
         return response.data;
     },
 

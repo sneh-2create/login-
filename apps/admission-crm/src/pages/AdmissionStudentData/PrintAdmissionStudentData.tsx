@@ -2,11 +2,11 @@ import { useEffect, useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DataTable } from '@od-erp/ui';
-import PrintLayout from '../../components/printLayout';
-import { admissionLead } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
+import { AdmissionLead } from '@od-erp/types';
 
 const PrintAdmissionStudentData = () => {
-    const [data, setData] = useState<admissionLead[]>([]);
+    const [data, setData] = useState<AdmissionLead[]>([]);
 
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -25,7 +25,7 @@ const PrintAdmissionStudentData = () => {
         }
     }, []);
 
-    const columns = useMemo<ColumnDef<admissionLead>[]>(() => [
+    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

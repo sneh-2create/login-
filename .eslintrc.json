@@ -1,0 +1,49 @@
+{
+    "root": true,
+    "env": {
+        "browser": true,
+        "es2020": true,
+        "node": true
+    },
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 2020,
+        "sourceType": "module"
+    },
+    "extends": [
+        "eslint:recommended"
+    ],
+    "plugins": [
+        "check-file"
+    ],
+    "rules": {
+        "no-unused-vars": [
+            "error",
+            {
+                "argsIgnorePattern": "^_",
+                "varsIgnorePattern": "^_"
+            }
+        ],
+        "check-file/folder-naming-convention": [
+            "error",
+            {
+                "apps/admission-crm/src/components/*/": "PASCAL_CASE",
+                "apps/shell/src/components/*/": "PASCAL_CASE",
+                "packages/ui/src/components/*/": "PASCAL_CASE"
+            }
+        ],
+        "check-file/filename-naming-convention": [
+            "error",
+            {
+                "**/components/**/*.tsx": "PASCAL_CASE",
+                "**/hooks/**/*.ts": "CAMEL_CASE",
+                "**/services/**/*.ts": "CAMEL_CASE",
+                "**/utils/**/*.ts": "CAMEL_CASE",
+                "**/store/**/*.ts": "CAMEL_CASE"
+            },
+            {
+                "ignoreMiddleExtensions": true
+            }
+        ]
+    }
+}

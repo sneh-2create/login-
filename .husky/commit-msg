@@ -1,0 +1,7 @@
+pattern="GENAI=(YES|NO)"
+
+if ! grep -qE "$pattern" "$1"; then
+  echo "❌ Error: Commit message must contain 'GENAI=YES' or 'GENAI=NO' (case sensitive)."
+  echo "Example: 'fix: update login logic GENAI=YES'"
+  exit 1
+fi

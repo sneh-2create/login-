@@ -6,7 +6,7 @@ import { Button, Select, Title, Card, Input } from '@od-erp/ui';
 import { DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Search, Printer } from 'lucide-react';
-import { admissionSummaryTableRow } from '@od-erp/types';
+import { AdmissionSummaryTableRow } from '@od-erp/types';
 import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
 
@@ -14,8 +14,8 @@ const admissionSummaryReport = () => {
     // const [searchParams] = useSearchParams(); // Unused
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<admissionSummaryTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<admissionSummaryTableRow>[]>([]);
+    const [data, setData] = useState<AdmissionSummaryTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
     const [sessionList, setSessionList] = useState<any[]>([]);
 
     // Filters
@@ -84,7 +84,7 @@ const admissionSummaryReport = () => {
             const { processedRows, dynamicColumns } = processAdmissionSummaryData(res);
 
             // Define Table Columns
-            const tableCols: ColumnDef<admissionSummaryTableRow>[] = [
+            const tableCols: ColumnDef<AdmissionSummaryTableRow>[] = [
                 { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() || '' },
                 { accessorKey: 'course', header: displayNames.course },
                 { accessorKey: 'stream', header: displayNames.stream },

@@ -6,13 +6,13 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { sourceWiseReportTableRow } from '@od-erp/types';
+import { SourceWiseReportTableRow } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
 
 const sourceWiseReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<sourceWiseReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<sourceWiseReportTableRow>[]>([]);
+    const [data, setData] = useState<SourceWiseReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<SourceWiseReportTableRow>[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
@@ -83,7 +83,7 @@ const sourceWiseReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<sourceWiseReportTableRow>[] = [
+        const cols: ColumnDef<SourceWiseReportTableRow>[] = [
             {
                 accessorKey: 'position',
                 header: 'S.No',

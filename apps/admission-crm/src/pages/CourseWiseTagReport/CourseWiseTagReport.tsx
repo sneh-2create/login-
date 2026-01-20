@@ -7,12 +7,12 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { courseWiseTagReportTableRow } from '@od-erp/types';
+import { CourseWiseTagReportTableRow } from '@od-erp/types';
 
-const courseWiseTagReport = () => {
+const CourseWiseTagReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<courseWiseTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<courseWiseTagReportTableRow>[]>([]);
+    const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<CourseWiseTagReportTableRow>[]>([]);
 
     // Filters
     const [startDate, setStartDate] = useState<string>('');
@@ -74,7 +74,7 @@ const courseWiseTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<courseWiseTagReportTableRow>[] = [
+        const cols: ColumnDef<CourseWiseTagReportTableRow>[] = [
             {
                 accessorKey: 'position',
                 header: 'S.No',
@@ -98,7 +98,7 @@ const courseWiseTagReport = () => {
 
     const processData = (rawData: any[]) => {
         if (!rawData || !Array.isArray(rawData)) {
-            console.warn('courseWiseTagReport: Received invalid data', rawData);
+            console.warn('CourseWiseTagReport: Received invalid data', rawData);
             setData([]);
             return;
         }
@@ -132,7 +132,7 @@ const courseWiseTagReport = () => {
         localStorage.setItem('reportName', 'Course Wise Tag Report');
         // Assuming a generic print page or specific one. 
         // Angular used 'printCourseWiseTagReport'.
-        window.open('/admission/print/courseWiseTagReport', '_blank');
+        window.open('/admission/print/CourseWiseTagReport', '_blank');
     };
 
     return (
@@ -232,4 +232,4 @@ const courseWiseTagReport = () => {
     );
 };
 
-export default courseWiseTagReport;
+export default CourseWiseTagReport;

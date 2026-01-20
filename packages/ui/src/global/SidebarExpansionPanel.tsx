@@ -1,21 +1,21 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { menuItem, subMenuItem } from './types';
+import { MenuItem, SubMenuItem } from './types';
 import { useAppSelector, useAppDispatch, updatePreferences } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
 
 interface SidebarExpansionPanelProps {
-    item: menuItem | null;
+    item: MenuItem | null;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
 }
 
 // Helper component for rendering a column of submenu items
 const SubMenuColumn: React.FC<{
-    items: subMenuItem[];
-    isActive: (path?: string) => boolean;
+    items: SubMenuItem[];
+    isActive: (_path?: string) => boolean;
     onLinkClick: () => void;
-    onFavorite: (e: React.MouseEvent, item: subMenuItem) => void;
+    onFavorite: (_e: React.MouseEvent, _item: SubMenuItem) => void;
 }> = ({ items, isActive, onLinkClick, onFavorite }) => {
     return (
         <div className="flex flex-col gap-6 flex-1 min-w-0">
@@ -33,7 +33,7 @@ const SubMenuColumn: React.FC<{
 
                             {/* Submenu Items (Level 3) */}
                             <ul className="flex flex-col gap-0.5">
-                                {category.submenu.map((subItem, subIndex) => {
+                                {category.submenu.map((subItem: any, subIndex: number) => {
                                     const active = isActive(subItem.page);
                                     return (
                                         <li key={subIndex} className="relative group/item">
@@ -217,8 +217,8 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     const containerWidthClass = isMultiColumn ? 'w-[600px]' : 'w-[320px]';
 
     // Split items into Left (Evens) and Right (Odds) columns for masonry effect
-    const leftItems = item.submenu.filter((_, i) => i % 2 === 0);
-    const rightItems = item.submenu.filter((_, i) => i % 2 === 1);
+    const leftItems = item.submenu.filter((_: any, i: number) => i % 2 === 0);
+    const rightItems = item.submenu.filter((_: any, i: number) => i % 2 === 1);
 
     return (
         <div

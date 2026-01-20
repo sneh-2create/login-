@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import PrintLayout from '../../components/printLayout';
-import { vacantSeatsReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
+import { VacantSeatsReportTableRow } from '@od-erp/types';
 
 const printVacantSeatsReport = () => {
-    const [data, setData] = useState<vacantSeatsReportTableRow[]>([]);
+    const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
 
     const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
 

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { nepSubjectReportTableRow } from '@od-erp/types';
-import PrintLayout from '../../components/printLayout';
+import { NepSubjectReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
 
 const PrintNepSubjectReport = () => {
-    const [data, setData] = useState<nepSubjectReportTableRow[]>([]);
+    const [data, setData] = useState<NepSubjectReportTableRow[]>([]);
 
     useEffect(() => {
         const storedData = localStorage.getItem('nepSubjectData');

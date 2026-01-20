@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Select } from '@od-erp/ui';
 import { useSessions, useDailyCollectionReport } from '@od-erp/query';
-import { admissionDailyCollectionReportParams, admissionTransaction } from '@od-erp/types';
+import { AdmissionDailyCollectionReportParams, AdmissionTransaction } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, RefreshCw } from 'lucide-react';
@@ -22,7 +22,7 @@ const DailyCollectionReportPage = () => {
 
 
 
-    const payload: admissionDailyCollectionReportParams = useMemo(() => ({
+    const payload: AdmissionDailyCollectionReportParams = useMemo(() => ({
         entity: entityId,
         session: session ? [session] : [],
         startDate,
@@ -62,7 +62,7 @@ const DailyCollectionReportPage = () => {
         window.open('/admission/print/dailyCollectionReport', '_blank');
     };
 
-    const columns = useMemo<ColumnDef<admissionTransaction>[]>(() => [
+    const columns = useMemo<ColumnDef<AdmissionTransaction>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

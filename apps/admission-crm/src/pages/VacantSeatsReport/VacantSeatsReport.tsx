@@ -4,15 +4,15 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { vacantSeatsReportTableRow } from '@od-erp/types';
+import { VacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
 
 const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<vacantSeatsReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<vacantSeatsReportTableRow>[]>([]);
+    const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
 
     // Filters
     const [courses, setCourses] = useState<any[]>([]);
@@ -54,7 +54,7 @@ const vacantSeatsReport = () => {
 
     const setupColumns = () => {
         console.log("Setting up columns. ShowBatch:", showBatch);
-        const cols: ColumnDef<vacantSeatsReportTableRow>[] = [
+        const cols: ColumnDef<VacantSeatsReportTableRow>[] = [
             { accessorKey: 'position', header: 'S.No', cell: (info: any) => info.getValue() },
             { accessorKey: 'course', header: displayNames.course },
             { accessorKey: 'stream', header: displayNames.stream },

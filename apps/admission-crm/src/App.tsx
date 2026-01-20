@@ -1,58 +1,63 @@
+import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AdmissionSummaryReport from './pages/admissionSummaryReport/admissionSummaryReport';
-import PrintAdmissionSummaryReport from './pages/admissionSummaryReport/printAdmissionSummaryReport';
-import VacantSeatsReport from './pages/vacantSeatsReport/vacantSeatsReport';
-import PrintVacantSeatsReport from './pages/vacantSeatsReport/printVacantSeatsReport';
-import CounselorTagReport from './pages/counselorTagReport';
-import PrintCounselorTagReport from './pages/counselorTagReport/printCounselorTagReport';
-import SourceWiseReport from './pages/sourceWiseReport/sourceWiseReport';
-import PrintSourceWiseReport from './pages/sourceWiseReport/printSourceWiseReport';
-import CourseWiseTagReport from './pages/courseWiseTagReport/courseWiseTagReport';
-import PrintCourseWiseTagReport from './pages/courseWiseTagReport/printCourseWiseTagReport';
-import NepSubjectReport from './pages/nepSubjectReport/nepSubjectReport';
-import PrintNepSubjectReport from './pages/nepSubjectReport/printNepSubjectReport';
-import CounselorProductivityReport from './pages/counselorProductivityReport/counselorProductivityReport';
-import PrintCounselorProductivityReport from './pages/counselorProductivityReport/printCounselorProductivityReport';
-import AdmissionLeadLogs from './pages/admissionLeadLogs/admissionLeadLogs';
-import AdmissionFollowUps from './pages/admissionFollowUps/admissionFollowUps';
-import AdmissionLeads from './pages/admissionLeads/admissionLeads';
-import AdmissionStudentData from './pages/admissionStudentData/admissionStudentData';
-import AdmissionTransactionPage from './pages/admissionTransaction/admissionTransaction';
-import DailyCollectionReportPage from './pages/dailyCollectionReport/dailyCollectionReport';
-import PrintDailyCollectionReport from './pages/dailyCollectionReport/printDailyCollectionReport';
-import PrintAdmissionTransaction from './pages/admissionTransaction/printAdmissionTransaction';
-import PrintAdmissionStudentData from './pages/admissionStudentData/printAdmissionStudentData';
 import { QueryClientProvider, queryClient } from '@od-erp/query';
+import { LoadingState } from '@od-erp/ui';
+
+const AdmissionSummaryReport = lazy(() => import('./pages/AdmissionSummaryReport/AdmissionSummaryReport'));
+const PrintAdmissionSummaryReport = lazy(() => import('./pages/AdmissionSummaryReport/PrintAdmissionSummaryReport'));
+const VacantSeatsReport = lazy(() => import('./pages/VacantSeatsReport/VacantSeatsReport'));
+const PrintVacantSeatsReport = lazy(() => import('./pages/VacantSeatsReport/PrintVacantSeatsReport'));
+const CounselorTagReport = lazy(() => import('./pages/CounselorTagReport/CounselorTagReport'));
+const PrintCounselorTagReport = lazy(() => import('./pages/CounselorTagReport/PrintCounselorTagReport'));
+const SourceWiseReport = lazy(() => import('./pages/SourceWiseReport/SourceWiseReport'));
+const PrintSourceWiseReport = lazy(() => import('./pages/SourceWiseReport/PrintSourceWiseReport'));
+const CourseWiseTagReport = lazy(() => import('./pages/CourseWiseTagReport/CourseWiseTagReport'));
+const PrintCourseWiseTagReport = lazy(() => import('./pages/CourseWiseTagReport/PrintCourseWiseTagReport'));
+const NepSubjectReport = lazy(() => import('./pages/NepSubjectReport/NepSubjectReport'));
+const PrintNepSubjectReport = lazy(() => import('./pages/NepSubjectReport/PrintNepSubjectReport'));
+const CounselorProductivityReport = lazy(() => import('./pages/CounselorProductivityReport/CounselorProductivityReport'));
+const PrintCounselorProductivityReport = lazy(() => import('./pages/CounselorProductivityReport/PrintCounselorProductivityReport'));
+const AdmissionLeadLogs = lazy(() => import('./pages/AdmissionLeadLogs/AdmissionLeadLogs'));
+const AdmissionFollowUps = lazy(() => import('./pages/AdmissionFollowUps/AdmissionFollowUps'));
+const AdmissionLeads = lazy(() => import('./pages/AdmissionLeads/AdmissionLeads'));
+const AdmissionStudentData = lazy(() => import('./pages/AdmissionStudentData/AdmissionStudentData'));
+const PrintAdmissionStudentData = lazy(() => import('./pages/AdmissionStudentData/PrintAdmissionStudentData'));
+const AdmissionTransactionPage = lazy(() => import('./pages/AdmissionTransaction/AdmissionTransaction'));
+const PrintAdmissionTransaction = lazy(() => import('./pages/AdmissionTransaction/PrintAdmissionTransaction'));
+const DailyCollectionReportPage = lazy(() => import('./pages/DailyCollectionReport/DailyCollectionReport'));
+const PrintDailyCollectionReport = lazy(() => import('./pages/DailyCollectionReport/PrintDailyCollectionReport'));
 
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
-            <Routes>
-                <Route path="/admissionSummaryReports" element={<AdmissionSummaryReport />} />
-                <Route path="/print/admissionSummaryReport" element={<PrintAdmissionSummaryReport />} />
-                <Route path="/vacentSeats" element={<VacantSeatsReport />} />
-                <Route path="/counselorTagReport" element={<CounselorTagReport />} />
-                <Route path="/print/vacantSeats" element={<PrintVacantSeatsReport />} />
-                <Route path="/print/counselorTagReport" element={<PrintCounselorTagReport />} />
-                <Route path="/sourceWiseReport" element={<SourceWiseReport />} />
-                <Route path="/print/sourceWiseReport" element={<PrintSourceWiseReport />} />
-                <Route path="/courseWiseTagReport" element={<CourseWiseTagReport />} />
-                <Route path="/print/courseWiseTagReport" element={<PrintCourseWiseTagReport />} />
-                <Route path="/nepSubjectReport" element={<NepSubjectReport />} />
-                <Route path="/print/nepSubjectReport" element={<PrintNepSubjectReport />} />
-                <Route path="/counselorProductivityReport" element={<CounselorProductivityReport />} />
-                <Route path="/print/counselorProductivityReport" element={<PrintCounselorProductivityReport />} />
-                <Route path="/admissionLeadLogs" element={<AdmissionLeadLogs />} />
-                <Route path="/followUps" element={<AdmissionFollowUps />} />
-                <Route path="/admissionLeads" element={<AdmissionLeads />} />
-                <Route path="/studentData" element={<AdmissionStudentData />} />
-                <Route path="/print/admissionStudentData" element={<PrintAdmissionStudentData />} />
-                <Route path="/transaction" element={<AdmissionTransactionPage />} />
-                <Route path="/print/admissionTransaction" element={<PrintAdmissionTransaction />} />
-                <Route path="/dailyCollectionReport" element={<DailyCollectionReportPage />} />
-                <Route path="/print/dailyCollectionReport" element={<PrintDailyCollectionReport />} />
-                <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
-            </Routes>
+            <Suspense fallback={<LoadingState />}>
+                <Routes>
+                    <Route path="/admissionSummaryReports" element={<AdmissionSummaryReport />} />
+                    <Route path="/print/admissionSummaryReport" element={<PrintAdmissionSummaryReport />} />
+                    <Route path="/vacentSeats" element={<VacantSeatsReport />} />
+                    <Route path="/print/vacantSeats" element={<PrintVacantSeatsReport />} />
+                    <Route path="/counselorTagReport" element={<CounselorTagReport />} />
+                    <Route path="/print/counselorTagReport" element={<PrintCounselorTagReport />} />
+                    <Route path="/sourceWiseReport" element={<SourceWiseReport />} />
+                    <Route path="/print/sourceWiseReport" element={<PrintSourceWiseReport />} />
+                    <Route path="/courseWiseTagReport" element={<CourseWiseTagReport />} />
+                    <Route path="/print/courseWiseTagReport" element={<PrintCourseWiseTagReport />} />
+                    <Route path="/nepSubjectReport" element={<NepSubjectReport />} />
+                    <Route path="/print/nepSubjectReport" element={<PrintNepSubjectReport />} />
+                    <Route path="/counselorProductivityReport" element={<CounselorProductivityReport />} />
+                    <Route path="/print/counselorProductivityReport" element={<PrintCounselorProductivityReport />} />
+                    <Route path="/admissionLeadLogs" element={<AdmissionLeadLogs />} />
+                    <Route path="/followUps" element={<AdmissionFollowUps />} />
+                    <Route path="/admissionLeads" element={<AdmissionLeads />} />
+                    <Route path="/studentData" element={<AdmissionStudentData />} />
+                    <Route path="/print/admissionStudentData" element={<PrintAdmissionStudentData />} />
+                    <Route path="/transaction" element={<AdmissionTransactionPage />} />
+                    <Route path="/print/admissionTransaction" element={<PrintAdmissionTransaction />} />
+                    <Route path="/dailyCollectionReport" element={<DailyCollectionReportPage />} />
+                    <Route path="/print/dailyCollectionReport" element={<PrintDailyCollectionReport />} />
+                    <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
+                </Routes>
+            </Suspense>
         </QueryClientProvider>
     );
 }

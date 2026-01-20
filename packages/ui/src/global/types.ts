@@ -1,5 +1,6 @@
 // import React from 'react';
-export type { menuItem, subMenuItem, subSubMenuItem } from '@od-erp/types';
+export type { MenuItem, SubMenuItem, SubSubMenuItem } from '@od-erp/types';
+// Re-export or define UI specific ones if needed
 
 export interface SidebarProps {
     collapsed: boolean;

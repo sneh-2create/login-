@@ -1,9 +1,9 @@
 import apiClient from '../../client';
-import { admissionLeadLogPayload, admissionLeadLogResponse } from '@od-erp/types';
+import { AdmissionLeadLogPayload, AdmissionLeadLogResponse } from '@od-erp/types';
 
 export const admissionLeadLogsService = {
-    listAdmissionLeadLogs: async (payload: admissionLeadLogPayload) => {
-        const response = await apiClient.post<admissionLeadLogResponse>('/list/admissionLeadLogs', payload);
+    listAdmissionLeadLogs: async (payload: AdmissionLeadLogPayload) => {
+        const response = await apiClient.post<AdmissionLeadLogResponse>('/list/admissionLeadLogs', payload);
         return response.data;
     },
 
