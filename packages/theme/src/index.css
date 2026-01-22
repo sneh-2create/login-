@@ -62,5 +62,34 @@
         --border-radius-md: 0.25rem;
         --border-radius-lg: 0.3rem;
         --border-color: #dee2e6;
+
+        /* UI Design System Colors */
+        --ui-gray-50: #f9fafb;
+        --ui-gray-100: #f3f4f6;
+        --ui-gray-200: #e5e7eb;
+        --ui-gray-300: #d1d5db;
+        --ui-gray-400: #9ca3af;
+        --ui-gray-500: #6b7280;
+        --ui-gray-600: #4b5563;
+        --ui-gray-700: #374151;
+        --ui-gray-800: #1f2937;
+        --ui-gray-900: #111827;
+        --ui-green: #4caf50;
+        --ui-orange: #ff6b35;
+        --ui-red: #ff5252;
+        --ui-orange-light: #f97316;
+
+        /* UI Letter Spacing */
+        --ui-letter-spacing-tight: -0.5px;
+        --ui-letter-spacing-tighter: -0.225px;
+        --ui-letter-spacing-wide: 0.05px;
+
+        /* Status Badge Background Colors */
+        --ui-status-paid-bg: #d4edd6;
+        --ui-status-pending-bg: #ffedd5;
+        --ui-status-failed-bg: #f8d7da;
+
+        /* UI Input Placeholder Color */
+        --ui-placeholder-color: #adaebc;
     }
 }

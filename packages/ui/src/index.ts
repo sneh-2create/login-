@@ -8,6 +8,7 @@ export * from './components/atoms/Select';
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
 export * from './components/DataTable/DataTable';
+export * from './components/StatusBadge/StatusBadge';
 
 // Molecules
 export * from './components/DateRangeFilter/DateRangeFilter';

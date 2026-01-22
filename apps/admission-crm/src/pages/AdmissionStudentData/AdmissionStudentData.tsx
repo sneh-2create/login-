@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
-import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
+import { Card, DataTable, Button, Select, StatusBadge } from '@od-erp/ui';
+import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta } from '@od-erp/types';
 import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -29,7 +29,7 @@ const AdmissionStudentData = () => {
     const [selectedStage, setSelectedStage] = useState('Total');
     const [searchTerm, setSearchTerm] = useState('');
     const [pageNumber, setPageNumber] = useState(1);
-    const [pageSize] = useState(10);
+    const [pageSize, setPageSize] = useState(10);
     const [searchBy, setSearchBy] = useState('name');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -282,12 +282,22 @@ const AdmissionStudentData = () => {
         setActionMenuPosition(null);
     };
 
-    // Columns
+    // Handle search from DataTable - debounced to avoid too many API calls
+    const handleSearch = (query: string) => {
+        setSearchTerm(query);
+        setPageNumber(1);
+    };
+
+    // Columns with dynamic styling
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',
             cell: info => (pageNumber - 1) * pageSize + info.row.index + 1,
+            meta: {
+                width: 78,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Action',
@@ -312,24 +322,42 @@ const AdmissionStudentData = () => {
             accessorKey: 'currentStage',
             cell: info => {
                 const val = info.getValue() as string;
-                return (
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold 
-                        ${val === 'Approved' ? 'bg-green-100 text-green-800' :
-                            val === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                'bg-blue-100 text-blue-800'}`}>
-                        {val}
-                    </span>
-                );
+                // Map stage to StatusBadge variant
+                let variant: 'paid' | 'pending' | 'failed' | 'custom' = 'custom';
+                if (val === 'Approved') {
+                    variant = 'paid';
+                } else if (val === 'Rejected' || val === 'Withdrawn') {
+                    variant = 'failed';
+                } else {
+                    variant = 'pending';
+                }
+                return <StatusBadge label={val} variant={variant} />;
             },
+            meta: {
+                width: 132,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Student Name',
             accessorKey: 'name',
-            cell: info => <span className="font-medium text-blue-600 cursor-pointer">{info.getValue() as string}</span>
+            cell: info => <span className="font-medium text-ui-orange cursor-pointer">{info.getValue() as string}</span>,
+            meta: {
+                width: 217,
+                align: 'left' as const,
+                isBold: true,
+                textColor: '#000',
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Form No.',
             accessorKey: 'applicationNumber',
+            meta: {
+                width: 133,
+                align: 'center' as const,
+                fontWeight: 500,
+                textColor: 'text-ui-orange',
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Date',
@@ -338,6 +366,10 @@ const AdmissionStudentData = () => {
                 const val = info.getValue();
                 return val ? format(new Date(val as number), 'dd-MMM-yyyy') : '-';
             },
+            meta: {
+                width: 111,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Tags',
@@ -353,25 +385,45 @@ const AdmissionStudentData = () => {
                         )) : '-'}
                     </div>
                 );
-            }
+            },
+            meta: {
+                width: 150,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Course',
             accessorKey: 'course',
+            meta: {
+                width: 164,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Phone',
             accessorKey: 'phone',
+            meta: {
+                width: 120,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Father Name',
             accessorKey: 'fatherName',
-            cell: info => info.getValue() || '-'
+            cell: info => info.getValue() || '-',
+            meta: {
+                width: 150,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
             header: 'Receipt Id',
             id: 'receiptId',
-            cell: () => '-'
+            cell: () => '-',
+            meta: {
+                width: 120,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
         },
     ], [pageNumber, pageSize]);
 
@@ -480,66 +532,72 @@ const AdmissionStudentData = () => {
 
             {/* Search Bar */}
             <Card className="mb-4 !p-4">
-                <div className="flex gap-4">
-                    <div className="w-1/4">
-                        <Select
-                            label=""
-                            options={[
-                                { label: 'Search By', value: '' },
-                                { label: 'Name', value: 'name' },
-                                { label: 'Application Number', value: 'applicationNumber' },
-                                { label: 'Mobile No.', value: 'phone' }
-                            ]}
-                            value={searchBy}
-                            onChange={(e) => setSearchBy(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex-1">
-                        <Input
-                            label=""
-                            placeholder="Search by Name/Application No./Mobile No./Father Name"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
+                <div className="w-1/4">
+                    <Select
+                        label="Search By"
+                        options={[
+                            { label: 'Name', value: 'name' },
+                            { label: 'Application Number', value: 'applicationNumber' },
+                            { label: 'Mobile No.', value: 'phone' },
+                            { label: 'Father Name', value: 'fatherName' }
+                        ]}
+                        value={searchBy}
+                        onChange={(e) => setSearchBy(e.target.value)}
+                    />
                 </div>
             </Card>
 
-            {/* Data Table */}
-            <div className="bg-white rounded-lg shadow">
+            {/* Data Table with built-in search */}
+            <Card className="overflow-hidden">
                 <div className="p-4 border-b font-semibold text-gray-700 uppercase text-sm tracking-wider text-center">
                     APPLICATIONS
                 </div>
-
-                <div className="w-full max-w-full overflow-x-auto">
-                    <DataTable
-                        columns={columns}
-                        data={data?.data || []}
-                        isLoading={isLoading}
-                    />
-                </div>
-
-                {/* Pagination Footer */}
-                <div className="p-3 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600">
-                    <span>Showing {data?.data?.length || 0} of {data?.totalCount || 0} entries</span>
-                    <div className="flex gap-2">
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={pageNumber === 1}
-                            onClick={() => setPageNumber(p => p - 1)}
+                <DataTable
+                    columns={columns}
+                    data={data?.data || []}
+                    isLoading={isLoading}
+                    showSearch={true}
+                    searchPlaceholder="Search by Name/Application No./Mobile No./Father Name"
+                    onSearch={handleSearch}
+                    showPagination={false}
+                    maxHeight="600px"
+                />
+                {/* Server-side Pagination Footer */}
+                <div className="p-3 border-t bg-ui-gray-50 flex justify-between items-center text-xs text-ui-gray-600">
+                    <span>Showing {((pageNumber - 1) * pageSize) + 1} – {Math.min(pageNumber * pageSize, data?.totalCount || 0)} of {data?.totalCount || 0}</span>
+                    <div className="flex items-center gap-3">
+                        <span className="text-sm">Items per page:</span>
+                        <select
+                            className="w-[70px] h-8 px-3 pr-7 border border-ui-gray-200 rounded bg-white text-sm text-ui-gray-700 appearance-none cursor-pointer outline-none"
+                            value={pageSize}
+                            onChange={(e) => {
+                                setPageSize(Number(e.target.value));
+                                setPageNumber(1);
+                            }}
                         >
-                            Previous
-                        </button>
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={!data || (data.data.length < pageSize && (pageNumber * pageSize >= (data.totalCount || 0)))}
-                            onClick={() => setPageNumber(p => p + 1)}
-                        >
-                            Next
-                        </button>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                            <option value={50}>50</option>
+                        </select>
+                        <div className="flex gap-1">
+                            <button
+                                className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded bg-white cursor-pointer hover:bg-ui-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={pageNumber === 1}
+                                onClick={() => setPageNumber(p => p - 1)}
+                            >
+                                ←
+                            </button>
+                            <button
+                                className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded bg-white cursor-pointer hover:bg-ui-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={!data || (pageNumber * pageSize >= (data.totalCount || 0))}
+                                onClick={() => setPageNumber(p => p + 1)}
+                            >
+                                →
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Card>
 
             <AddStudentModal
                 isOpen={isAddModalOpen}

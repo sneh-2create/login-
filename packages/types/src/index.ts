@@ -80,3 +80,4 @@ export interface SubSubMenuItem {
 
 export * from './dashboard';
 export * from './admission';
+export * from './table';
