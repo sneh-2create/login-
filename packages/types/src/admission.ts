@@ -131,6 +131,8 @@ export interface AdmissionLeadLogPayload {
     pageSize: number;
     pageNumber: number;
     memberDetails?: boolean;
+    search?: string;
+    phone?: string;
 }
 
 export interface AdmissionLeadLogResponse {
@@ -197,6 +199,8 @@ export interface AdmissionLead {
     status?: string;
     currentStage?: string;
     fatherName?: string;
+    timeline?: any[];
+    [key: string]: any; // Allow dynamic document fields
 }
 
 export interface AdmissionLeadPayload {

@@ -6,10 +6,11 @@ import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Trash2, Eye, RefreshCw } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { useAppSelector } from '@od-erp/store';
+import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
 const AdmissionTransactionPage = () => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const dispatch = useAppDispatch();
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
@@ -81,6 +82,10 @@ const AdmissionTransactionPage = () => {
 
     const handleRefresh = () => {
         refetch();
+    };
+
+    const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        dispatch(setAcademicSession(e.target.value));
     };
 
     // Columns
@@ -159,7 +164,7 @@ const AdmissionTransactionPage = () => {
                         <select
                             className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
                             value={session}
-                            disabled
+                            onChange={handleSessionChange}
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>

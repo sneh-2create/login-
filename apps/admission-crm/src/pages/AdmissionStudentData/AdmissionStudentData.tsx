@@ -6,9 +6,12 @@ import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
-import AddStudentModal from './components/AddStudentModal';
-import FilterModal from './components/FilterModal';
-import UploadExcelModal from './components/UploadExcelModal';
+import AddStudentModal from './components/addStudentModal';
+import FilterModal from './components/filterModal';
+import UploadExcelModal from './components/uploadExcelModal';
+import TimelineModal from './components/timelineModal';
+import ViewDocumentsModal from './components/viewDocumentsModal';
+import { MoreVertical, Clock, FileText } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -29,6 +32,12 @@ const AdmissionStudentData = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
     const [isExporting, setIsExporting] = useState(false);
+    const [timelineStudent, setTimelineStudent] = useState<admissionLead | null>(null);
+    const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+    const [documentStudent, setDocumentStudent] = useState<admissionLead | null>(null);
+    const [isViewDocumentsOpen, setIsViewDocumentsOpen] = useState(false);
+    const [openActionId, setOpenActionId] = useState<string | null>(null);
+    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
@@ -161,6 +170,60 @@ const AdmissionStudentData = () => {
         dispatch(setAcademicSession(e.target.value));
     };
 
+    const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        if (openActionId === id) {
+            setOpenActionId(null);
+            setActionMenuPosition(null);
+        } else {
+            const rect = event.currentTarget.getBoundingClientRect();
+            setOpenActionId(id);
+            // Position: below the button, aligned to the right if possible, or left
+            // Using fixed positioning relative to viewport
+            setActionMenuPosition({
+                top: rect.bottom + 5,
+                left: rect.left
+            });
+        }
+    };
+
+    // Close dropdown when clicking outside
+    const handleDocumentClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        // Check if click is inside the menu
+        if (!target.closest('.action-menu-dropdown')) {
+            setOpenActionId(null);
+            setActionMenuPosition(null);
+        }
+    };
+
+    // Add event listener for clicking outside
+    useMemo(() => {
+        if (typeof document !== 'undefined') {
+            document.addEventListener('click', handleDocumentClick);
+        }
+        return () => {
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('click', handleDocumentClick);
+            }
+        };
+    }, []);
+
+    const handleViewTimeline = (student: admissionLead) => {
+        setTimelineStudent(student);
+        setIsTimelineOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewDocuments = (student: admissionLead) => {
+        setDocumentStudent(student);
+        setIsViewDocumentsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+
 
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
@@ -172,13 +235,19 @@ const AdmissionStudentData = () => {
         {
             header: 'Action',
             id: 'actions',
-            cell: () => (
-                <div className="flex space-x-2">
-                    <button className="text-blue-500 hover:text-blue-700 font-medium text-sm">
-                        View
-                    </button>
-                </div>
-            )
+            cell: info => {
+                const id = info.row.original._id;
+                return (
+                    <div className="relative">
+                        <button
+                            onClick={(e) => toggleActionMenu(id, e)}
+                            className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                        >
+                            <MoreVertical size={16} />
+                        </button>
+                    </div>
+                )
+            }
         },
         {
             header: 'Current Stage',
@@ -425,6 +494,50 @@ const AdmissionStudentData = () => {
                 isOpen={isUploadModalOpen}
                 onClose={() => setIsUploadModalOpen(false)}
                 onUpload={handleUploadExcel}
+            />
+
+            {/* Fixed Position Dropdown Menu */}
+            {openActionId && actionMenuPosition && (
+                <div
+                    className="fixed bg-white rounded-md shadow-lg border border-gray-100 z-[9999] overflow-hidden w-40 action-menu-dropdown"
+                    style={{
+                        top: actionMenuPosition.top,
+                        left: actionMenuPosition.left
+                    }}
+                >
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewTimeline(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Clock size={14} className="mr-2 text-blue-500" />
+                        View Timeline
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewDocuments(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <FileText size={14} className="mr-2 text-green-500" />
+                        View Documents
+                    </button>
+                </div>
+            )}
+
+            <TimelineModal
+                isOpen={isTimelineOpen}
+                onClose={() => setIsTimelineOpen(false)}
+                student={timelineStudent}
+            />
+
+            <ViewDocumentsModal
+                isOpen={isViewDocumentsOpen}
+                onClose={() => setIsViewDocumentsOpen(false)}
+                student={documentStudent}
             />
         </div>
     );
