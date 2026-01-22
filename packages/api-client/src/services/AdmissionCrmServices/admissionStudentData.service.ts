@@ -25,5 +25,37 @@ export const admissionStudentDataService = {
     addAdmissionStudentData: async (payload: any) => {
         const response = await apiClient.post<any>('/add/admissionStudentData', payload);
         return response.data;
+    },
+
+    getStudentTimeline: async (studentId: string) => {
+        const response = await apiClient.get<any[]>(`/view/studentTimeline?studentId=${studentId}`);
+        return response.data;
+    },
+    // Document Upload
+    getPresignedUrl: async (qac: string, payload: any) => {
+        const response = await apiClient.post<any>(`/getPresignedUrl?qac=${qac}`, payload);
+        return response.data;
+    },
+
+    uploadAdmissionDocuments: async (id: string, qac: string, payload: any) => {
+        const response = await apiClient.post<any>(`/uploadAdmissionDocuments?id=${id}&qac=${qac}`, payload);
+        return response.data;
+    },
+
+    // Helper to upload file to S3 via presigned URL
+    uploadFileToUrl: async (url: string, file: File, contentType: string) => {
+        // Use fetch directly as this is an external URL, not the API client
+        const response = await fetch(url, {
+            method: 'PUT',
+            body: file,
+            headers: {
+                'Content-Type': contentType
+            }
+        });
+        if (!response.ok) {
+            throw new Error('Failed to upload file to storage');
+        }
+        return response;
     }
 };
+

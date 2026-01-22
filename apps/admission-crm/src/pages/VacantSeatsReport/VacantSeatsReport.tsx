@@ -1,18 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { vacantSeatsReportService } from '@od-erp/api-client';
-import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { vacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
+import { ReportHeader } from './components/ReportHeader';
+import { FilterSection } from './components/FilterSection';
+import { SearchInput } from './components/SearchInput';
+import { ReportTable } from './components/ReportTable';
+import { TablePagination } from './components/TablePagination';
 
 const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<vacantSeatsReportTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<vacantSeatsReportTableRow>[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
 
     // Filters
     const [courses, setCourses] = useState<any[]>([]);
@@ -55,21 +61,57 @@ const vacantSeatsReport = () => {
     const setupColumns = () => {
         console.log("Setting up columns. ShowBatch:", showBatch);
         const cols: ColumnDef<vacantSeatsReportTableRow>[] = [
-            { accessorKey: 'position', header: 'S.No', cell: (info: any) => info.getValue() },
-            { accessorKey: 'course', header: displayNames.course },
-            { accessorKey: 'stream', header: displayNames.stream },
+            { 
+                accessorKey: 'position', 
+                header: 'S.No', 
+                cell: (info: any) => <span className="text-gray-500">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'course', 
+                header: displayNames.course,
+                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'stream', 
+                header: displayNames.stream,
+                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+            },
         ];
 
         if (showBatch) {
-            cols.push({ accessorKey: 'batch', header: displayNames.batch });
+            cols.push({ 
+                accessorKey: 'batch', 
+                header: displayNames.batch,
+                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+            });
         }
 
         cols.push(
-            { accessorKey: 'name', header: 'Name' },
-            { accessorKey: 'seats', header: 'Seats' },
-            { accessorKey: 'availableSeats', header: 'Available Seats' },
-            { accessorKey: 'filledSeats', header: 'Filled Seats' },
-            { accessorKey: 'pendingApplications', header: 'Pending Applications' }
+            { 
+                accessorKey: 'name', 
+                header: 'Name',
+                cell: (info: any) => <span className="font-medium text-gray-900">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'seats', 
+                header: 'Seats',
+                cell: (info: any) => <span className="text-gray-900">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'availableSeats', 
+                header: 'Available Seats',
+                cell: (info: any) => <span className="font-medium text-green-600">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'filledSeats', 
+                header: 'Filled Seats',
+                cell: (info: any) => <span className="font-medium text-blue-600">{info.getValue()}</span>
+            },
+            { 
+                accessorKey: 'pendingApplications', 
+                header: 'Pending Applications',
+                cell: (info: any) => <span className="font-medium text-orange-600">{info.getValue()}</span>
+            }
         );
 
         setColumns(cols);
@@ -157,91 +199,86 @@ const vacantSeatsReport = () => {
         window.open('/admission/print/vacantSeats', '_blank');
     };
 
+    // Filter data based on search query
+    const filteredData = useMemo(() => {
+        if (!searchQuery) return data;
+        
+        return data.filter((row: any) => {
+            return Object.values(row).some((value) =>
+                String(value).toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        });
+    }, [data, searchQuery]);
+
+    // Pagination logic
+    const paginatedData = useMemo(() => {
+        const startIndex = (currentPage - 1) * pageSize;
+        return filteredData.slice(startIndex, startIndex + pageSize);
+    }, [filteredData, currentPage, pageSize]);
+
+    const totalPages = Math.ceil(filteredData.length / pageSize);
+
+    // Reset to page 1 when data or search query changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [data, searchQuery]);
+
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-xs text-gray-500 mb-1 cursor-pointer">
-                        Dashboard &gt; Admission Reports &gt; <b>{displayNames.subjectCombination} Report</b>
-                    </div>
-                    <Title variant="pageTitle">{displayNames.subjectCombination} Report</Title>
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handlePrint}
-                        leftIcon={<Printer size={16} />}
-                    >
-                        Print
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        isLoading={exportLoading}
-                        leftIcon={<Download size={16} />}
-                    >
-                        Excel
-                    </Button>
-                </div>
-            </div>
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-8 gap-6">
+            <ReportHeader
+                displayName={displayNames.subjectCombination}
+                onExport={handleExport}
+                onPrint={handlePrint}
+                exportLoading={exportLoading}
+            />
 
-            <Card className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Data for Course</label>
-                        <Select
-                            value={selectedCourse?.name || ''}
-                            onChange={(e) => {
-                                const course = courses.find(c => c.name === e.target.value);
-                                handleCourseChange(course);
-                            }}
-                            options={[
-                                { value: '', label: 'Select Course' },
-                                ...courses.map(c => ({ value: c.name, label: c.name }))
-                            ]}
-                        />
-                    </div>
+            <FilterSection
+                courses={courses}
+                selectedCourse={selectedCourse}
+                onCourseChange={handleCourseChange}
+                streams={streams}
+                selectedStream={selectedStream}
+                onStreamChange={setSelectedStream}
+                batches={batches}
+                selectedBatch={selectedBatch}
+                onBatchChange={setSelectedBatch}
+                onSearch={handleSearch}
+                loading={loading}
+                showBatch={showBatch}
+                displayNames={{
+                    course: displayNames.course,
+                    stream: displayNames.stream,
+                    batch: displayNames.batch,
+                }}
+            />
 
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.stream}</label>
-                        <Select
-                            value={selectedStream}
-                            onChange={(e) => setSelectedStream(e.target.value)}
-                            options={[
-                                { value: '', label: `Select ${displayNames.stream}` },
-                                ...streams.map(s => ({ value: s, label: s }))
-                            ]}
-                        />
-                    </div>
-
-                    {showBatch && (
-                        <div>
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.batch}</label>
-                            <Select
-                                value={selectedBatch}
-                                onChange={(e) => setSelectedBatch(e.target.value)}
-                                options={[
-                                    { value: '', label: `Select ${displayNames.batch}` },
-                                    ...batches.map(b => ({ value: b, label: b }))
-                                ]}
-                            />
-                        </div>
-                    )}
-
-                    <div>
-                        <Button onClick={handleSearch} isLoading={loading}>Go</Button>
-                    </div>
-                </div>
-            </Card>
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="w-full max-w-full overflow-x-auto">
-                    <DataTable
-                        columns={columns}
-                        data={data}
-                        isLoading={loading}
+            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-gray-100">
+                    <SearchInput
+                        onSearch={setSearchQuery}
+                        placeholder="Search..."
                     />
                 </div>
+
+                <ReportTable
+                    columns={columns}
+                    data={paginatedData}
+                    isLoading={loading}
+                />
+
+                {filteredData.length > 0 && (
+                    <TablePagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        pageSize={pageSize}
+                        totalItems={filteredData.length}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(size) => {
+                            setPageSize(size);
+                            setCurrentPage(1);
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

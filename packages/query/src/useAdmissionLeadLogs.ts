@@ -1,0 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
+import { admissionLeadLogsService } from '@od-erp/api-client';
+import { admissionLeadLogPayload } from '@od-erp/types';
+
+export const useAdmissionLeadLogs = (payload: admissionLeadLogPayload) => {
+    return useQuery({
+        queryKey: ['admissionLeadLogs', payload],
+        queryFn: () => admissionLeadLogsService.listAdmissionLeadLogs(payload),
+        enabled: !!payload.session && !!payload.entity,
+    });
+};
