@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import { useAdmissionLeadLogs, useCounselors } from '@od-erp/query';
+import { useAdmissionLeadLog, useCounselors } from '@od-erp/query';
 import { Button, Title, Card, DataTable, Input, Select } from '@od-erp/ui';
+import { AdmissionLeadLog } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { admissionLeadLog } from '@od-erp/types';
 import { Phone, Eye, Trash2 } from 'lucide-react';
 import { admissionLeadLogsService } from '@od-erp/api-client';
 import { useAppSelector } from '@od-erp/store';
@@ -57,7 +57,7 @@ const AdmissionLeadLogs = () => {
         memberDetails: showMemberDetails
     }), [entityId, session, pageNumber, pageSize, selectedCounselor, startDate, endDate, selectedSource, selectedStatus, selectedCallStatus, showMemberDetails]);
 
-    const { data: reportData, isLoading, refetch } = useAdmissionLeadLogs(queryPayload);
+    const { data: reportData, isLoading, refetch } = useAdmissionLeadLog(queryPayload);
 
     // Options
     const counselorOptions = counselors?.map((c: any) => ({
@@ -128,7 +128,7 @@ const AdmissionLeadLogs = () => {
     };
 
     // Columns
-    const columns: ColumnDef<admissionLeadLog>[] = [
+    const columns: ColumnDef<AdmissionLeadLog>[] = [
         {
             accessorKey: 'position',
             header: 'S.No',
@@ -281,8 +281,8 @@ const AdmissionLeadLogs = () => {
                     >
                         Previous
                     </Button>
-                    <span className="text-sm text-gray-600 font-medium">
-                        Page {pageNumber} {reportData?.count ? `of ${Math.ceil(reportData.count / pageSize)}` : ''}
+                    <span className="text-sm text-gray-700">
+                        Page {pageNumber} {reportData?.count ? `of ${Math.ceil(reportData.count / pageSize)} ` : ''}
                     </span>
                     <Button
                         variant="outline"

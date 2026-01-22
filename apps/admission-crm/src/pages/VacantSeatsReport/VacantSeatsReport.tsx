@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { vacantSeatsReportService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import * as xlsx from 'xlsx';
-import { vacantSeatsReportTableRow } from '@od-erp/types';
+import { VacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
 import { ReportHeader } from './components/ReportHeader';

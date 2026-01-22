@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData } from '@od-erp/query';
-import { admissionLead, admissionStudentDataPayload } from '@od-erp/types';
+import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
 import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -30,7 +30,7 @@ const AdmissionStudentData = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const [currentFilters, setCurrentFilters] = useState<Partial<admissionStudentDataPayload>>({});
+    const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
     const [isExporting, setIsExporting] = useState(false);
     const [timelineStudent, setTimelineStudent] = useState<admissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
@@ -52,8 +52,8 @@ const AdmissionStudentData = () => {
     const { data: stageCounts, refetch: refetchStages } = useAdmissionStages(entityId, session);
 
     // Payload for student data
-    const payload: admissionStudentDataPayload = useMemo(() => {
-        const p: admissionStudentDataPayload = {
+    const payload: AdmissionStudentDataPayload = useMemo(() => {
+        const p: AdmissionStudentDataPayload = {
             entity: entityId,
             session: session,
             pageNumber,
@@ -94,7 +94,7 @@ const AdmissionStudentData = () => {
         setIsExporting(true);
         try {
             // Create payload to fetch all data
-            const exportPayload: admissionStudentDataPayload = {
+            const exportPayload: AdmissionStudentDataPayload = {
                 ...payload,
                 pageNumber: 1,
                 pageSize: 100000, // Fetch all data
@@ -135,7 +135,7 @@ const AdmissionStudentData = () => {
         window.open('/admission/print/admissionStudentData', '_blank');
     };
 
-    const handleApplyFilters = (filters: Partial<admissionStudentDataPayload>) => {
+    const handleApplyFilters = (filters: Partial<AdmissionStudentDataPayload>) => {
         setCurrentFilters(filters);
         setIsFilterModalOpen(false);
         setPageNumber(1);
@@ -226,7 +226,7 @@ const AdmissionStudentData = () => {
 
 
     // Columns
-    const columns = useMemo<ColumnDef<admissionLead>[]>(() => [
+    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

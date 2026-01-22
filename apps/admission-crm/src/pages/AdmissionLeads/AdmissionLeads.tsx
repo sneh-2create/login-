@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
-import { useAdmissionLeads, useAddAdmissionLead, useCounselors, useSessions } from '@od-erp/query';
-import { admissionLead, admissionLeadPayload } from '@od-erp/types';
+import { useAdmissionLead, useAddAdmissionLead, useCounselors, useSessions } from '@od-erp/query';
+import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { Filter, Plus, Settings, Edit } from 'lucide-react';
@@ -38,7 +38,7 @@ const AdmissionLeads = () => {
     const { data: counselors } = useCounselors(entityId, 'counselor');
 
     // Derived Payload
-    const payload: admissionLeadPayload = useMemo(() => ({
+    const payload: AdmissionLeadPayload = useMemo(() => ({
         entity: entityId,
         session,
         pageNumber: pagination.pageIndex + 1,
@@ -47,7 +47,7 @@ const AdmissionLeads = () => {
         searchType: globalSearch ? undefined : searchType,
     }), [entityId, session, pagination, searchTerm, searchType, globalSearch]);
 
-    const { data, isLoading } = useAdmissionLeads(payload);
+    const { data, isLoading } = useAdmissionLead(payload);
     const addLeadMutation = useAddAdmissionLead();
 
     // Handlers
@@ -72,7 +72,7 @@ const AdmissionLeads = () => {
     };
 
     // Columns
-    const columns = useMemo<ColumnDef<admissionLead>[]>(
+    const columns = useMemo<ColumnDef<AdmissionLead>[]>(
         () => [
             {
                 header: 'Action',

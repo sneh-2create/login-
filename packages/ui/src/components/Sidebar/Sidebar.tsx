@@ -3,7 +3,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useMenu } from '@od-erp/store';
 import { cn } from '../../utils';
-import { getIconSrc } from './iconMapping';
+import { getIconSrc } from './IconMapping';
 import { LayoutDashboard } from 'lucide-react';
 import { SidebarItem } from '../../global/SidebarItem';
 import { SidebarExpansionPanel } from '../../global/SidebarExpansionPanel';

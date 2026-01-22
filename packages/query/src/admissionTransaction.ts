@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { admissionTransactionService } from '@od-erp/api-client';
-import { admissionTransaction, admissionTransactionPayload } from '@od-erp/types';
+import { AdmissionTransaction, AdmissionTransactionPayload } from '@od-erp/types';
 
-export const useAdmissionTransactions = (payload: admissionTransactionPayload) => {
-    return useQuery<admissionTransaction[]>({
+export const useAdmissionTransactions = (payload: AdmissionTransactionPayload) => {
+    return useQuery<AdmissionTransaction[]>({
         queryKey: ['admissionTransactions', payload],
         queryFn: () => admissionTransactionService.listAdmissionTransaction(payload),
         enabled: !!payload.entity && !!payload.session,
@@ -12,9 +12,9 @@ export const useAdmissionTransactions = (payload: admissionTransactionPayload) =
 };
 
 export const useAdmissionTransaction = (id: string) => {
-    return useQuery<admissionTransaction>({
+    return useQuery<AdmissionTransaction>({
         queryKey: ['admissionTransaction', id],
-        queryFn: () => admissionTransactionService.viewAdmissionTransaction(id),
+        queryFn: () => admissionTransactionService.getAdmissionTransactionById(id),
         enabled: !!id,
     });
 };

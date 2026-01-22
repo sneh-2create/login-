@@ -1,9 +1,9 @@
 import apiClient from '../client';
-import { session } from '@od-erp/types';
+import { Session } from '@od-erp/types';
 
 export const sessionService = {
     getSessionList: async (entityId: string) => {
-        const response = await apiClient.get<session[]>(`/list/session?entity=${entityId}`);
+        const response = await apiClient.get<Session[]>(`/list/session?entity=${entityId}`);
         return response.data;
     },
 

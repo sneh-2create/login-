@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { counselorProductivityReportTableRow } from '@od-erp/types';
-import PrintLayout from '../../components/printLayout';
+import { CounselorProductivityReportData } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
 import { DataTable } from '@od-erp/ui';
 
 const PrintCounselorProductivityReport = () => {
-    const [data, setData] = useState<counselorProductivityReportTableRow[]>([]);
+    const [data, setData] = useState<CounselorProductivityReportData[]>([]);
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [stageType, setStageType] = useState<string>('lead');
 
@@ -25,7 +25,7 @@ const PrintCounselorProductivityReport = () => {
         }
     }, []);
 
-    const columns: ColumnDef<counselorProductivityReportTableRow>[] = [
+    const columns: ColumnDef<CounselorProductivityReportData>[] = [
         { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
         { accessorKey: 'counselorName', header: 'Counselor Name' },
         { accessorKey: 'totalCount', header: stageType === 'lead' ? 'Total Leads' : 'Application Count' },

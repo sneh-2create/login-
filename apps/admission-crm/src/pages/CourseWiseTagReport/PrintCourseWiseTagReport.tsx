@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { courseWiseTagReportTableRow } from '@od-erp/types';
-import PrintLayout from '../../components/printLayout';
+import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
 
-const printCourseWiseTagReport = () => {
-    const [data, setData] = useState<courseWiseTagReportTableRow[]>([]);
+const PrintCourseWiseTagReport = () => {
+    const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
     const [reportName, setReportName] = useState('Course Wise Tag Report');
 
@@ -58,4 +58,4 @@ const printCourseWiseTagReport = () => {
     );
 };
 
-export default printCourseWiseTagReport;
+export default PrintCourseWiseTagReport;

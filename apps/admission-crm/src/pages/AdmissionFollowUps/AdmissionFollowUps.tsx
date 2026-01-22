@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Title, Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useAdmissionFollowUp, useAdmissionFollowUpStats, useCounselors } from '@od-erp/query';
-import { admissionFollowUp, admissionFollowUpPayload } from '@od-erp/types';
+import { AdmissionFollowUp, AdmissionFollowUpPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { Eye, Trash2 } from 'lucide-react';
@@ -25,8 +25,8 @@ const AdmissionFollowUps = () => {
     const { data: counselors } = useCounselors(entityId, 'counselor');
 
     // Logic to determine payload based on Active Tab
-    const payload: admissionFollowUpPayload = useMemo(() => {
-        const basePayload: admissionFollowUpPayload = {
+    const payload: AdmissionFollowUpPayload = useMemo(() => {
+        const basePayload: AdmissionFollowUpPayload = {
             entity: entityId,
             session,
             pageSize: pagination.pageSize,
@@ -81,7 +81,7 @@ const AdmissionFollowUps = () => {
         }
     };
 
-    const columns = useMemo<ColumnDef<admissionFollowUp>[]>(
+    const columns = useMemo<ColumnDef<AdmissionFollowUp>[]>(
         () => [
             {
                 header: 'S.No',

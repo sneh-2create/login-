@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useSessions, useAdmissionTransactions, useDeleteAdmissionTransaction } from '@od-erp/query';
-import { admissionTransaction, admissionTransactionPayload } from '@od-erp/types';
+import { AdmissionTransaction, AdmissionTransactionPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Trash2, Eye, RefreshCw } from 'lucide-react';
@@ -29,7 +29,7 @@ const AdmissionTransactionPage = () => {
 
 
 
-    const payload: admissionTransactionPayload = useMemo(() => ({
+    const payload: AdmissionTransactionPayload = useMemo(() => ({
         entity: entityId,
         session: session,
         startDate,
@@ -89,7 +89,7 @@ const AdmissionTransactionPage = () => {
     };
 
     // Columns
-    const columns = useMemo<ColumnDef<admissionTransaction>[]>(() => [
+    const columns = useMemo<ColumnDef<AdmissionTransaction>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',

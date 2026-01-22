@@ -1,9 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { menuItem } from './types';
+import { MenuItem } from './types';
 
 interface SidebarItemProps {
-    item: menuItem;
+    item: MenuItem;
     collapsed: boolean;
     isActive: boolean;
     isHovered: boolean;

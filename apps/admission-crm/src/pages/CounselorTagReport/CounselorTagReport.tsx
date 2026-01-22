@@ -4,15 +4,15 @@ import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { counselorTagReportTableRow } from '@od-erp/types';
+import { CounselorTagReportTableRow } from '@od-erp/types';
 import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
 
 const counselorTagReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<counselorTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<counselorTagReportTableRow>[]>([]);
+    const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<CounselorTagReportTableRow>[]>([]);
 
     // Filters
     const [counselors, setCounselors] = useState<any[]>([]);
@@ -60,7 +60,7 @@ const counselorTagReport = () => {
     };
 
     const setupColumns = () => {
-        const cols: ColumnDef<counselorTagReportTableRow>[] = [
+        const cols: ColumnDef<CounselorTagReportTableRow>[] = [
             {
                 accessorKey: 'position',
                 header: 'S.No',

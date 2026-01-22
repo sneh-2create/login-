@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
-import { admissionSummaryTableRow } from '@od-erp/types';
-import PrintLayout from '../../components/printLayout';
+import { AdmissionSummaryTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
 import { DataTable } from '@od-erp/ui';
 
-const printAdmissionSummaryReport = () => {
-    const [data, setData] = useState<admissionSummaryTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<admissionSummaryTableRow>[]>([]);
+const PrintAdmissionSummaryReport = () => {
+    const [data, setData] = useState<AdmissionSummaryTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
 
     useEffect(() => {
         const storedData = localStorage.getItem('admissionSummaryData');
@@ -43,4 +43,4 @@ const printAdmissionSummaryReport = () => {
     );
 };
 
-export default printAdmissionSummaryReport;
+export default PrintAdmissionSummaryReport;

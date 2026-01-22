@@ -1,6 +1,6 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 // --- Auth Types ---
-export interface session {
+export interface Session {
     _id: string;
     name: string;
     status: string;
@@ -8,7 +8,7 @@ export interface session {
     endDate: string;
 }
 
-export interface user {
+export interface User {
     id: string;
     name: string;
     email: string;
@@ -18,7 +18,7 @@ export interface user {
     permissions?: string[];
 }
 
-export interface entityDetails {
+export interface EntityDetails {
     id: string;
     logo?: string;
     displayName?: string;
@@ -29,13 +29,13 @@ export interface entityDetails {
     entityPreferences?: any;
 }
 
-export interface authState {
-    user: user | null;
+export interface AuthState {
+    user: User | null;
     token: string | null;
     isAuthenticated: boolean;
     permissions: string[];
     preferences: any | null;
-    entityDetails: entityDetails | null;
+    entityDetails: EntityDetails | null;
 }
 
 // --- Dashboard Types ---
@@ -48,11 +48,11 @@ export interface TabConfig {
 }
 
 // --- UI / Menu Types ---
-export interface menuItem {
+export interface MenuItem {
     title: string;
     icon?: ReactNode | string; // Updated to allow string (legacy flaticon) or Node
     page?: string;
-    submenu?: subMenuItem[];
+    submenu?: SubMenuItem[];
     root?: boolean; // Legacy
     bullet?: string; // Legacy
     permission?: string; // Generic permission
@@ -60,9 +60,9 @@ export interface menuItem {
     admPermission?: string; // Admin permission
 }
 
-export interface subMenuItem {
+export interface SubMenuItem {
     title: string;
-    submenu?: subSubMenuItem[];
+    submenu?: SubSubMenuItem[];
     page?: string;
     fav?: boolean;
     bullet?: string;
@@ -70,7 +70,7 @@ export interface subMenuItem {
     entPermission?: string;
 }
 
-export interface subSubMenuItem {
+export interface SubSubMenuItem {
     title: string;
     page: string;
     fav?: boolean;

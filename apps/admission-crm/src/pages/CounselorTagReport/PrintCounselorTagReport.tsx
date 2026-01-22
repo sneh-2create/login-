@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import PrintLayout from '../../components/printLayout';
-import { counselorTagReportTableRow } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
+import { CounselorTagReportTableRow } from '@od-erp/types';
 
 const printCounselorTagReport = () => {
-    const [data, setData] = useState<counselorTagReportTableRow[]>([]);
+    const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
     const [tableHeads, setTableHeads] = useState<string[]>([]);
 
     useEffect(() => {

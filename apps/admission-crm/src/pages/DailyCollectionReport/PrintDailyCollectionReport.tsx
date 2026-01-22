@@ -2,20 +2,26 @@ import { useEffect, useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DataTable } from '@od-erp/ui';
-import PrintLayout from '../../components/printLayout';
-import { admissionTransaction } from '@od-erp/types';
+import PrintLayout from '../../components/PrintLayout';
+import { AdmissionTransaction } from '@od-erp/types';
 
-const PrintAdmissionTransaction = () => {
-    const [data, setData] = useState<admissionTransaction[]>([]);
+const PrintDailyCollectionReport = () => {
+    const [data, setData] = useState<AdmissionTransaction[]>([]);
+    const [totalAmount, setTotalAmount] = useState<number>(0);
 
     useEffect(() => {
-        const storedData = localStorage.getItem('admissionTransactionData');
+        const storedData = localStorage.getItem('dailyCollectionData');
+        const storedTotal = localStorage.getItem('dailyCollectionTotal');
+
         if (storedData) {
             setData(JSON.parse(storedData));
         }
+        if (storedTotal) {
+            setTotalAmount(parseFloat(storedTotal));
+        }
     }, []);
 
-    const columns = useMemo<ColumnDef<admissionTransaction>[]>(() => [
+    const columns = useMemo<ColumnDef<AdmissionTransaction>[]>(() => [
         {
             header: 'S.No',
             accessorKey: 'sno',
@@ -49,7 +55,7 @@ const PrintAdmissionTransaction = () => {
         },
         {
             header: 'Amount',
-            accessorKey: 'paymentDetails.paidAmount',
+            accessorKey: 'totalPaidAmount',
             cell: info => {
                 const val = info.getValue() as number;
                 return val ? `₹${val.toFixed(2)}` : '-';
@@ -67,7 +73,12 @@ const PrintAdmissionTransaction = () => {
     ], []);
 
     return (
-        <PrintLayout reportName="Admission Transaction Report">
+        <PrintLayout reportName="Daily Collection Report">
+            <div className="mb-4 border p-4 rounded bg-gray-50 flex justify-between items-center">
+                <span className="font-semibold text-lg">Total Collection</span>
+                <span className="font-bold text-xl">₹{totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+            </div>
+
             <DataTable
                 columns={columns}
                 data={data}
@@ -77,4 +88,4 @@ const PrintAdmissionTransaction = () => {
     );
 };
 
-export default PrintAdmissionTransaction;
+export default PrintDailyCollectionReport;

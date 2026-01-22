@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { dailyCollectionReportService } from '@od-erp/api-client';
-import { admissionDailyCollectionReportParams, admissionTransaction } from '@od-erp/types';
+import { AdmissionDailyCollectionReportParams, AdmissionTransaction } from '@od-erp/types';
 
-export const useDailyCollectionReport = (payload: admissionDailyCollectionReportParams) => {
-    return useQuery<admissionTransaction[], Error>({
+export const useDailyCollectionReport = (payload: AdmissionDailyCollectionReportParams) => {
+    return useQuery<AdmissionTransaction[], Error>({
         queryKey: ['dailyCollectionReport', payload],
         queryFn: () => dailyCollectionReportService.listDailyCollectionReport(payload),
         enabled: !!payload.entity && !!payload.session && !!payload.startDate && !!payload.endDate,
