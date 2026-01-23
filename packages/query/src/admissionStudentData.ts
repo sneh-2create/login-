@@ -58,3 +58,19 @@ export const useEditAdmissionStudentData = () => {
         },
     });
 };
+
+export const useAdmissionStudentTransactions = (entityId: string, session: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionStudentTransactions', entityId, session, studentId],
+        queryFn: () => admissionStudentDataService.viewAdmissionTransactionList(entityId, session, studentId),
+        enabled: !!entityId && !!session && !!studentId,
+    });
+};
+
+export const useAdmissionStudentRefunds = (entityId: string, session: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionStudentRefunds', entityId, session, studentId],
+        queryFn: () => admissionStudentDataService.listAdmissionRefundTransactions(entityId, session, studentId),
+        enabled: !!entityId && !!session && !!studentId,
+    });
+};

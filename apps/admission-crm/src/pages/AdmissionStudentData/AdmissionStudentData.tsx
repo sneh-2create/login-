@@ -12,7 +12,8 @@ import UploadExcelModal from './components/UploadExcelModal';
 import TimelineModal from './components/TimelineModal';
 import ViewDocumentsModal from './components/ViewDocumentsModal';
 import BankDetailsModal from './components/BankDetailsModal';
-import { MoreVertical, Clock, FileText, Landmark } from 'lucide-react';
+import ViewTransactionsModal from './components/ViewTransactionsModal';
+import { MoreVertical, Clock, FileText, Landmark, Receipt } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -39,6 +40,8 @@ const AdmissionStudentData = () => {
     const [isViewDocumentsOpen, setIsViewDocumentsOpen] = useState(false);
     const [bankDetailsStudent, setBankDetailsStudent] = useState<AdmissionLead | null>(null);
     const [isBankDetailsOpen, setIsBankDetailsOpen] = useState(false);
+    const [transactionsStudent, setTransactionsStudent] = useState<AdmissionLead | null>(null);
+    const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
     const [openActionId, setOpenActionId] = useState<string | null>(null);
     const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -231,6 +234,13 @@ const AdmissionStudentData = () => {
     const handleViewBankDetails = (student: AdmissionLead) => {
         setBankDetailsStudent(student);
         setIsBankDetailsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewTransactions = (student: AdmissionLead) => {
+        setTransactionsStudent(student);
+        setIsTransactionsOpen(true);
         setOpenActionId(null);
         setActionMenuPosition(null);
     };
@@ -545,6 +555,16 @@ const AdmissionStudentData = () => {
                         <Landmark size={14} className="mr-2 text-purple-500" />
                         View Bank Details
                     </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewTransactions(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Receipt size={14} className="mr-2 text-orange-500" />
+                        View Transactions
+                    </button>
                 </div>
             )}
 
@@ -564,6 +584,12 @@ const AdmissionStudentData = () => {
                 isOpen={isBankDetailsOpen}
                 onClose={() => setIsBankDetailsOpen(false)}
                 student={bankDetailsStudent}
+            />
+
+            <ViewTransactionsModal
+                isOpen={isTransactionsOpen}
+                onClose={() => setIsTransactionsOpen(false)}
+                student={transactionsStudent}
             />
         </div>
     );

@@ -61,6 +61,16 @@ export const admissionStudentDataService = {
             throw new Error('Failed to upload file to storage');
         }
         return response;
+    },
+
+    viewAdmissionTransactionList: async (entityId: string, session: string, studentId: string) => {
+        const response = await apiClient.get<any[]>(`/list/admissionTransaction?entity=${entityId}&session=${session}&studentData=${studentId}`);
+        return response.data;
+    },
+
+    listAdmissionRefundTransactions: async (entityId: string, session: string, studentId: string) => {
+        const response = await apiClient.get<any[]>(`/list/refundTransaction?entity=${entityId}&session=${session}&studentData=${studentId}`);
+        return response.data;
     }
 };
 
