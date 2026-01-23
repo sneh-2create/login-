@@ -48,3 +48,13 @@ export const useAddAdmissionStudentData = () => {
         },
     });
 };
+
+export const useEditAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+        },
+    });
+};

@@ -1,15 +1,15 @@
 import { format } from 'date-fns';
 import { X, Clock, Circle } from 'lucide-react';
-import { useAdmissionLeadLogs } from '@od-erp/query'; // Import the new hook (assuming it's exported from admission or checking where it comes from)
+import { useAdmissionLeadLog } from '@od-erp/query'; // Import the new hook (assuming it's exported from admission or checking where it comes from)
 import { useAppSelector } from '@od-erp/store';
 import { useMemo } from 'react';
 
-import { admissionLead } from '@od-erp/types';
+import { AdmissionLead } from '@od-erp/types';
 
 interface TimelineModalProps {
     isOpen: boolean;
     onClose: () => void;
-    student: admissionLead | null;
+    student: AdmissionLead | null;
 }
 
 const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
@@ -28,7 +28,7 @@ const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
         search: ''
     }), [entityId, session, student]);
 
-    const { data: response, isLoading } = useAdmissionLeadLogs(queryPayload);
+    const { data: response, isLoading } = useAdmissionLeadLog(queryPayload);
 
     // Merge local timeline and fetched logs, then sort
     const timelineData = useMemo(() => {

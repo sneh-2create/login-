@@ -6,12 +6,13 @@ import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
-import AddStudentModal from './components/addStudentModal';
-import FilterModal from './components/filterModal';
-import UploadExcelModal from './components/uploadExcelModal';
-import TimelineModal from './components/timelineModal';
-import ViewDocumentsModal from './components/viewDocumentsModal';
-import { MoreVertical, Clock, FileText } from 'lucide-react';
+import AddStudentModal from './components/AddStudentModal';
+import FilterModal from './components/FilterModal';
+import UploadExcelModal from './components/UploadExcelModal';
+import TimelineModal from './components/TimelineModal';
+import ViewDocumentsModal from './components/ViewDocumentsModal';
+import BankDetailsModal from './components/BankDetailsModal';
+import { MoreVertical, Clock, FileText, Landmark } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -32,10 +33,12 @@ const AdmissionStudentData = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
     const [isExporting, setIsExporting] = useState(false);
-    const [timelineStudent, setTimelineStudent] = useState<admissionLead | null>(null);
+    const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
-    const [documentStudent, setDocumentStudent] = useState<admissionLead | null>(null);
+    const [documentStudent, setDocumentStudent] = useState<AdmissionLead | null>(null);
     const [isViewDocumentsOpen, setIsViewDocumentsOpen] = useState(false);
+    const [bankDetailsStudent, setBankDetailsStudent] = useState<AdmissionLead | null>(null);
+    const [isBankDetailsOpen, setIsBankDetailsOpen] = useState(false);
     const [openActionId, setOpenActionId] = useState<string | null>(null);
     const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -209,14 +212,14 @@ const AdmissionStudentData = () => {
         };
     }, []);
 
-    const handleViewTimeline = (student: admissionLead) => {
+    const handleViewTimeline = (student: AdmissionLead) => {
         setTimelineStudent(student);
         setIsTimelineOpen(true);
         setOpenActionId(null);
         setActionMenuPosition(null);
     };
 
-    const handleViewDocuments = (student: admissionLead) => {
+    const handleViewDocuments = (student: AdmissionLead) => {
         setDocumentStudent(student);
         setIsViewDocumentsOpen(true);
         setOpenActionId(null);
@@ -224,6 +227,13 @@ const AdmissionStudentData = () => {
     };
 
 
+
+    const handleViewBankDetails = (student: AdmissionLead) => {
+        setBankDetailsStudent(student);
+        setIsBankDetailsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
 
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
@@ -525,6 +535,16 @@ const AdmissionStudentData = () => {
                         <FileText size={14} className="mr-2 text-green-500" />
                         View Documents
                     </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewBankDetails(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Landmark size={14} className="mr-2 text-purple-500" />
+                        View Bank Details
+                    </button>
                 </div>
             )}
 
@@ -538,6 +558,12 @@ const AdmissionStudentData = () => {
                 isOpen={isViewDocumentsOpen}
                 onClose={() => setIsViewDocumentsOpen(false)}
                 student={documentStudent}
+            />
+
+            <BankDetailsModal
+                isOpen={isBankDetailsOpen}
+                onClose={() => setIsBankDetailsOpen(false)}
+                student={bankDetailsStudent}
             />
         </div>
     );

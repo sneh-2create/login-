@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { X, FileText, Eye, CloudUpload } from 'lucide-react';
-import { admissionLead } from '@od-erp/types';
+import { AdmissionLead } from '@od-erp/types';
 import { admissionStudentDataService } from '@od-erp/api-client';
 
 
 interface ViewDocumentsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    student: admissionLead | null;
+    student: AdmissionLead | null;
 }
 
 // Simplified document list based on common requirements

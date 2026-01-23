@@ -27,6 +27,11 @@ export const admissionStudentDataService = {
         return response.data;
     },
 
+    editAdmissionStudentData: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionStudentData', payload);
+        return response.data;
+    },
+
     getStudentTimeline: async (studentId: string) => {
         const response = await apiClient.get<any[]>(`/view/studentTimeline?studentId=${studentId}`);
         return response.data;
