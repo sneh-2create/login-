@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -137,3 +138,14 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+=======
+node_modules/
+dist/
+.env
+.DS_Store
+npm-debug.log
+.vscode/
+.idea/
+coverage/
+*.log
+>>>>>>> c1859a5 (Initial project upload)
