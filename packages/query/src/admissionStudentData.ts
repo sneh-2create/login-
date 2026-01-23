@@ -74,3 +74,31 @@ export const useAdmissionStudentRefunds = (entityId: string, session: string, st
         enabled: !!entityId && !!session && !!studentId,
     });
 };
+
+export const useAdmissionFollowUps = (entityId: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionFollowUps', entityId, studentId],
+        queryFn: () => admissionStudentDataService.listAdmissionFollowUp({ entity: entityId, studentData: studentId }),
+        enabled: !!entityId && !!studentId,
+    });
+};
+
+export const useAddAdmissionFollowUp = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.addAdmissionFollowUp,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionFollowUps'] });
+        },
+    });
+};
+
+export const useEditAdmissionFollowUp = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionFollowUp,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionFollowUps'] });
+        },
+    });
+};

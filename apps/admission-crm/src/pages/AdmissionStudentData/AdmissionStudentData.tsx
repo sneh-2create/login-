@@ -13,7 +13,8 @@ import TimelineModal from './components/TimelineModal';
 import ViewDocumentsModal from './components/ViewDocumentsModal';
 import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
-import { MoreVertical, Clock, FileText, Landmark, Receipt } from 'lucide-react';
+import ViewFollowUpModal from './components/ViewFollowUpModal';
+import { MoreVertical, Clock, FileText, Landmark, Receipt, MessageSquare } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -42,6 +43,8 @@ const AdmissionStudentData = () => {
     const [isBankDetailsOpen, setIsBankDetailsOpen] = useState(false);
     const [transactionsStudent, setTransactionsStudent] = useState<AdmissionLead | null>(null);
     const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
+    const [followUpStudent, setFollowUpStudent] = useState<AdmissionLead | null>(null);
+    const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
     const [openActionId, setOpenActionId] = useState<string | null>(null);
     const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -241,6 +244,13 @@ const AdmissionStudentData = () => {
     const handleViewTransactions = (student: AdmissionLead) => {
         setTransactionsStudent(student);
         setIsTransactionsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewFollowUp = (student: AdmissionLead) => {
+        setFollowUpStudent(student);
+        setIsFollowUpOpen(true);
         setOpenActionId(null);
         setActionMenuPosition(null);
     };
@@ -565,6 +575,16 @@ const AdmissionStudentData = () => {
                         <Receipt size={14} className="mr-2 text-orange-500" />
                         View Transactions
                     </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewFollowUp(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <MessageSquare size={14} className="mr-2 text-blue-500" />
+                        View Follow Up
+                    </button>
                 </div>
             )}
 
@@ -590,6 +610,12 @@ const AdmissionStudentData = () => {
                 isOpen={isTransactionsOpen}
                 onClose={() => setIsTransactionsOpen(false)}
                 student={transactionsStudent}
+            />
+
+            <ViewFollowUpModal
+                isOpen={isFollowUpOpen}
+                onClose={() => setIsFollowUpOpen(false)}
+                student={followUpStudent}
             />
         </div>
     );

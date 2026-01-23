@@ -71,6 +71,21 @@ export const admissionStudentDataService = {
     listAdmissionRefundTransactions: async (entityId: string, session: string, studentId: string) => {
         const response = await apiClient.get<any[]>(`/list/refundTransaction?entity=${entityId}&session=${session}&studentData=${studentId}`);
         return response.data;
+    },
+
+    listAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any[]>('/list/admissionFollowUp', payload);
+        return response.data;
+    },
+
+    addAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any>('/add/admissionFollowUp', payload);
+        return response.data;
+    },
+
+    editAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionFollowUp', payload);
+        return response.data;
     }
 };
 
