@@ -1,14 +1,14 @@
 import './lord-icon-types';
-export * from './components/atoms/Title';
-export * from './components/atoms/Card';
-export * from './components/atoms/Button';
-export * from './components/atoms/Input';
-export * from './components/atoms/Select';
+export * from './components/Atoms/Title';
+export * from './components/Atoms/Card';
+export * from './components/Atoms/Button';
+export * from './components/Atoms/Input';
+export * from './components/Atoms/Select';
+export * from './components/Atoms/Badge';
 // Dashboard
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
 export * from './components/DataTable/DataTable';
-export * from './components/StatusBadge/StatusBadge';
 
 // Molecules
 export * from './components/DateRangeFilter/DateRangeFilter';

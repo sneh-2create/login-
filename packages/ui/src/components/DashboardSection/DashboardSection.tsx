@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card } from '../atoms/Card';
-import { Title } from '../atoms/Title';
+import { Card } from '../Atoms/Card';
+import { Title } from '../Atoms/Title';
 
 export interface DashboardSectionProps {
     title: string;

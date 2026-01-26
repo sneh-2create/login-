@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import Cookies from 'js-cookie';
 import { setCredentials, useAppDispatch, useAppSelector } from '@od-erp/store';
 
-const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || 'https://login.oderp.in/login';
+const LOGIN_URL = import.meta.env.VITE_LOGIN_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3000/login' : 'https://login.oderp.in/login');
 
 export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const dispatch = useAppDispatch();
@@ -49,19 +49,38 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
 
                     // 2. Fetch Entity Preferences if Entity ID exists
                     const entityId = decoded.entity || decoded.entityId;
-                    let fetchedPreferences = null;
+                    let fetchedEntityPreferences = null;
+                    let fetchedUserPreferences = null;
+                    let fetchedWebsiteConfig: any = null;
 
                     if (entityId) {
                         try {
-                            console.log(`[AuthGuard] Fetching preferences for Entity: ${entityId}`);
+                            console.log(`[AuthGuard] Fetching data for Entity: ${entityId}`);
                             // Dynamic import to avoid circular dependencies if any
                             const { commonService } = await import('@od-erp/api-client');
-                            fetchedPreferences = await commonService.getEntityPreferences(entityId);
-                            console.log('[AuthGuard] Preferences Fetched:', fetchedPreferences);
 
-                            if (fetchedPreferences) {
+                            // Parallel fetch
+                            const [entityPrefs, userPrefs, websiteConfig] = await Promise.all([
+                                commonService.getEntityPreferences(entityId),
+                                commonService.getUserPreferences().catch(err => {
+                                    console.warn('[AuthGuard] Failed to fetch user preferences:', err);
+                                    return null;
+                                }),
+                                commonService.getEntityWebsiteConfig(entityId).catch(err => {
+                                    console.warn('[AuthGuard] Failed to fetch website config:', err);
+                                    return null;
+                                })
+                            ]);
+
+                            fetchedEntityPreferences = entityPrefs;
+                            fetchedUserPreferences = userPrefs;
+                            fetchedWebsiteConfig = websiteConfig;
+
+                            console.log('[AuthGuard] Preferences/Config Fetched:', { entity: fetchedEntityPreferences, user: fetchedUserPreferences, website: fetchedWebsiteConfig });
+
+                            if (fetchedEntityPreferences) {
                                 const { setEntityPreferences } = await import('@od-erp/store');
-                                dispatch(setEntityPreferences(fetchedPreferences));
+                                dispatch(setEntityPreferences(fetchedEntityPreferences));
                             }
                         } catch (prefError) {
                             console.warn('[AuthGuard] Failed to fetch preferences:', prefError);
@@ -92,6 +111,12 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                                     console.warn('[AuthGuard] No permissions array in login response:', loginResponse);
                                 }
 
+                                // Extract Preferences from Login Response (Overlap with User Prefs)
+                                if (loginResponse.preferences) {
+                                    console.log('[AuthGuard] Preferences found in login response');
+                                    fetchedUserPreferences = loginResponse.preferences;
+                                }
+
                                 // Extract Entity Details
                                 if (loginResponse.entity) {
                                     finalEntityDetails = {
@@ -99,11 +124,16 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                                         logo: loginResponse.entity.logo,
                                         displayName: loginResponse.entity.displayName || loginResponse.entity.name,
                                         type: loginResponse.entity.entityType,
-                                        qac: loginResponse.entity.qac,
+                                        qac: String(loginResponse.entity.qac), // Ensure string
                                         activeSession: loginResponse.entity.activeSession,
-                                        entityPreferences: loginResponse.entity.entityPreferences
+                                        entityPreferences: loginResponse.entity.entityPreferences,
+                                        primaryColour: loginResponse.entity.primaryColour || loginResponse.entity.primaryColor || fetchedWebsiteConfig?.primaryColor || fetchedWebsiteConfig?.primaryColour,
+                                        secondaryColour: loginResponse.entity.secondaryColour || loginResponse.entity.secondaryColor || fetchedWebsiteConfig?.secondaryColor || fetchedWebsiteConfig?.secondaryColour
                                     };
                                 }
+
+                                console.log('[AuthGuard] Final Preferences:', fetchedUserPreferences);
+                                console.log('[AuthGuard] Final Entity Details:', finalEntityDetails);
                             }
                         } catch (reLoginError) {
                             console.error('[AuthGuard] Re-login failed:', reLoginError);
@@ -122,9 +152,11 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                             // Add minimal required fields or defaults
                             logo: '',
                             type: 'School', // Default
-                            qac: false,
+                            qac: 'false',
                             activeSession: '',
-                            entityPreferences: null
+                            entityPreferences: null,
+                            primaryColour: fetchedWebsiteConfig?.primaryColor || fetchedWebsiteConfig?.primaryColour,
+                            secondaryColour: fetchedWebsiteConfig?.secondaryColor || fetchedWebsiteConfig?.secondaryColour
                         };
                     }
 
@@ -139,7 +171,7 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                             permissions: finalPermissions
                         },
                         token: token,
-                        preferences: fetchedPreferences,
+                        preferences: fetchedUserPreferences,
                         entityDetails: finalEntityDetails
                     };
 

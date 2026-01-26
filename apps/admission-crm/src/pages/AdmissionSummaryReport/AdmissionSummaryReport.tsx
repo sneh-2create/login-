@@ -237,6 +237,7 @@ const admissionSummaryReport = () => {
                     columns={columns}
                     data={filteredData}
                     isLoading={loading}
+                    showSearch={false}
                 />
             </div>
         </div>

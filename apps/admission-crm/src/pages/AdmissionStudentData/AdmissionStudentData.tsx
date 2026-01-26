@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
-import { Card, DataTable, Button, Select, StatusBadge } from '@od-erp/ui';
+import { Card, DataTable, Button, Select, Badge } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta } from '@od-erp/types';
 import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
@@ -322,16 +322,7 @@ const AdmissionStudentData = () => {
             accessorKey: 'currentStage',
             cell: info => {
                 const val = info.getValue() as string;
-                // Map stage to StatusBadge variant
-                let variant: 'paid' | 'pending' | 'failed' | 'custom' = 'custom';
-                if (val === 'Approved') {
-                    variant = 'paid';
-                } else if (val === 'Rejected' || val === 'Withdrawn') {
-                    variant = 'failed';
-                } else {
-                    variant = 'pending';
-                }
-                return <StatusBadge label={val} variant={variant} />;
+                return <Badge variant={val}>{val}</Badge>;
             },
             meta: {
                 width: 132,
@@ -341,12 +332,11 @@ const AdmissionStudentData = () => {
         {
             header: 'Student Name',
             accessorKey: 'name',
-            cell: info => <span className="font-medium text-ui-orange cursor-pointer">{info.getValue() as string}</span>,
+            cell: info => <span className="font-medium cursor-pointer">{info.getValue() as string}</span>,
             meta: {
                 width: 217,
                 align: 'left' as const,
-                isBold: true,
-                textColor: '#000',
+                isBold: true, // This will make it black via DataTable
             } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
@@ -356,7 +346,6 @@ const AdmissionStudentData = () => {
                 width: 133,
                 align: 'center' as const,
                 fontWeight: 500,
-                textColor: 'text-ui-orange',
             } as ExtendedColumnMeta<AdmissionLead>,
         },
         {
@@ -367,7 +356,7 @@ const AdmissionStudentData = () => {
                 return val ? format(new Date(val as number), 'dd-MMM-yyyy') : '-';
             },
             meta: {
-                width: 111,
+                width: 140,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>,
         },
@@ -559,44 +548,16 @@ const AdmissionStudentData = () => {
                     showSearch={true}
                     searchPlaceholder="Search by Name/Application No./Mobile No./Father Name"
                     onSearch={handleSearch}
-                    showPagination={false}
+                    showPagination={true}
+                    manualPagination={true}
+                    rowCount={data?.totalCount || 0}
+                    initialItemsPerPage={pageSize}
+                    onPaginationChange={(pagination) => {
+                        setPageNumber(pagination.pageIndex + 1);
+                        setPageSize(pagination.pageSize);
+                    }}
                     maxHeight="600px"
                 />
-                {/* Server-side Pagination Footer */}
-                <div className="p-3 border-t bg-ui-gray-50 flex justify-between items-center text-xs text-ui-gray-600">
-                    <span>Showing {((pageNumber - 1) * pageSize) + 1} – {Math.min(pageNumber * pageSize, data?.totalCount || 0)} of {data?.totalCount || 0}</span>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm">Items per page:</span>
-                        <select
-                            className="w-[70px] h-8 px-3 pr-7 border border-ui-gray-200 rounded bg-white text-sm text-ui-gray-700 appearance-none cursor-pointer outline-none"
-                            value={pageSize}
-                            onChange={(e) => {
-                                setPageSize(Number(e.target.value));
-                                setPageNumber(1);
-                            }}
-                        >
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
-                        </select>
-                        <div className="flex gap-1">
-                            <button
-                                className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded bg-white cursor-pointer hover:bg-ui-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={pageNumber === 1}
-                                onClick={() => setPageNumber(p => p - 1)}
-                            >
-                                ←
-                            </button>
-                            <button
-                                className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded bg-white cursor-pointer hover:bg-ui-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={!data || (pageNumber * pageSize >= (data.totalCount || 0))}
-                                onClick={() => setPageNumber(p => p + 1)}
-                            >
-                                →
-                            </button>
-                        </div>
-                    </div>
-                </div>
             </Card>
 
             <AddStudentModal

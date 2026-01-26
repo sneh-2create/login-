@@ -58,8 +58,8 @@ module.exports = {
             fontFamily: {
                 sans: ['var(--font-family)', 'sans-serif'],
                 body: ['var(--font-family)', 'sans-serif'],
-                cabin: ['Cabin', 'sans-serif'],
                 poppins: ['Poppins', 'sans-serif'],
+                lato: ['Lato', 'sans-serif'],
             },
             spacing: {
                 'header': 'var(--header-height)',

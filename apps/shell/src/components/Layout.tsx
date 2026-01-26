@@ -58,16 +58,25 @@ export const Layout: React.FC = () => {
         );
     }
 
+    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+
+    const toggleSidebar = () => {
+        setIsSidebarExpanded(!isSidebarExpanded);
+    };
+
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
             {/* Header (Fixed Top) */}
-            <Header />
+            <Header isSidebarExpanded={isSidebarExpanded} onToggleSidebar={toggleSidebar} />
 
             {/* Sidebar (Fixed Left) */}
-            <Sidebar />
+            <Sidebar collapsed={!isSidebarExpanded} />
 
             {/* Main Content Area */}
-            <div className="flex-1 min-w-0 flex flex-col pt-[80px] ml-[100px] h-full transition-all duration-300">
+            <div
+                className={`flex-1 min-w-0 flex flex-col pt-[80px] h-full transition-all duration-300`}
+                style={{ marginLeft: isSidebarExpanded ? '265px' : '100px' }}
+            >
                 {/* Page Content */}
                 <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6">
                     <Outlet />

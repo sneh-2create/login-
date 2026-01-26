@@ -36,6 +36,10 @@ export interface BaseDataTableProps {
     showPagination?: boolean;
     itemsPerPageOptions?: number[];
     initialItemsPerPage?: number;
+    manualPagination?: boolean;
+    pageCount?: number;
+    rowCount?: number;
+    onPaginationChange?: (_pagination: { pageIndex: number; pageSize: number }) => void;
     // Container styling
     containerClassName?: string;
     // Enable sorting

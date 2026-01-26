@@ -75,6 +75,10 @@ export const iconMap: { [key: string]: { active: string, inactive: string } } = 
         active: "https://cdn.lordicon.com/ziiscpji.json",
         inactive: "https://cdn.lordicon.com/tsndvcpl.json"
     },
+    'Admissions': {
+        active: "https://cdn.lordicon.com/ziiscpji.json",
+        inactive: "https://cdn.lordicon.com/tsndvcpl.json"
+    },
     'Communication': {
         active: "https://cdn.lordicon.com/ysfeiqhs.json",
         inactive: "https://cdn.lordicon.com/wcheggay.json"

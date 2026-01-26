@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -41,11 +41,13 @@
         --sidebar-section-title: #3F4254;
         --sidebar-bullet-inactive: #b8bac3;
         --sidebar-border: #eff2f5;
+        --sidebar-submenu-icon-bg: color-mix(in srgb, var(--color-brand) 10%, transparent);
+        --sidebar-submenu-icon-color: var(--color-brand);
 
         /* Typography */
-        --font-family: "Cabin", Poppins, Helvetica, sans-serif;
-        --font-family-body: "Cabin", Poppins, Helvetica, sans-serif;
-        --font-family-base: "Cabin", Poppins, Helvetica, sans-serif;
+        --font-family: "Lato", Poppins, Helvetica, sans-serif;
+        --font-family-body: "Lato", Poppins, Helvetica, sans-serif;
+        --font-family-base: "Lato", Poppins, Helvetica, sans-serif;
         --font-size-base: 16px;
         --font-size-sm: 0.875rem;
         --font-size-lg: 1.25rem;

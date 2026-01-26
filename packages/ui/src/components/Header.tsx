@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 import { useSession, useAppDispatch, useAppSelector, logout } from '@od-erp/store'; // Added imports
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu, ChevronLeft } from 'lucide-react'; // Added icons
 import { cn } from '../utils';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
     className?: string;
+    isSidebarExpanded?: boolean;
+    onToggleSidebar?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ className }) => {
+export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, onToggleSidebar }) => {
+    // ... existing hooks ...
     const { session } = useSession();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const { entityDetails } = useAppSelector((state) => state.auth); // Get entity details
+    const { entityDetails } = useAppSelector((state) => state.auth);
 
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-    // Dynamic Branding Logic
+    // ... variables ...
     const displayName = entityDetails?.displayName || "OD ERP";
-    const logoUrl = entityDetails?.logo; // If null, fallback logic in UI
-
+    const logoUrl = entityDetails?.logo;
     const userName = session?.user?.name || "User";
-    const userRole = session?.user?.role || "Admin"; // Fallback
+    const userRole = session?.user?.role || "Admin";
     const quickActionIcon = "https://cdn.lordicon.com/mwzdatpw.json";
 
     const handleLogout = () => {
@@ -54,6 +56,16 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                     </h3>
                 </div>
 
+                {/* Sidebar Toggle */}
+                {onToggleSidebar && (
+                    <button
+                        onClick={onToggleSidebar}
+                        className="ml-2 p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                    >
+                        {isSidebarExpanded ? <ChevronLeft size={24} /> : <Menu size={24} />}
+                    </button>
+                )}
+
                 {/* Horizontal Menu (Legacy Parity) */}
                 <nav className="hidden lg:flex items-center gap-6 pl-8">
                     {['Fee', 'Advanced', 'Analytics', 'Admission'].map((item) => (
@@ -61,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
                             <span className="text-[13px] font-medium text-[#6c7293] group-hover:text-[var(--color-primary)] transition-colors uppercase tracking-wide">
                                 {item}
                             </span>
-                            {/* Active/Hover Indicator Line (Optional) */}
+                            {/* Active/Hover Indicator Line */}
                             <span className="absolute -bottom-[29px] left-0 w-full h-[2px] bg-[var(--color-primary)] scale-x-0 group-hover:scale-x-100 transition-transform duration-300" />
                         </div>
                     ))}
@@ -69,6 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ className }) => {
             </div>
 
             <div className="flex items-center gap-4">
+                {/* ... existing right side ... */}
                 <div className="hidden md:flex items-center px-4 py-2 bg-gray-50 rounded-full text-sm text-[#6c7293] font-medium border border-gray-100">
                     2024-2025
                 </div>
