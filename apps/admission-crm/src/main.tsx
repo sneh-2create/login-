@@ -57,6 +57,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                             </AuthGuard>
                         </StandaloneLayout>
                     } />
+                    <Route path="/print/*" element={
+                        <StandaloneLayout>
+                            <App />
+                        </StandaloneLayout>
+                    } />
                     <Route path="*" element={<Navigate to="/admission" replace />} />
                 </Routes>
             </BrowserRouter>

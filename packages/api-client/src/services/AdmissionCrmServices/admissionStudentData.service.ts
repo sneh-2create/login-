@@ -86,6 +86,18 @@ export const admissionStudentDataService = {
     editAdmissionFollowUp: async (payload: any) => {
         const response = await apiClient.post<any>('/edit/admissionFollowUp', payload);
         return response.data;
-    }
+    },
+    viewAdmissionStudentData: async (id: string) => {
+        const { data } = await apiClient.get(`/view/admissionStudentData?id=${id}`);
+        return data;
+    },
+    listCourses: async (entityId: string, session: string) => {
+        const response = await apiClient.get<any[]>(`/list/course?entity=${entityId}&session=${session}`);
+        return response.data;
+    },
+    listPartnerInstitutes: async (entityId: string) => {
+        const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
+        return response.data;
+    },
 };
 

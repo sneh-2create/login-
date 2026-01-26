@@ -102,3 +102,29 @@ export const useEditAdmissionFollowUp = () => {
         },
     });
 };
+
+export const useViewAdmissionStudentData = (studentId: string) => {
+    return useQuery<AdmissionLead>({
+        queryKey: ['viewAdmissionStudentData', studentId],
+        queryFn: () => admissionStudentDataService.viewAdmissionStudentData(studentId),
+        enabled: !!studentId,
+    });
+};
+
+export const useCourses = (entityId: string, session: string) => {
+    return useQuery<any[]>({
+        queryKey: ['courses', entityId, session],
+        queryFn: () => admissionStudentDataService.listCourses(entityId, session),
+        enabled: !!entityId && !!session,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+
+export const usePartnerInstitutes = (entityId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['partnerInstitutes', entityId],
+        queryFn: () => admissionStudentDataService.listPartnerInstitutes(entityId),
+        enabled: !!entityId,
+        staleTime: 10 * 60 * 1000,
+    });
+};

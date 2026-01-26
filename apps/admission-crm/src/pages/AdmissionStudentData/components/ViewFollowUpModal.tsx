@@ -11,9 +11,10 @@ interface ViewFollowUpModalProps {
     isOpen: boolean;
     onClose: () => void;
     student: AdmissionLead | null;
+    onSaveSuccess?: () => void;
 }
 
-const ViewFollowUpModal = ({ isOpen, onClose, student }: ViewFollowUpModalProps) => {
+const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFollowUpModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     const { data: followUps, isLoading: isFollowUpsLoading } = useAdmissionFollowUps(entityId, student?._id || '');
@@ -84,6 +85,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student }: ViewFollowUpModalProps)
             } else {
                 await addFollowUp.mutateAsync(payload);
             }
+            if (onSaveSuccess) onSaveSuccess();
             resetForm();
         } catch (error) {
             console.error('Failed to save follow up', error);

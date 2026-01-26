@@ -7,13 +7,15 @@ interface PrintLayoutProps {
     reportName: string;
     entityName?: string;
     hidePrintButton?: boolean;
+    noHeader?: boolean;
 }
 
 const PrintLayout = ({
     children,
     reportName,
     entityName = localStorage.getItem('entityName') || 'OkieDokie',
-    hidePrintButton = false
+    hidePrintButton = false,
+    noHeader = false
 }: PrintLayoutProps) => {
 
     const handlePrint = () => {
@@ -39,10 +41,12 @@ const PrintLayout = ({
             )}
 
             {/* Report Header */}
-            <div className="text-center mb-8">
-                <h3 className="text-xl font-bold mb-2 uppercase">{entityName}</h3>
-                <p className="text-lg text-gray-700">{reportName}</p>
-            </div>
+            {!noHeader && (
+                <div className="text-center mb-8">
+                    <h3 className="text-xl font-bold mb-2 uppercase">{entityName}</h3>
+                    <p className="text-lg text-gray-700">{reportName}</p>
+                </div>
+            )}
 
             {/* Content */}
             <div className="w-full">
