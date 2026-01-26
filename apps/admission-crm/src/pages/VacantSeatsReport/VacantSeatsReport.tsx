@@ -14,8 +14,8 @@ import { TablePagination } from './components/TablePagination';
 const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
-    const [data, setData] = useState<vacantSeatsReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<vacantSeatsReportTableRow>[]>([]);
+    const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
+    const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
@@ -60,55 +60,55 @@ const vacantSeatsReport = () => {
 
     const setupColumns = () => {
         console.log("Setting up columns. ShowBatch:", showBatch);
-        const cols: ColumnDef<vacantSeatsReportTableRow>[] = [
-            { 
-                accessorKey: 'position', 
-                header: 'S.No', 
+        const cols: ColumnDef<VacantSeatsReportTableRow>[] = [
+            {
+                accessorKey: 'position',
+                header: 'S.No',
                 cell: (info: any) => <span className="text-gray-500">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'course', 
+            {
+                accessorKey: 'course',
                 header: displayNames.course,
                 cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'stream', 
+            {
+                accessorKey: 'stream',
                 header: displayNames.stream,
                 cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
             },
         ];
 
         if (showBatch) {
-            cols.push({ 
-                accessorKey: 'batch', 
+            cols.push({
+                accessorKey: 'batch',
                 header: displayNames.batch,
                 cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
             });
         }
 
         cols.push(
-            { 
-                accessorKey: 'name', 
+            {
+                accessorKey: 'name',
                 header: 'Name',
                 cell: (info: any) => <span className="font-medium text-gray-900">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'seats', 
+            {
+                accessorKey: 'seats',
                 header: 'Seats',
                 cell: (info: any) => <span className="text-gray-900">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'availableSeats', 
+            {
+                accessorKey: 'availableSeats',
                 header: 'Available Seats',
                 cell: (info: any) => <span className="font-medium text-green-600">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'filledSeats', 
+            {
+                accessorKey: 'filledSeats',
                 header: 'Filled Seats',
                 cell: (info: any) => <span className="font-medium text-blue-600">{info.getValue()}</span>
             },
-            { 
-                accessorKey: 'pendingApplications', 
+            {
+                accessorKey: 'pendingApplications',
                 header: 'Pending Applications',
                 cell: (info: any) => <span className="font-medium text-orange-600">{info.getValue()}</span>
             }
@@ -202,7 +202,7 @@ const vacantSeatsReport = () => {
     // Filter data based on search query
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
-        
+
         return data.filter((row: any) => {
             return Object.values(row).some((value) =>
                 String(value).toLowerCase().includes(searchQuery.toLowerCase())

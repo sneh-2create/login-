@@ -26,6 +26,9 @@ const AdmissionTransactionPage = lazy(() => import('./pages/AdmissionTransaction
 const PrintAdmissionTransaction = lazy(() => import('./pages/AdmissionTransaction/PrintAdmissionTransaction'));
 const DailyCollectionReportPage = lazy(() => import('./pages/DailyCollectionReport/DailyCollectionReport'));
 const PrintDailyCollectionReport = lazy(() => import('./pages/DailyCollectionReport/PrintDailyCollectionReport'));
+const PrintStudentTimeline = lazy(() => import('./pages/AdmissionStudentData/PrintStudentTimeline'));
+const PrintAdmissionForm = lazy(() => import('./pages/AdmissionStudentData/PrintAdmissionForm'));
+const VerifyDocuments = lazy(() => import('./pages/AdmissionStudentData/VerifyDocuments'));
 
 function App() {
     return (
@@ -55,6 +58,9 @@ function App() {
                     <Route path="/print/admissionTransaction" element={<PrintAdmissionTransaction />} />
                     <Route path="/dailyCollectionReport" element={<DailyCollectionReportPage />} />
                     <Route path="/print/dailyCollectionReport" element={<PrintDailyCollectionReport />} />
+                    <Route path="/print/open/studentTimeline" element={<PrintStudentTimeline />} />
+                    <Route path="/print/open/admissionForm" element={<PrintAdmissionForm />} />
+                    <Route path="/verify-documents/:id" element={<VerifyDocuments />} />
                     <Route path="/" element={<Navigate to="/admissionSummaryReports" replace />} />
                 </Routes>
             </Suspense>

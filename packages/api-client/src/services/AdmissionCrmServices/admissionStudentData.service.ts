@@ -27,6 +27,11 @@ export const admissionStudentDataService = {
         return response.data;
     },
 
+    editAdmissionStudentData: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionStudentData', payload);
+        return response.data;
+    },
+
     getStudentTimeline: async (studentId: string) => {
         const response = await apiClient.get<any[]>(`/view/studentTimeline?studentId=${studentId}`);
         return response.data;
@@ -56,6 +61,43 @@ export const admissionStudentDataService = {
             throw new Error('Failed to upload file to storage');
         }
         return response;
-    }
+    },
+
+    viewAdmissionTransactionList: async (entityId: string, session: string, studentId: string) => {
+        const response = await apiClient.get<any[]>(`/list/admissionTransaction?entity=${entityId}&session=${session}&studentData=${studentId}`);
+        return response.data;
+    },
+
+    listAdmissionRefundTransactions: async (entityId: string, session: string, studentId: string) => {
+        const response = await apiClient.get<any[]>(`/list/refundTransaction?entity=${entityId}&session=${session}&studentData=${studentId}`);
+        return response.data;
+    },
+
+    listAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any[]>('/list/admissionFollowUp', payload);
+        return response.data;
+    },
+
+    addAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any>('/add/admissionFollowUp', payload);
+        return response.data;
+    },
+
+    editAdmissionFollowUp: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionFollowUp', payload);
+        return response.data;
+    },
+    viewAdmissionStudentData: async (id: string) => {
+        const { data } = await apiClient.get(`/view/admissionStudentData?id=${id}`);
+        return data;
+    },
+    listCourses: async (entityId: string, session: string) => {
+        const response = await apiClient.get<any[]>(`/list/course?entity=${entityId}&session=${session}`);
+        return response.data;
+    },
+    listPartnerInstitutes: async (entityId: string) => {
+        const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
+        return response.data;
+    },
 };
 

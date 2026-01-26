@@ -48,3 +48,83 @@ export const useAddAdmissionStudentData = () => {
         },
     });
 };
+
+export const useEditAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+        },
+    });
+};
+
+export const useAdmissionStudentTransactions = (entityId: string, session: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionStudentTransactions', entityId, session, studentId],
+        queryFn: () => admissionStudentDataService.viewAdmissionTransactionList(entityId, session, studentId),
+        enabled: !!entityId && !!session && !!studentId,
+    });
+};
+
+export const useAdmissionStudentRefunds = (entityId: string, session: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionStudentRefunds', entityId, session, studentId],
+        queryFn: () => admissionStudentDataService.listAdmissionRefundTransactions(entityId, session, studentId),
+        enabled: !!entityId && !!session && !!studentId,
+    });
+};
+
+export const useAdmissionFollowUps = (entityId: string, studentId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['admissionFollowUps', entityId, studentId],
+        queryFn: () => admissionStudentDataService.listAdmissionFollowUp({ entity: entityId, studentData: studentId }),
+        enabled: !!entityId && !!studentId,
+    });
+};
+
+export const useAddAdmissionFollowUp = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.addAdmissionFollowUp,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionFollowUps'] });
+        },
+    });
+};
+
+export const useEditAdmissionFollowUp = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionFollowUp,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionFollowUps'] });
+        },
+    });
+};
+
+export const useViewAdmissionStudentData = (studentId: string) => {
+    return useQuery<AdmissionLead>({
+        queryKey: ['viewAdmissionStudentData', studentId],
+        queryFn: () => admissionStudentDataService.viewAdmissionStudentData(studentId),
+        enabled: !!studentId,
+    });
+};
+
+export const useCourses = (entityId: string, session: string) => {
+    return useQuery<any[]>({
+        queryKey: ['courses', entityId, session],
+        queryFn: () => admissionStudentDataService.listCourses(entityId, session),
+        enabled: !!entityId && !!session,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+
+export const usePartnerInstitutes = (entityId: string) => {
+    return useQuery<any[]>({
+        queryKey: ['partnerInstitutes', entityId],
+        queryFn: () => admissionStudentDataService.listPartnerInstitutes(entityId),
+        enabled: !!entityId,
+        staleTime: 10 * 60 * 1000,
+    });
+};

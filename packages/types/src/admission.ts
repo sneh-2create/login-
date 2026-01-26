@@ -179,6 +179,14 @@ export interface AdmissionFollowUpStats {
     completedFollowUps: number;
 }
 
+export interface BankDetails {
+    bankName?: string;
+    branchName?: string;
+    ifscCode?: string;
+    accountNumber?: string;
+    studentName?: string;
+}
+
 export interface AdmissionLead {
     _id: string;
     entityId: string;
@@ -200,6 +208,7 @@ export interface AdmissionLead {
     currentStage?: string;
     fatherName?: string;
     timeline?: any[];
+    bankDetails?: BankDetails;
     [key: string]: any; // Allow dynamic document fields
 }
 

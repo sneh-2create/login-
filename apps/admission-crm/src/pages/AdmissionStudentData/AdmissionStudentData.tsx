@@ -1,17 +1,21 @@
 import React, { useState, useMemo } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData } from '@od-erp/query';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
 import { AdmissionLead, AdmissionStudentDataPayload } from '@od-erp/types';
 import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
-import AddStudentModal from './components/addStudentModal';
-import FilterModal from './components/filterModal';
-import UploadExcelModal from './components/uploadExcelModal';
-import TimelineModal from './components/timelineModal';
-import ViewDocumentsModal from './components/viewDocumentsModal';
-import { MoreVertical, Clock, FileText } from 'lucide-react';
+import AddStudentModal from './components/AddStudentModal';
+import FilterModal from './components/FilterModal';
+import UploadExcelModal from './components/UploadExcelModal';
+import TimelineModal from './components/TimelineModal';
+import ViewDocumentsModal from './components/ViewDocumentsModal';
+import BankDetailsModal from './components/BankDetailsModal';
+import ViewTransactionsModal from './components/ViewTransactionsModal';
+import ViewFollowUpModal from './components/ViewFollowUpModal';
+import ViewAdmissionDetails from './components/ViewAdmissionDetails';
+import { MoreVertical, Clock, FileText, Landmark, Receipt, MessageSquare, User } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -32,10 +36,18 @@ const AdmissionStudentData = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
     const [isExporting, setIsExporting] = useState(false);
-    const [timelineStudent, setTimelineStudent] = useState<admissionLead | null>(null);
+    const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
-    const [documentStudent, setDocumentStudent] = useState<admissionLead | null>(null);
+    const [documentStudent, setDocumentStudent] = useState<AdmissionLead | null>(null);
     const [isViewDocumentsOpen, setIsViewDocumentsOpen] = useState(false);
+    const [bankDetailsStudent, setBankDetailsStudent] = useState<AdmissionLead | null>(null);
+    const [isBankDetailsOpen, setIsBankDetailsOpen] = useState(false);
+    const [transactionsStudent, setTransactionsStudent] = useState<AdmissionLead | null>(null);
+    const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
+    const [followUpStudent, setFollowUpStudent] = useState<AdmissionLead | null>(null);
+    const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
+    const [viewAdmissionStudentId, setViewAdmissionStudentId] = useState<string | null>(null);
+    const [isViewAdmissionOpen, setIsViewAdmissionOpen] = useState(false);
     const [openActionId, setOpenActionId] = useState<string | null>(null);
     const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
@@ -44,6 +56,23 @@ const AdmissionStudentData = () => {
 
     // Queries
     const { data: sessions } = useSessions(entityId);
+    const { data: counselors } = useCounselors(entityId || '', 'counselor');
+
+    const handlePrintForm = (student: AdmissionLead) => {
+        if (!student) return;
+
+        // Inject Counselor Name logic (same as ViewAdmissionDetails)
+        const counselor = counselors?.find((c: any) => c._id === student.counselorId);
+        const studentWithCounselor = {
+            ...student,
+            counselorName: counselor?.name || '-'
+        };
+
+        localStorage.setItem('print_student_data', JSON.stringify(studentWithCounselor));
+        window.open('/admission/print/open/admissionForm', '_blank');
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
 
     // Set default session
 
@@ -209,14 +238,14 @@ const AdmissionStudentData = () => {
         };
     }, []);
 
-    const handleViewTimeline = (student: admissionLead) => {
+    const handleViewTimeline = (student: AdmissionLead) => {
         setTimelineStudent(student);
         setIsTimelineOpen(true);
         setOpenActionId(null);
         setActionMenuPosition(null);
     };
 
-    const handleViewDocuments = (student: admissionLead) => {
+    const handleViewDocuments = (student: AdmissionLead) => {
         setDocumentStudent(student);
         setIsViewDocumentsOpen(true);
         setOpenActionId(null);
@@ -224,6 +253,34 @@ const AdmissionStudentData = () => {
     };
 
 
+
+    const handleViewBankDetails = (student: AdmissionLead) => {
+        setBankDetailsStudent(student);
+        setIsBankDetailsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewTransactions = (student: AdmissionLead) => {
+        setTransactionsStudent(student);
+        setIsTransactionsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewFollowUp = (student: AdmissionLead) => {
+        setFollowUpStudent(student);
+        setIsFollowUpOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewAdmission = (id: string) => {
+        setViewAdmissionStudentId(id);
+        setIsViewAdmissionOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
 
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
@@ -245,6 +302,7 @@ const AdmissionStudentData = () => {
                         >
                             <MoreVertical size={16} />
                         </button>
+
                     </div>
                 )
             }
@@ -412,6 +470,14 @@ const AdmissionStudentData = () => {
                 ))}
             </div>
 
+            {/* View Admission Details (Inline) */}
+            {isViewAdmissionOpen && (
+                <ViewAdmissionDetails
+                    studentId={viewAdmissionStudentId}
+                    onClose={() => setIsViewAdmissionOpen(false)}
+                />
+            )}
+
             {/* Search Bar */}
             <Card className="mb-4 !p-4">
                 <div className="flex gap-4">
@@ -508,6 +574,26 @@ const AdmissionStudentData = () => {
                     <button
                         onClick={() => {
                             const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handlePrintForm(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Printer size={14} className="mr-2 text-gray-500" />
+                        Print Form
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewAdmission(openActionId);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <User size={14} className="mr-2 text-blue-500" />
+                        View Admission
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
                             if (student) handleViewTimeline(student);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
@@ -518,12 +604,53 @@ const AdmissionStudentData = () => {
                     <button
                         onClick={() => {
                             const student = data?.data?.find(s => s._id === openActionId);
+                            // Navigate to verify page
+                            if (student) window.open(`/admission/verify-documents/${student._id}`, '_blank');
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <FileText size={14} className="mr-2 text-blue-600" />
+                        Verify Documents
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
                             if (student) handleViewDocuments(student);
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
                     >
                         <FileText size={14} className="mr-2 text-green-500" />
                         View Documents
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewBankDetails(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Landmark size={14} className="mr-2 text-purple-500" />
+                        View Bank Details
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewTransactions(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Receipt size={14} className="mr-2 text-orange-500" />
+                        View Transactions
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewFollowUp(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <MessageSquare size={14} className="mr-2 text-blue-500" />
+                        View Follow Up
                     </button>
                 </div>
             )}
@@ -539,6 +666,26 @@ const AdmissionStudentData = () => {
                 onClose={() => setIsViewDocumentsOpen(false)}
                 student={documentStudent}
             />
+
+            <BankDetailsModal
+                isOpen={isBankDetailsOpen}
+                onClose={() => setIsBankDetailsOpen(false)}
+                student={bankDetailsStudent}
+            />
+
+            <ViewTransactionsModal
+                isOpen={isTransactionsOpen}
+                onClose={() => setIsTransactionsOpen(false)}
+                student={transactionsStudent}
+            />
+
+            <ViewFollowUpModal
+                isOpen={isFollowUpOpen}
+                onClose={() => setIsFollowUpOpen(false)}
+                student={followUpStudent}
+            />
+
+
         </div>
     );
 };
