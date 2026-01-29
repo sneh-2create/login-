@@ -3,7 +3,7 @@ import { useViewAdmissionStudentData } from '@od-erp/query';
 import { Button, Select } from '@od-erp/ui';
 import { useState } from 'react';
 import AdmissionFormTemplate from './components/AdmissionFormTemplate';
-import ViewFollowUpModal from './components/ViewFollowUpModal';
+import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import { MessageSquare } from 'lucide-react';
 
 const VerifyDocuments = () => {
@@ -54,16 +54,27 @@ const VerifyDocuments = () => {
                     </div>
 
                     {/* Document Placeholder / Viewer */}
-                    <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                        {selectedDocument ? (
-                            <span>Preview for {selectedDocument} will appear here</span>
-                        ) : (
-                            <span>Select a document to view</span>
-                        )}
-                        {/* 
-                           Integration Note: If 'student.documents' is available, map options dynamically 
-                           and show <img src={url} /> or <iframe /> accordingly.
-                        */}
+                    <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 overflow-hidden relative">
+                        {(() => {
+                            const documentKeys: Record<string, string> = {
+                                '10th_marksheet': 'educationDetails1Marksheet',
+                                '12th_marksheet': 'educationDetails2Marksheet',
+                                'aadhar': 'aadharCard',
+                                'photo': 'photo'
+                            };
+                            const docUrl = selectedDocument ? student?.[documentKeys[selectedDocument]] : null;
+
+                            if (!selectedDocument) return <span>Select a document to view</span>;
+                            if (!docUrl) return <span>Document not uploaded</span>;
+
+                            const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(docUrl);
+
+                            return isImage ? (
+                                <img src={docUrl} alt={selectedDocument} className="max-w-full max-h-full object-contain" />
+                            ) : (
+                                <iframe src={docUrl} className="w-full h-full" title={selectedDocument} />
+                            );
+                        })()}
                     </div>
                 </div>
 

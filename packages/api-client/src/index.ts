@@ -17,5 +17,7 @@ export { admissionFollowUpService } from './services/AdmissionCrmServices/admiss
 export { admissionLeadService } from './services/AdmissionCrmServices/admissionLead.service';
 export { admissionTransactionService } from './services/AdmissionCrmServices/admissionTransaction.service';
 export { dailyCollectionReportService } from './services/AdmissionCrmServices/dailyCollectionReport.service';
+export { admissionVisitService } from './services/AdmissionCrmServices/admissionVisit.service';
+export { admissionNoteService } from './services/AdmissionCrmServices/admissionNote.service';
 export { sessionService } from './services/session.service';
 export { default as apiClient } from './client';
