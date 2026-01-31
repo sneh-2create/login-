@@ -1,12 +1,12 @@
 import React from 'react';
-import { Input } from '../atoms/Input';
-import { Button } from '../atoms/Button';
+import { Input } from '../Atoms/Input';
+import { Button } from '../Atoms/Button';
 
 export interface DateRangeFilterProps {
     startDate: string;
     endDate: string;
-    onStartChange: (date: string) => void;
-    onEndChange: (date: string) => void;
+    onStartChange: (_date: string) => void;
+    onEndChange: (_date: string) => void;
     onGo: () => void;
     isLoading?: boolean;
 }

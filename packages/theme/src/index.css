@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -41,11 +41,13 @@
         --sidebar-section-title: #3F4254;
         --sidebar-bullet-inactive: #b8bac3;
         --sidebar-border: #eff2f5;
+        --sidebar-submenu-icon-bg: color-mix(in srgb, var(--color-brand) 10%, transparent);
+        --sidebar-submenu-icon-color: var(--color-brand);
 
         /* Typography */
-        --font-family: "Cabin", Poppins, Helvetica, sans-serif;
-        --font-family-body: "Cabin", Poppins, Helvetica, sans-serif;
-        --font-family-base: "Cabin", Poppins, Helvetica, sans-serif;
+        --font-family: "Lato", Poppins, Helvetica, sans-serif;
+        --font-family-body: "Lato", Poppins, Helvetica, sans-serif;
+        --font-family-base: "Lato", Poppins, Helvetica, sans-serif;
         --font-size-base: 16px;
         --font-size-sm: 0.875rem;
         --font-size-lg: 1.25rem;
@@ -62,5 +64,34 @@
         --border-radius-md: 0.25rem;
         --border-radius-lg: 0.3rem;
         --border-color: #dee2e6;
+
+        /* UI Design System Colors */
+        --ui-gray-50: #f9fafb;
+        --ui-gray-100: #f3f4f6;
+        --ui-gray-200: #e5e7eb;
+        --ui-gray-300: #d1d5db;
+        --ui-gray-400: #9ca3af;
+        --ui-gray-500: #6b7280;
+        --ui-gray-600: #4b5563;
+        --ui-gray-700: #374151;
+        --ui-gray-800: #1f2937;
+        --ui-gray-900: #111827;
+        --ui-green: #4caf50;
+        --ui-orange: #ff6b35;
+        --ui-red: #ff5252;
+        --ui-orange-light: #f97316;
+
+        /* UI Letter Spacing */
+        --ui-letter-spacing-tight: -0.5px;
+        --ui-letter-spacing-tighter: -0.225px;
+        --ui-letter-spacing-wide: 0.05px;
+
+        /* Status Badge Background Colors */
+        --ui-status-paid-bg: #d4edd6;
+        --ui-status-pending-bg: #ffedd5;
+        --ui-status-failed-bg: #f8d7da;
+
+        /* UI Input Placeholder Color */
+        --ui-placeholder-color: #adaebc;
     }
 }

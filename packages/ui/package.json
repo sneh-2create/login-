@@ -24,6 +24,7 @@
     },
     "dependencies": {
         "@od-erp/api-client": "workspace:*",
+        "@od-erp/constants": "workspace:*",
         "@od-erp/store": "workspace:*",
         "@od-erp/types": "workspace:*",
         "@tanstack/react-table": "^8.21.3",

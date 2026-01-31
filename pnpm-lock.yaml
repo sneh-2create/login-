@@ -126,6 +126,9 @@ importers:
       '@od-erp/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@od-erp/context':
+        specifier: workspace:*
+        version: link:../../packages/context
       '@od-erp/query':
         specifier: workspace:*
         version: link:../../packages/query
@@ -684,6 +687,19 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
+  packages/context:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.0
+        version: 18.3.27
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
   packages/query:
     dependencies:
       '@od-erp/api-client':
@@ -752,6 +768,9 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1
     devDependencies:
+      '@tanstack/react-table':
+        specifier: ^8.21.3
+        version: 8.21.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@types/react':
         specifier: ^18.2.0
         version: 18.3.27
@@ -764,6 +783,9 @@ importers:
       '@od-erp/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@od-erp/constants':
+        specifier: workspace:*
+        version: link:../constants
       '@od-erp/store':
         specifier: workspace:*
         version: link:../store

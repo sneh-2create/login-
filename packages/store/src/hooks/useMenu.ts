@@ -47,6 +47,8 @@ export const useMenu = () => {
         }
 
         const favourites = preferences?.favourites || [];
+        console.log('[useMenu] Preferences:', preferences);
+        console.log('[useMenu] Extracted Favourites:', favourites);
         return transformMenuItems(rawItems, favourites);
     };
 
@@ -61,10 +63,8 @@ export const useMenu = () => {
             if (!isSuperAdmin) {
                 if (item.entPermission) {
                     hasPermission = permissions.includes(item.entPermission);
-                    if (!hasPermission) console.log(`DEBUG: Permission Failed for ${item.title} (Needed: ${item.entPermission})`);
                 } else if (item.admPermission) {
                     hasPermission = permissions.includes(item.admPermission);
-                    if (!hasPermission) console.log(`DEBUG: Permission Failed for ${item.title} (Needed: ${item.admPermission})`);
                 }
             }
 

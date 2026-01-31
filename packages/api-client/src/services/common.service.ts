@@ -55,6 +55,11 @@ export const commonService = {
         return response.data;
     },
 
+    getUserPreferences: async () => {
+        const response = await apiClient.get(`/view/userPreferences`);
+        return response.data;
+    },
+
     getMessDashboard: async () => {
         const response = await apiClient.get('/getMessMangementDashboard/dashboard');
         return response.data;

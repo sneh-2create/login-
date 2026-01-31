@@ -13,3 +13,5 @@ export const PERMISSIONS = {
 export * from './menu.config';
 export * from './dashboard.config';
 export * from './ui.config';
+export * from './badge.config';
+export * from './table.config';

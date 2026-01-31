@@ -152,7 +152,7 @@ const admissionSummaryReport = () => {
     };
 
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-white gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">
@@ -237,6 +237,7 @@ const admissionSummaryReport = () => {
                     columns={columns}
                     data={filteredData}
                     isLoading={loading}
+                    showSearch={false}
                 />
             </div>
         </div>

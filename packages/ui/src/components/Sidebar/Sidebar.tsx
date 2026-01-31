@@ -1,42 +1,74 @@
 
 import React from 'react';
-import { useLocation } from 'react-router-dom';
-import { useMenu } from '@od-erp/store';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useMenu, useSession, useAppSelector, useAppDispatch, logout } from '@od-erp/store';
 import { cn } from '../../utils';
 import { getIconSrc } from './IconMapping';
-import { LayoutDashboard } from 'lucide-react';
-import { SidebarItem } from '../../global/SidebarItem';
+import { LayoutDashboard, LogOut } from 'lucide-react';
 import { SidebarExpansionPanel } from '../../global/SidebarExpansionPanel';
+import Cookies from 'js-cookie';
 
 interface SidebarProps {
     className?: string;
+    collapsed?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }) => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const dispatch = useAppDispatch();
     const { menuItems } = useMenu();
-    const [hoveredItem, setHoveredItem] = React.useState<any | null>(null);
+    const { session } = useSession();
+    const { entityDetails } = useAppSelector((state) => state.auth);
+
+    const [activePanelItem, setActivePanelItem] = React.useState<any | null>(null);
     const leaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Clear timeout wrapper to ensure we don't close if entering another item or the panel
-    const handleMouseEnter = (item: any) => {
-        if (leaveTimeoutRef.current) {
-            clearTimeout(leaveTimeoutRef.current);
-            leaveTimeoutRef.current = null;
-        }
-        setHoveredItem(item);
+    // Entity details
+    const logoUrl = entityDetails?.logo;
+    const instituteName = entityDetails?.displayName || "OD ERP";
+    const userName = session?.user?.name || "User";
+    const userRole = session?.user?.role || "Admin";
+    const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+    // Dynamic font size based on institute name length
+    const getFontSize = (name: string) => {
+        if (name.length > 40) return 'text-xs';
+        if (name.length > 25) return 'text-sm';
+        return 'text-base';
+    };
+
+    const handleMouseEnter = (_item: any) => {
+        // Disabled hover-to-open behavior
     };
 
     const handleMouseLeave = () => {
-        leaveTimeoutRef.current = setTimeout(() => {
-            setHoveredItem(null);
-        }, 100); // 100ms delay to match Angular legacy behavior
+        // Disabled hover-exit-to-close behavior
     };
 
-    // Close panel when location changes (navigation occurred)
+    const handleItemClick = (item: any) => {
+        if (item.submenu && item.submenu.length > 0) {
+            if (activePanelItem === item) {
+                setActivePanelItem(null);
+            } else {
+                setActivePanelItem(item);
+            }
+        }
+    };
+
+    const handleLogout = () => {
+        dispatch(logout());
+        Cookies.remove('token');
+        navigate('/login');
+    };
+
     React.useEffect(() => {
-        setHoveredItem(null);
+        setActivePanelItem(null);
     }, [location.pathname]);
+
+    const closeActivePanel = () => {
+        setActivePanelItem(null);
+    }
 
     React.useEffect(() => {
         return () => {
@@ -44,68 +76,199 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         };
     }, []);
 
+    const sidebarWidth = collapsed ? '100px' : '265px';
+
     return (
         <>
             <aside
                 className={cn(
-                    "bg-white shadow-[0px_0px_20px_0px_rgba(76,87,125,0.02)] transition-all duration-300 z-20 flex flex-col fixed left-0 top-[80px] pb-20",
-                    "w-[100px] border-r border-[#eff2f5]",
+                    "bg-white shadow-lg transition-all duration-300 z-[58] flex flex-col fixed left-0 top-0",
+                    "border-r border-[#eff2f5]",
                     className
                 )}
-                style={{ height: 'calc(100vh - 80px)' }}
+                style={{ width: sidebarWidth, height: '100vh' }}
                 onMouseLeave={handleMouseLeave}
             >
-                <div className="flex-1 overflow-y-auto overflow-x-hidden py-1 scrollbar-hide">
-                    <ul className="flex flex-col gap-1 items-center w-full">
+                {/* Fixed Header - Logo + Institute Name */}
+                <div className={cn(
+                    "border-b border-[#eff2f5] flex items-center justify-center transition-all duration-300",
+                    collapsed ? "h-[80px] py-4" : "h-[80px] px-4 py-3"
+                )}>
+                    {collapsed ? (
+                        // Collapsed: Show logo only (centered)
+                        <div className="flex items-center justify-center">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo" className="h-12 w-12 object-contain" />
+                            ) : (
+                                <div className="h-12 w-12 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                                    {instituteName.substring(0, 2).toUpperCase()}
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        // Expanded: Show logo + institute name
+                        <div className="flex items-center gap-3 w-full">
+                            {logoUrl ? (
+                                <img src={logoUrl} alt="Logo" className="h-12 w-12 object-contain flex-shrink-0" />
+                            ) : (
+                                <div className="h-12 w-12 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                    {instituteName.substring(0, 2).toUpperCase()}
+                                </div>
+                            )}
+                            <h2 className={cn(
+                                "font-bold text-gray-800 leading-tight flex-1",
+                                getFontSize(instituteName)
+                            )}>
+                                {instituteName}
+                            </h2>
+                        </div>
+                    )}
+                </div>
+
+                {/* Scrollable Menu Section */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-hide">
+                    <ul className="flex flex-col gap-1 items-start w-full">
                         {menuItems && menuItems.map((item: any, index: number) => {
                             const isActive = location.pathname === item.page || (item.page !== '/' && location.pathname.startsWith(`${item.page}`));
-                            const isHovered = hoveredItem === item;
-                            const iconSrc = getIconSrc(item.title, isActive || isHovered);
+                            const isPanelOpen = activePanelItem === item;
+                            const isSelected = isActive || isPanelOpen;
+                            const iconSrc = getIconSrc(item.title, isSelected);
 
-                            const iconNode = (
-                                <div className="w-8 h-8 flex items-center justify-center">
-                                    {iconSrc ? (
-                                        <lord-icon
-                                            key={`${index}-${isActive}-${isHovered}`}
-                                            src={iconSrc}
-                                            trigger="hover"
-                                            colors={`primary:${isActive || isHovered ? '#5d78ff' : '#b8bac3'}`}
-                                            style={{ width: '25px', height: '25px' }}
-                                        />
-                                    ) : (
-                                        <LayoutDashboard className={`w-5 h-5 ${isActive ? 'text-[#5d78ff]' : 'text-[#b8bac3]'}`} />
-                                    )}
-                                </div>
-                            );
-
-                            const adaptedItem = { ...item, icon: iconNode };
+                            // Determine Submenu Badge Count - recursively count all leaf items
+                            let badgeCount = 0;
+                            if (item.submenu) {
+                                const countLeaves = (subItems: any[]): number => {
+                                    let count = 0;
+                                    subItems.forEach(sub => {
+                                        if (sub.submenu && sub.submenu.length > 0) {
+                                            count += countLeaves(sub.submenu);
+                                        } else {
+                                            count++;
+                                        }
+                                    });
+                                    return count;
+                                };
+                                badgeCount = countLeaves(item.submenu);
+                            }
 
                             return (
                                 <li key={index} className="w-full px-2">
-                                    <SidebarItem
-                                        item={adaptedItem}
-                                        collapsed={false} // Always show title below icon
-                                        isActive={isActive}
-                                        isHovered={isHovered}
+                                    <div
+                                        className={cn(
+                                            "relative flex items-center w-full px-3 py-3 cursor-pointer rounded-xl transition-all duration-200 group",
+                                            isSelected ? "bg-[var(--color-primary)] text-white" : "hover:bg-gray-50 text-gray-600",
+                                            collapsed ? "justify-center flex-col gap-1" : "justify-start gap-4"
+                                        )}
                                         onMouseEnter={() => handleMouseEnter(item)}
-                                    />
+                                        onClick={() => handleItemClick(item)}
+                                    >
+                                        {/* Icon */}
+                                        <div className="w-6 h-6 flex items-center justify-center">
+                                            {iconSrc ? (
+                                                <lord-icon
+                                                    src={iconSrc}
+                                                    trigger="hover"
+                                                    colors={isSelected ? "primary:#ffffff" : "primary:#b5b5c3"}
+                                                    style={{ width: '24px', height: '24px' }}
+                                                />
+                                            ) : (
+                                                <LayoutDashboard className={cn("w-5 h-5", isSelected ? "text-white" : "text-[#b5b5c3]")} />
+                                            )}
+                                        </div>
+
+                                        {/* Title (Only if Expanded) */}
+                                        {!collapsed && (
+                                            <span className={cn(
+                                                "text-sm font-medium tracking-wide flex-1 truncate",
+                                                isSelected ? "text-white" : "text-gray-600 group-hover:text-[var(--color-primary)]"
+                                            )}>
+                                                {item.title}
+                                            </span>
+                                        )}
+
+                                        {/* Badge (Submenu Count) */}
+                                        {badgeCount > 0 && (
+                                            <div
+                                                className={cn(
+                                                    "flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm",
+                                                    collapsed ? "absolute top-2 right-2 w-4 h-4" : "w-5 h-5",
+                                                    isSelected ? "bg-white text-[var(--color-primary)]" : "bg-[var(--color-primary)] text-white"
+                                                )}
+                                            >
+                                                {badgeCount}
+                                            </div>
+                                        )}
+
+                                        {/* Collapsed Label */}
+                                        {collapsed && (
+                                            <span className={cn(
+                                                "text-[10px] truncate max-w-full",
+                                                isSelected ? "text-white" : "text-gray-400 group-hover:text-[var(--color-primary)]"
+                                            )}>
+                                                {item.title}
+                                            </span>
+                                        )}
+                                    </div>
                                 </li>
                             );
                         })}
                     </ul>
                 </div>
+
+                {/* Fixed Footer - User Details + Logout */}
+                <div className={cn(
+                    "border-t border-[#eff2f5] transition-all duration-300",
+                    collapsed ? "h-[70px] py-4" : "h-[80px] px-4 py-3"
+                )}>
+                    {collapsed ? (
+                        // Collapsed: Show logout icon only (centered)
+                        <div className="flex items-center justify-center h-full">
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors"
+                                title="Logout"
+                            >
+                                <LogOut size={20} />
+                            </button>
+                        </div>
+                    ) : (
+                        // Expanded: Show user details + logout
+                        <div className="flex items-center gap-3 w-full">
+                            <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                                {userInitials}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-800 truncate">{userName}</p>
+                                <p className="text-xs text-gray-500 truncate capitalize">{userRole}</p>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors flex-shrink-0"
+                                title="Logout"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </aside>
 
-            {/* Expansion Panel (Recursive Submenu) */}
+            {/* Expansion Panel (Drawer) */}
             <SidebarExpansionPanel
-                item={hoveredItem}
+                item={activePanelItem ? menuItems.find((m: any) => m.title === activePanelItem.title) || activePanelItem : null}
+                leftOffset={0}
+                onClose={closeActivePanel}
                 onMouseEnter={() => {
-                    if (leaveTimeoutRef.current) {
-                        clearTimeout(leaveTimeoutRef.current);
-                        leaveTimeoutRef.current = null;
+                    if (collapsed) {
+                        if (leaveTimeoutRef.current) {
+                            clearTimeout(leaveTimeoutRef.current);
+                            leaveTimeoutRef.current = null;
+                        }
                     }
                 }}
-                onMouseLeave={handleMouseLeave}
+                onMouseLeave={() => {
+                    if (collapsed) handleMouseLeave();
+                }}
             />
         </>
     );

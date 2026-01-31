@@ -3,12 +3,17 @@ import { Link, useLocation } from 'react-router-dom';
 import { MenuItem, SubMenuItem } from './types';
 import { useAppSelector, useAppDispatch, updatePreferences } from '@od-erp/store';
 import { commonService } from '@od-erp/api-client';
+import { getIconSrc } from '../components/Sidebar/IconMapping';
+import { X, Bookmark, LayoutDashboard } from 'lucide-react';
 
 interface SidebarExpansionPanelProps {
     item: MenuItem | null;
     onMouseEnter: () => void;
     onMouseLeave: () => void;
+    leftOffset?: number;
+    onClose?: () => void;
 }
+
 
 // Helper component for rendering a column of submenu items
 const SubMenuColumn: React.FC<{
@@ -18,7 +23,7 @@ const SubMenuColumn: React.FC<{
     onFavorite: (_e: React.MouseEvent, _item: SubMenuItem) => void;
 }> = ({ items, isActive, onLinkClick, onFavorite }) => {
     return (
-        <div className="flex flex-col gap-6 flex-1 min-w-0">
+        <div className="flex flex-col gap-0 flex-1 min-w-0">
             {items.map((category, catIndex) => (
                 <div key={catIndex} className="break-inside-avoid w-full">
                     {/* Logic Match: Only show Title if it is a Group (has submenu) */}
@@ -32,7 +37,7 @@ const SubMenuColumn: React.FC<{
                             )}
 
                             {/* Submenu Items (Level 3) */}
-                            <ul className="flex flex-col gap-0.5">
+                            <ul className="flex flex-col gap-0">
                                 {category.submenu.map((subItem: any, subIndex: number) => {
                                     const active = isActive(subItem.page);
                                     return (
@@ -42,38 +47,25 @@ const SubMenuColumn: React.FC<{
                                                 onClick={onLinkClick}
                                                 className={`
                                                     block w-full
-                                                    min-h-[40px] py-2 pl-0
-                                                    text-[13px] font-normal
+                                                    py-3 pl-4 pr-10
+                                                    text-[14px]
                                                     transition-all duration-300
                                                     ${active
-                                                        ? 'bg-[var(--sidebar-item-active-bg)] pl-[10px] rounded-[12px] font-bold text-[var(--color-brand)]'
-                                                        : 'text-black hover:bg-[var(--sidebar-item-active-bg)] hover:pl-[10px] hover:rounded-[12px] hover:font-bold hover:text-[var(--color-brand)]'
+                                                        ? 'text-[var(--color-brand)] font-medium'
+                                                        : 'text-[#5e6278] hover:text-[var(--color-brand)]'
                                                     }
                                                 `}
                                             >
-                                                <div className="grid grid-cols-[20px_1fr] gap-[10px] items-start">
-                                                    {/* Bullet Icon */}
-                                                    <span className={`
-                                                        submenuSectionContentItemIcon
-                                                        flex items-center justify-center 
-                                                        h-[20px] 
-                                                        after:content-['○'] after:text-[0.7rem]
-                                                        ${active ? "after:content-['●'] after:text-[var(--color-brand)]" : "after:text-[var(--sidebar-bullet-inactive)] group-hover/item:after:content-['●'] group-hover/item:after:text-[var(--color-brand)]"}
-                                                    `}></span>
-                                                    <span className="whitespace-normal leading-tight break-words pt-[1px] pr-8">{subItem.title}</span>
-                                                </div>
+                                                <span className="whitespace-normal leading-tight break-words">{subItem.title}</span>
                                             </Link>
                                             {/* Favorite Icon */}
                                             <div
                                                 onClick={(e) => onFavorite(e, subItem)}
                                                 className="flex items-center justify-center absolute top-0 right-0 h-full px-[10px] z-[2]"
                                             >
-                                                <lord-icon
-                                                    src={subItem.fav ? 'https://cdn.lordicon.com/xjronrda.json' : 'https://cdn.lordicon.com/vcuhguff.json'}
-                                                    trigger="hover"
-                                                    colors="primary:var(--color-brand),secondary:var(--color-brand)"
-                                                    stroke="bold"
-                                                    style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                                                <Bookmark
+                                                    size={18}
+                                                    className={subItem.fav ? "fill-[var(--color-brand)] text-[var(--color-brand)]" : "text-gray-300 hover:text-[var(--color-brand)]"}
                                                 />
                                             </div>
                                         </li>
@@ -89,38 +81,25 @@ const SubMenuColumn: React.FC<{
                                 onClick={onLinkClick}
                                 className={`
                                     block w-full
-                                    min-h-[40px] py-2 pl-0
-                                    text-[13px] font-normal
+                                    py-3 pl-2 pr-10
+                                    text-[14px]
                                     transition-all duration-300
                                     ${isActive(category.page)
-                                        ? 'bg-[#f0f3ff] pl-[10px] rounded-[12px] font-bold text-[#5d78ff]'
-                                        : 'text-black hover:bg-[#f0f3ff] hover:pl-[10px] hover:rounded-[12px] hover:font-bold hover:text-[#5d78ff]'
+                                        ? 'text-[#5d78ff] font-medium'
+                                        : 'text-[#5e6278] hover:text-[#5d78ff]'
                                     }
                                 `}
                             >
-                                <div className="grid grid-cols-[20px_1fr] gap-[10px] items-start">
-                                    {/* Bullet Icon */}
-                                    <span className={`
-                                        submenuSectionContentItemIcon
-                                        flex items-center justify-center 
-                                        h-[20px]
-                                        after:content-['○'] after:text-[0.7rem]
-                                        ${isActive(category.page) ? "after:content-['●'] after:text-[#5d78ff]" : "after:text-[#b8bac3] group-hover/item:after:content-['●'] group-hover/item:after:text-[#5d78ff]"}
-                                    `}></span>
-                                    <span className="whitespace-normal leading-tight break-words pt-[1px] pr-8">{category.title}</span>
-                                </div>
+                                <span className="whitespace-normal leading-tight break-words">{category.title}</span>
                             </Link>
                             {/* Favorite Icon */}
                             <div
                                 onClick={(e) => onFavorite(e, category)}
                                 className="flex items-center justify-center absolute top-0 right-0 h-full px-[10px] z-[2]"
                             >
-                                <lord-icon
-                                    src={category.fav ? 'https://cdn.lordicon.com/xjronrda.json' : 'https://cdn.lordicon.com/vcuhguff.json'}
-                                    trigger="hover"
-                                    colors="primary:#5d78ff,secondary:#5d78ff"
-                                    stroke="bold"
-                                    style={{ width: '24px', height: '24px', cursor: 'pointer' }}
+                                <Bookmark
+                                    size={18}
+                                    className={category.fav ? "fill-[#5d78ff] text-[#5d78ff]" : "text-gray-300 hover:text-[#5d78ff]"}
                                 />
                             </div>
                         </div>
@@ -135,6 +114,8 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     item,
     onMouseEnter,
     onMouseLeave,
+    leftOffset = 100,
+    onClose
 }) => {
     if (!item || !item.submenu) return null;
 
@@ -209,61 +190,96 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
         }
     };
 
-    // Layout Logic: Masonry-style split for "Immediate Below" behavior
-    // If submenu has nested groups (submenu property on items), use multi-column if length > 1
-    // If submenu is just a flat list of items (no nested submenu), force single column and show title
-    const hasNestedGroups = item.submenu.some(sub => sub.submenu && sub.submenu.length > 0);
-    const isMultiColumn = hasNestedGroups && item.submenu.length > 1;
-    const containerWidthClass = isMultiColumn ? 'w-[600px]' : 'w-[320px]';
+    // Resolve Icon Color from CSS Variable to Hex for LordIcon
+    const [iconColor, setIconColor] = React.useState<string>('');
 
-    // Split items into Left (Evens) and Right (Odds) columns for masonry effect
-    const leftItems = item.submenu.filter((_: any, i: number) => i % 2 === 0);
-    const rightItems = item.submenu.filter((_: any, i: number) => i % 2 === 1);
+    React.useEffect(() => {
+        // Delay slightly to ensure styles are applied
+        const timer = setTimeout(() => {
+            const rootStyle = getComputedStyle(document.documentElement);
+            const raw = rootStyle.getPropertyValue('--sidebar-submenu-icon-color').trim();
+            // Fallback to primary if empty, assuming standard brand color
+            setIconColor(raw || '#e95029');
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Layout Logic: Single Column Strict
+    const containerWidthClass = 'w-[320px]';
 
     return (
-        <div
-            className={`
-                fixed left-[100px] top-[80px] bottom-0 ${containerWidthClass}
-                bg-white border-r border-[var(--sidebar-border)] shadow-[2px_0_5px_rgba(0,0,0,0.5)] z-50 
-                overflow-y-auto py-[18px] transition-all duration-300 ease-in-out
-                [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
-                ${isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}
-            `}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-        >
-            <div className="px-[18px]">
-                {/* For flat lists (single column), show the parent menu title as header */}
-                {!isMultiColumn && !hasNestedGroups && (
+        <>
+            {/* Backdrop for Blur Effect and Click Outside */}
+            {isVisible && (
+                <div
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[55] transition-opacity duration-300"
+                    onClick={onClose}
+                />
+            )}
+
+            <div
+                className={`
+                    fixed top-0 bottom-0 ${containerWidthClass}
+                    bg-white border-r border-[var(--sidebar-border)] shadow-[0_0_30px_rgba(0,0,0,0.1)] z-[60]
+                    overflow-y-auto py-0 transition-transform duration-300 ease-in-out
+                    [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
+                    ${isVisible ? 'translate-x-0' : '-translate-x-full opacity-0'}
+                `}
+                style={{ left: `${leftOffset}px` }}
+                onMouseEnter={onMouseEnter}
+                onMouseLeave={onMouseLeave}
+            >
+                {/* Header with Title and Close */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                        {/* Optional Icon */}
+                        {/* Header Icon */}
+                        <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center"
+                            style={{
+                                backgroundColor: 'var(--sidebar-submenu-icon-bg)',
+                                // color: 'var(--sidebar-submenu-icon-color)' // Handled by iconColor now for icon
+                            }}
+                        >
+                            {getIconSrc(item.title, true) ? (
+                                <lord-icon
+                                    src={getIconSrc(item.title, true) || undefined}
+                                    trigger="hover"
+                                    colors={`primary:${iconColor || '#e95029'},secondary:${iconColor || '#e95029'}`}
+                                    style={{ width: '24px', height: '24px' }}
+                                />
+                            ) : (
+                                <LayoutDashboard size={18} className="text-[var(--sidebar-submenu-icon-color)]" />
+                            )}
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-800">{item.title}</h3>
+                    </div>
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="p-1 rounded-full hover:bg-gray-200 text-gray-500 transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    )}
+                </div>
+
+                <div className="px-[18px] py-4">
+                    {/* For flat lists (single column), show the parent menu title as header (Redundant if header exists above, but keeping for structure) */}
+                    {/* {!isMultiColumn && !hasNestedGroups && (
                     <div className="submenuSectionTitle text-[12px] font-semibold text-[#3F4254] uppercase tracking-wider mb-2">
                         <span>{item.title}</span>
                     </div>
-                )}
+                )} */}
 
-                {isMultiColumn ? (
-                    <div className="flex gap-8 items-start">
-                        <SubMenuColumn
-                            items={leftItems}
-                            isActive={isActive}
-                            onLinkClick={handleLinkClick}
-                            onFavorite={handleFavorite}
-                        />
-                        <SubMenuColumn
-                            items={rightItems}
-                            isActive={isActive}
-                            onLinkClick={handleLinkClick}
-                            onFavorite={handleFavorite}
-                        />
-                    </div>
-                ) : (
                     <SubMenuColumn
                         items={item.submenu}
                         isActive={isActive}
                         onLinkClick={handleLinkClick}
                         onFavorite={handleFavorite}
                     />
-                )}
+                </div>
             </div>
-        </div>
+        </>
     );
 };

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Select, SelectProps } from '../atoms/Select';
+import { Select, SelectProps } from '../Atoms/Select';
 
 export const SelectInput: React.FC<SelectProps> = (props) => {
     return (
