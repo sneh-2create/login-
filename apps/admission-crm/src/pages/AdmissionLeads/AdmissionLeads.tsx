@@ -1,11 +1,16 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
 import { useAdmissionLead, useAddAdmissionLead, useCounselors, useSessions } from '@od-erp/query';
 import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Filter, Plus, Settings, Edit } from 'lucide-react';
+import { Filter, Plus, MoreVertical, Clock, MessageSquare, Plane, FileText, PhoneCall } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
+import TimelineModal from '../../components/Modals/TimelineModal';
+import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
+import VisitsModal from '../../components/Modals/VisitsModal';
+import NotesModal from '../../components/Modals/NotesModal';
+import CallsModal from '../../components/Modals/CallsModal';
 
 const AdmissionLeads = () => {
     // Metadata
@@ -33,6 +38,20 @@ const AdmissionLeads = () => {
         addCounselor: false,
         counselorId: ''
     });
+
+    const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
+    const [isTimelineOpen, setIsTimelineOpen] = useState(false);
+    const [followUpStudent, setFollowUpStudent] = useState<AdmissionLead | null>(null);
+    const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
+    const [visitsStudent, setVisitsStudent] = useState<AdmissionLead | null>(null);
+    const [isVisitsOpen, setIsVisitsOpen] = useState(false);
+    const [notesStudent, setNotesStudent] = useState<AdmissionLead | null>(null);
+    const [isNotesOpen, setIsNotesOpen] = useState(false);
+    const [callsStudent, setCallsStudent] = useState<AdmissionLead | null>(null);
+    const [isCallsOpen, setIsCallsOpen] = useState(false);
+    const [openActionId, setOpenActionId] = useState<string | null>(null);
+
+    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
 
     // Queries
     const { data: counselors } = useCounselors(entityId, 'counselor');
@@ -71,20 +90,96 @@ const AdmissionLeads = () => {
         }
     };
 
+    const handleViewTimeline = (student: AdmissionLead) => {
+        setTimelineStudent(student);
+        setIsTimelineOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewFollowUp = (student: AdmissionLead) => {
+        setFollowUpStudent(student);
+        setIsFollowUpOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewVisits = (student: AdmissionLead) => {
+        setVisitsStudent(student);
+        setIsVisitsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewNotes = (student: AdmissionLead) => {
+        setNotesStudent(student);
+        setIsNotesOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const handleViewCalls = (student: AdmissionLead) => {
+        setCallsStudent(student);
+        setIsCallsOpen(true);
+        setOpenActionId(null);
+        setActionMenuPosition(null);
+    };
+
+    const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
+        if (openActionId === id) {
+            setOpenActionId(null);
+            setActionMenuPosition(null);
+        } else {
+            const rect = event.currentTarget.getBoundingClientRect();
+            setOpenActionId(id);
+            setActionMenuPosition({
+                top: rect.bottom + 5,
+                left: rect.left - 100 // Adjust to align better
+            });
+        }
+    };
+
+    // Close dropdown when clicking outside
+    const handleDocumentClick = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.action-menu-dropdown')) {
+            setOpenActionId(null);
+            setActionMenuPosition(null);
+        }
+    };
+
+    useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.addEventListener('click', handleDocumentClick);
+        }
+        return () => {
+            if (typeof document !== 'undefined') {
+                document.removeEventListener('click', handleDocumentClick);
+            }
+        };
+    }, []);
+
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(
         () => [
             {
                 header: 'Action',
                 id: 'actions',
-                cell: () => (
-                    <div className="flex items-center gap-2">
-                        <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
-                        <Settings size={16} className="text-gray-500 cursor-pointer" />
-                        <Edit size={16} className="text-blue-500 cursor-pointer" />
-                    </div>
-                ),
-                size: 100
+                cell: info => {
+                    const id = info.row.original._id;
+                    return (
+                        <div className="relative">
+                            <button
+                                onClick={(e) => toggleActionMenu(id, e)}
+                                className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+                        </div>
+                    );
+                },
+                size: 60
             },
             {
                 header: 'Tag',
@@ -319,8 +414,102 @@ const AdmissionLeads = () => {
                     </div>
                 </div>
             </Card>
+
+            {/* Action Menu Dropdown */}
+            {openActionId && actionMenuPosition && (
+                <div
+                    className="fixed bg-white rounded-md shadow-lg border border-gray-100 z-[9999] overflow-hidden w-40 action-menu-dropdown"
+                    style={{
+                        top: actionMenuPosition.top,
+                        left: actionMenuPosition.left
+                    }}
+                >
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewTimeline(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Clock size={14} className="mr-2 text-blue-500" />
+                        View Timeline
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewFollowUp(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <MessageSquare size={14} className="mr-2 text-green-500" />
+                        Follow Up
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewVisits(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <Plane size={14} className="mr-2 text-orange-500" />
+                        Visits
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewCalls(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <PhoneCall size={14} className="mr-2 text-indigo-500" />
+                        Calls
+                    </button>
+                    <button
+                        onClick={() => {
+                            const student = data?.data?.find(s => s._id === openActionId);
+                            if (student) handleViewNotes(student);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
+                    >
+                        <FileText size={14} className="mr-2 text-purple-500" />
+                        Notes
+                    </button>
+
+                </div>
+            )}
+
+            <TimelineModal
+                isOpen={isTimelineOpen}
+                onClose={() => setIsTimelineOpen(false)}
+                student={timelineStudent}
+            />
+
+            <ViewFollowUpModal
+                isOpen={isFollowUpOpen}
+                onClose={() => setIsFollowUpOpen(false)}
+                student={followUpStudent}
+            />
+
+            <VisitsModal
+                isOpen={isVisitsOpen}
+                onClose={() => setIsVisitsOpen(false)}
+                student={visitsStudent}
+            />
+
+            <CallsModal
+                isOpen={isCallsOpen}
+                onClose={() => setIsCallsOpen(false)}
+                student={callsStudent}
+            />
+
+            <NotesModal
+                isOpen={isNotesOpen}
+                onClose={() => setIsNotesOpen(false)}
+                student={notesStudent}
+            />
         </div>
     );
 };
 
 export default AdmissionLeads;
+

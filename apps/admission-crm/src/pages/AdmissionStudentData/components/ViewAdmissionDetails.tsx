@@ -5,7 +5,7 @@ import { Button, Input, Select } from '@od-erp/ui';
 import { ArrowLeft, ArrowRight, Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import NegativeTagModal from './NegativeTagModal';
-import ViewFollowUpModal from './ViewFollowUpModal';
+import ViewFollowUpModal from '../../../components/Modals/ViewFollowUpModal';
 import { useAdmissionStageSetup } from '@od-erp/query';
 import { ALL_STUDENT_FIELDS } from '../config/studentFields';
 import { useMemo } from 'react';

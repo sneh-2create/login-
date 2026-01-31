@@ -322,3 +322,51 @@ export interface AdmissionDailyCollectionReportParams {
     paymentMode?: string;
     courses?: string[];
 }
+
+export interface AdmissionVisit {
+    _id: string;
+    studentData?: {
+        name: string;
+        applicationNumber?: string;
+        fatherName?: string;
+        schoolName?: string;
+        course?: string;
+        currentStage?: string;
+    };
+    visitDate: number;
+    remark?: string;
+    createdBy?: string;
+    createdAt?: number;
+}
+
+export interface AdmissionVisitPayload {
+    entity: string;
+    session?: string;
+    studentId?: string; // ID of the student
+    pageSize?: number;
+    pageNumber?: number;
+}
+
+export interface AdmissionNote {
+    _id: string;
+    studentData?: {
+        name: string;
+        applicationNumber?: string;
+        fatherName?: string;
+        schoolName?: string;
+        course?: string;
+        currentStage?: string;
+    };
+    noteDate: number;
+    note: string;
+    createdBy?: string;
+    createdAt?: number;
+}
+
+export interface AdmissionNotePayload {
+    entity: string;
+    session?: string;
+    studentId?: string;
+    pageSize?: number;
+    pageNumber?: number;
+}

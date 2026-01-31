@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead } from '@od-erp/types';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService, admissionVisitService, admissionNoteService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -157,6 +157,44 @@ export const useUpdateAdmissionLead = () => {
         mutationFn: admissionLeadService.updateAdmissionLead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useAdmissionVisit = (payload: AdmissionVisitPayload, enabled?: boolean) => {
+    return useQuery<{ data: AdmissionVisit[]; totalCount: number }>({
+        queryKey: ['admissionVisit', payload],
+        queryFn: () => admissionVisitService.listAdmissionVisit(payload),
+        enabled: !!payload.entity && (enabled !== undefined ? enabled : true),
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddAdmissionVisit = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionVisitService.addAdmissionVisit,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionVisit'] });
+        },
+    });
+};
+
+export const useAdmissionNote = (payload: AdmissionNotePayload, enabled?: boolean) => {
+    return useQuery<{ data: AdmissionNote[]; totalCount: number }>({
+        queryKey: ['admissionNote', payload],
+        queryFn: () => admissionNoteService.listAdmissionNote(payload),
+        enabled: !!payload.entity && (enabled !== undefined ? enabled : true),
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddAdmissionNote = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionNoteService.addAdmissionNote,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionNote'] });
         },
     });
 };
