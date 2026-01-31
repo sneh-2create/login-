@@ -18,6 +18,7 @@
         "@od-erp/api-client": "workspace:*",
         "@od-erp/auth": "workspace:*",
         "@od-erp/constants": "workspace:*",
+        "@od-erp/context": "workspace:*",
         "@od-erp/query": "workspace:*",
         "@od-erp/store": "workspace:*",
         "@od-erp/theme": "workspace:*",

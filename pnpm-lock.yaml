@@ -126,6 +126,9 @@ importers:
       '@od-erp/constants':
         specifier: workspace:*
         version: link:../../packages/constants
+      '@od-erp/context':
+        specifier: workspace:*
+        version: link:../../packages/context
       '@od-erp/query':
         specifier: workspace:*
         version: link:../../packages/query
@@ -680,6 +683,19 @@ importers:
 
   packages/constants:
     devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/context:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.0
+        version: 18.3.27
       typescript:
         specifier: ^5.3.3
         version: 5.9.3

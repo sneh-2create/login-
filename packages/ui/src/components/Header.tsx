@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useSession, useAppDispatch, useAppSelector, logout } from '@od-erp/store'; // Added imports
+import { useSession, useAppDispatch, logout } from '@od-erp/store';
 import { User, LogOut, Menu, ChevronLeft } from 'lucide-react'; // Added icons
 import { cn } from '../utils';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
+import { SearchIcon, BellIcon, PlusIcon } from './Icons/HeaderIcons';
 
 interface HeaderProps {
     className?: string;
@@ -16,14 +17,12 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
     const { session } = useSession();
     const dispatch = useAppDispatch();
     const navigate = useNavigate();
-    const { entityDetails } = useAppSelector((state) => state.auth);
 
+    const [showSearchExpanded, setShowSearchExpanded] = useState(false);
     const [showQuickActions, setShowQuickActions] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     // ... variables ...
-    const displayName = entityDetails?.displayName || "OD ERP";
-    const logoUrl = entityDetails?.logo;
     const userName = session?.user?.name || "User";
     const userRole = session?.user?.role || "Admin";
     const quickActionIcon = "https://cdn.lordicon.com/mwzdatpw.json";
@@ -37,37 +36,26 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
     return (
         <header
             className={cn(
-                "h-[80px] bg-white shadow-sm flex items-center justify-between px-6 fixed top-0 left-0 w-full z-30 transition-all duration-300",
+                "h-[80px] bg-white flex items-center justify-between px-6 transition-all duration-300",
+                "border-b border-gray-200 shadow-md z-[58]",
                 className
             )}
         >
             <div className="flex items-center gap-4">
-                {/* Logo Area */}
-                <div className="flex items-center gap-3">
-                    {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="h-10 w-auto object-contain max-w-[150px]" />
-                    ) : (
-                        <div className="h-10 w-10 bg-[var(--sidebar-item-active-bg)] rounded-full flex items-center justify-center text-[var(--color-primary)] font-bold">
-                            OD
-                        </div>
-                    )}
-                    <h3 className="text-xl font-bold text-[var(--color-primary)] hidden md:block cursor-pointer hover:text-[var(--color-primary)] transition-colors">
-                        {displayName}
-                    </h3>
-                </div>
-
                 {/* Sidebar Toggle */}
                 {onToggleSidebar && (
                     <button
                         onClick={onToggleSidebar}
-                        className="ml-2 p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
+                        className="p-2 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
                     >
                         {isSidebarExpanded ? <ChevronLeft size={24} /> : <Menu size={24} />}
                     </button>
                 )}
 
+
+
                 {/* Horizontal Menu (Legacy Parity) */}
-                <nav className="hidden lg:flex items-center gap-6 pl-8">
+                <nav className="hidden lg:flex items-center gap-6 pl-2">
                     {['Fee', 'Advanced', 'Analytics', 'Admission'].map((item) => (
                         <div key={item} className="group relative cursor-pointer">
                             <span className="text-[13px] font-medium text-[#6c7293] group-hover:text-[var(--color-primary)] transition-colors uppercase tracking-wide">
@@ -80,15 +68,47 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
                 </nav>
             </div>
 
-            <div className="flex items-center gap-4">
-                {/* ... existing right side ... */}
+            {/* Right Side */}
+            <div className="flex items-center gap-3">
+                {/* Expandable Search */}
+                <div className="relative">
+                    {!showSearchExpanded ? (
+                        // Collapsed: Search Icon
+                        <button
+                            onClick={() => setShowSearchExpanded(true)}
+                            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors text-gray-600"
+                        >
+                            <SearchIcon size={20} />
+                        </button>
+                    ) : (
+                        // Expanded: Search Input
+                        <div className="flex items-center gap-2 bg-white border-2 border-[var(--color-primary)] rounded-full px-4 py-2 min-w-[300px] animate-in fade-in slide-in-from-right-2">
+                            <SearchIcon size={18} color="var(--color-primary)" />
+                            <input
+                                type="text"
+                                placeholder="Search students, fees, reports..."
+                                className="flex-1 outline-none text-sm text-gray-700 placeholder:text-gray-400"
+                                autoFocus
+                                onBlur={() => setShowSearchExpanded(false)}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Academic Year Badge */}
                 <div className="hidden md:flex items-center px-4 py-2 bg-gray-50 rounded-full text-sm text-[#6c7293] font-medium border border-gray-100">
                     2024-2025
                 </div>
 
-                <button
-                    className="hidden md:flex items-center justify-center px-4 py-2 text-sm font-bold text-[var(--color-primary)] border border-[var(--color-primary)] rounded-md hover:bg-[var(--color-primary)] hover:text-white transition-all uppercase tracking-wide"
-                >
+                {/* Notification Bell */}
+                <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 transition-colors text-gray-600 relative">
+                    <BellIcon size={20} />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+
+                {/* Create Ticket Button */}
+                <button className="hidden md:flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-all">
+                    <PlusIcon size={16} />
                     Create Ticket
                 </button>
 

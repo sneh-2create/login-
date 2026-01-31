@@ -7,6 +7,7 @@ import * as xlsx from 'xlsx';
 import { CounselorTagReportTableRow } from '@od-erp/types';
 import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
+import { useBreadcrumbs } from '@od-erp/context';
 
 const counselorTagReport = () => {
     const [loading, setLoading] = useState(false);
@@ -23,7 +24,16 @@ const counselorTagReport = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const { setBreadcrumbs } = useBreadcrumbs();
 
+    // Set breadcrumbs
+    useEffect(() => {
+        setBreadcrumbs([
+            { label: 'Home', href: '/' },
+            { label: 'Reports', href: '/admission/reports' },
+            { label: 'Counselor Tag Report' }
+        ]);
+    }, [setBreadcrumbs]);
 
     // Dynamic Tags
     const [tags, setTags] = useState<string[]>([]);
@@ -129,7 +139,7 @@ const counselorTagReport = () => {
     };
 
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-6 gap-6">
+        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-white gap-6">
             <div className="flex justify-between items-center">
                 <div>
                     <div className="text-xs text-gray-500 mb-1 cursor-pointer">

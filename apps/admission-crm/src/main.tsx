@@ -2,8 +2,9 @@ import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { Sidebar, Header } from '@od-erp/ui'
-import { store, useAppDispatch, useAppSelector, setMenuConfig } from '@od-erp/store'
+import { Sidebar, Header } from '@od-erp/ui';
+import { BreadcrumbProvider } from '@od-erp/context';
+import { store, useAppDispatch, useAppSelector, setMenuConfig } from '@od-erp/store';
 import { menuConfig } from '@od-erp/constants'
 import { AuthGuard } from './components/AuthGuard'
 import App from './App'
@@ -60,13 +61,22 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
 
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
-            <Header isSidebarExpanded={isSidebarExpanded} onToggleSidebar={toggleSidebar} />
+            {/* Sidebar (Fixed Left, Full Height) */}
             <Sidebar collapsed={!isSidebarExpanded} />
+
+            {/* Main Content Area (Header + Content) */}
             <div
-                className={`flex-1 min-w-0 flex flex-col pt-[80px] h-full transition-all duration-300`}
+                className="flex-1 min-w-0 flex flex-col h-full transition-all duration-300"
                 style={{ marginLeft: isSidebarExpanded ? '265px' : '100px' }}
             >
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6">
+                {/* Header (Fixed Top, to the right of sidebar) */}
+                <Header
+                    isSidebarExpanded={isSidebarExpanded}
+                    onToggleSidebar={toggleSidebar}
+                />
+
+                {/* Page Content */}
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6 bg-white">
                     {children}
                 </main>
             </div>
@@ -78,21 +88,23 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <Provider store={store}>
             <BrowserRouter>
-                <Routes>
-                    <Route path="/admission/*" element={
-                        <StandaloneLayout>
-                            <AuthGuard>
+                <BreadcrumbProvider>
+                    <Routes>
+                        <Route path="/admission/*" element={
+                            <StandaloneLayout>
+                                <AuthGuard>
+                                    <App />
+                                </AuthGuard>
+                            </StandaloneLayout>
+                        } />
+                        <Route path="/print/*" element={
+                            <StandaloneLayout>
                                 <App />
-                            </AuthGuard>
-                        </StandaloneLayout>
-                    } />
-                    <Route path="/print/*" element={
-                        <StandaloneLayout>
-                            <App />
-                        </StandaloneLayout>
-                    } />
-                    <Route path="*" element={<Navigate to="/admission" replace />} />
-                </Routes>
+                            </StandaloneLayout>
+                        } />
+                        <Route path="*" element={<Navigate to="/admission" replace />} />
+                    </Routes>
+                </BreadcrumbProvider>
             </BrowserRouter>
         </Provider>
     </React.StrictMode>

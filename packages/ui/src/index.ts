@@ -17,4 +17,5 @@ export * from './components/SelectInput/SelectInput';
 export * from './components/Sidebar/Sidebar';
 export * from './components/LoadingState/LoadingState';
 export * from './components/Header';
+export * from './components/Breadcrumb';
 export { cn } from './utils';
