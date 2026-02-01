@@ -1,55 +1,294 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Cookies from 'js-cookie';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '@od-erp/api-client';
 import { useAppDispatch } from '@od-erp/store';
 import { setCredentials, setAcademicSession, setEntity } from '@od-erp/store';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Users, CreditCard, CalendarCheck2, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { useMutation } from '@od-erp/query';
 
 // Import Assets
-import slide1 from '../assets/images/slide1.1.svg';
-import slide2 from '../assets/images/slider2.svg';
-import slide3 from '../assets/images/slider3.svg';
-import topLogo from '../assets/images/top-logo.png';
-import welcomeIcon from '../assets/images/welcomeIcon.png';
+import logo from '../assets/images/logo.png';
 
+// ============================================================================
+// CUSTOM HOOK: Typing Animation
+// ============================================================================
+const useTypingText = (phrases: string[], options: { typingSpeed?: number; deletingSpeed?: number; pauseTime?: number } = {}) => {
+    const { typingSpeed = 100, deletingSpeed = 50, pauseTime = 2000 } = options;
+    const [index, setIndex] = useState(0);
+    const [text, setText] = useState('');
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        if (!phrases || phrases.length === 0) return;
+
+        const current = phrases[index];
+        let timeoutId: ReturnType<typeof setTimeout>;
+
+        if (!isDeleting && text === current) {
+            timeoutId = setTimeout(() => setIsDeleting(true), pauseTime);
+        } else {
+            const delay = isDeleting ? deletingSpeed : typingSpeed;
+            timeoutId = setTimeout(() => {
+                const next = isDeleting
+                    ? current.slice(0, text.length - 1)
+                    : current.slice(0, text.length + 1);
+
+                setText(next);
+
+                if (isDeleting && next === '') {
+                    setIsDeleting(false);
+                    setIndex((prev) => (prev + 1) % phrases.length);
+                }
+            }, delay);
+        }
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [phrases, index, text, isDeleting, typingSpeed, deletingSpeed, pauseTime]);
+
+    return text;
+};
+
+// ============================================================================
+// UTILITY: Validation Functions
+// ============================================================================
+const sanitizePhone = (value: string = ''): string => {
+    return String(value).replace(/\D/g, '').slice(0, 10);
+};
+
+const phoneErrorMessage = (value: string = ''): string => {
+    const digits = sanitizePhone(value);
+    if (!digits) return '';
+    if (digits.length < 10) return 'Please enter 10 digit phone number';
+    return '';
+};
+
+const sanitizePassword = (raw: string = ''): string => {
+    return String(raw).replace(/[()[\]{}<>\s+\-=]/g, '');
+};
+
+const passwordErrorMessage = (password: string = '', attemptedInvalid: boolean = false): string => {
+    if (!password && !attemptedInvalid) return '';
+    if (attemptedInvalid) return "Spaces, brackets, '+', '-' and '=' are not allowed";
+    if (String(password).trim().length < 3) return 'Password must be at least 3 characters';
+    return '';
+};
+
+const isPhoneValid = (value: string = ''): boolean => {
+    return sanitizePhone(value).length === 10;
+};
+
+const isPasswordValid = (password: string = ''): boolean => {
+    return String(password).trim().length >= 3;
+};
+
+// ============================================================================
+// COMPONENTS
+// ============================================================================
+
+// Feature Card Component
+interface FeatureCardProps {
+    icon: React.ElementType;
+    title: string;
+    subtitle: string;
+    bgClass: string;
+    hoverBgClass: string;
+    iconBgClass?: string;
+    iconColorClass?: string;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({
+    icon: Icon,
+    title,
+    subtitle,
+    bgClass,
+    hoverBgClass,
+    iconBgClass = 'bg-slate-50',
+    iconColorClass = 'text-slate-700'
+}) => {
+    return (
+        <div
+            className={`group flex cursor-pointer items-center gap-4 rounded-[12px] px-5 py-4 shadow-sm transition-all duration-300 ${bgClass} ${hoverBgClass} hover:shadow-lg hover:-translate-y-2 hover:scale-[1.05]`}
+        >
+            <div className="flex h-12 w-12 items-center justify-center rounded-[8px] bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
+                <div
+                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-125 ${iconBgClass}`}
+                >
+                    <Icon className={`h-4 w-4 ${iconColorClass}`} />
+                </div>
+            </div>
+            <div className="space-y-1">
+                <p className="text-[14px] font-semibold leading-[20px] text-[#1f2937]">{title}</p>
+                <p className="text-[12px] leading-[16px] text-[#6b7280]">{subtitle}</p>
+            </div>
+        </div>
+    );
+};
+
+// Auth Toggle Component
+interface AuthToggleProps {
+    mode: 'OTP' | 'PASSWORD';
+    onChange: (_mode: 'OTP' | 'PASSWORD') => void;
+}
+
+const AuthToggle: React.FC<AuthToggleProps> = ({ mode, onChange }) => {
+    const isOtp = mode === 'OTP';
+
+    return (
+        <div className="mb-6 mt-6 flex h-[52px] w-full rounded-[12px] bg-[#f3f4f6] p-1">
+            <button
+                type="button"
+                onClick={() => onChange('OTP')}
+                className={`flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${isOtp
+                    ? 'bg-[#e95028] text-white shadow-sm'
+                    : 'text-[#6b7280] hover:text-[#374151]'
+                    }`}
+            >
+                OTP Login
+            </button>
+            <button
+                type="button"
+                onClick={() => onChange('PASSWORD')}
+                className={`flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${!isOtp
+                    ? 'bg-[#e95028] text-white shadow-sm'
+                    : 'text-[#6b7280] hover:text-[#374151]'
+                    }`}
+            >
+                Password
+            </button>
+        </div>
+    );
+};
+
+// Input Component
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+    label?: string;
+    icon?: React.ReactNode;
+    error?: string;
+}
+
+const Input: React.FC<InputProps> = ({ label, icon, error, className = '', ...props }) => {
+    return (
+        <div className="space-y-2">
+            {label && (
+                <label className="text-[14px] font-semibold text-[#374151]">{label}</label>
+            )}
+            <div className="relative">
+                {icon && (
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        {icon}
+                    </span>
+                )}
+                <input
+                    className={`h-[54px] w-full rounded-[12px] border border-[#e5e7eb] bg-white px-3 text-[16px] text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/10 ${icon ? 'pl-10' : ''
+                        } ${error ? 'border-red-500' : ''} ${className}`}
+                    {...props}
+                />
+            </div>
+            {error && <p className="text-[12px] text-red-500">{error}</p>}
+        </div>
+    );
+};
+
+// Button Component
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: 'primary' | 'secondary';
+    isLoading?: boolean;
+}
+
+const Button: React.FC<ButtonProps> = ({
+    variant = 'primary',
+    isLoading = false,
+    children,
+    className = '',
+    disabled,
+    ...props
+}) => {
+    const baseStyles =
+        'h-[52px] w-full rounded-[12px] text-[16px] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2';
+    const variantStyles = {
+        primary:
+            "bg-[#e95028] text-white shadow-[0px_4px_6px_rgba(249,115,22,0.2),0px_10px_15px_rgba(249,115,22,0.2)] hover:bg-[#d04320] focus:ring-[#e95028]/20",
+        secondary:
+            'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb] focus:ring-[#6b7280]/20'
+    };
+
+    return (
+        <button
+            className={`${baseStyles} ${variantStyles[variant]} ${className} disabled:cursor-not-allowed disabled:opacity-60`}
+            disabled={disabled || isLoading}
+            {...props}
+        >
+            {isLoading ? <Loader2 className="animate-spin" /> : children}
+        </button>
+    );
+};
+
+// ============================================================================
+// HEADING PHRASES FOR TYPING ANIMATION
+// ============================================================================
+const HEADING_PHRASES = [
+    'Campus Automation',
+    'Fees Management',
+    'Campus Management',
+    'Staff Portal',
+    'Academic Portal'
+];
+
+// ============================================================================
+// MAIN LOGIN COMPONENT
+// ============================================================================
 export const Login: React.FC = () => {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
+
+    // Typing Animation
+    const typed = useTypingText(HEADING_PHRASES, {
+        typingSpeed: 100,
+        deletingSpeed: 50,
+        pauseTime: 2000
+    });
 
     // UI State
     const [authMode, setAuthMode] = useState<'OTP' | 'PASSWORD'>('OTP');
     const [otpSent, setOtpSent] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showPassword, setShowPassword] = useState(false);
+    const [passwordInvalidAttempt, setPasswordInvalidAttempt] = useState(false);
 
     // Form Data
     const [mobile, setMobile] = useState('');
     const [password, setPassword] = useState('');
-    const [otp, setOtp] = useState('');
+    const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
 
-    // Carousel State
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const slides = [
-        { img: slide1, text: "Access Daily and Annual \n Fee Collection Reports" },
-        { img: slide2, text: "Effortlessly Capture Student and \n Employee Attendance Data" },
-        { img: slide3, text: "Unlock the Power of Examination \n Analysis and Library Management" }
-    ];
+    // OTP Input Refs
+    const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
+    // OTP Countdown
+    const [countdown, setCountdown] = useState(30);
+
+    // Countdown Effect
     useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % slides.length);
-        }, 3000);
-        return () => clearInterval(interval);
-    }, [slides.length]);
+        if (!otpSent || countdown <= 0) return;
+        const timer = setInterval(() => setCountdown((prev) => (prev > 0 ? prev - 1 : 0)), 1000);
+        return () => clearInterval(timer);
+    }, [otpSent, countdown]);
 
-    // Mutations
+    // ========================================================================
+    // MUTATIONS (Existing Auth Logic)
+    // ========================================================================
     const sendOtpMutation = useMutation({
         mutationFn: (mobile: string) => authService.sendOtp(mobile),
         onSuccess: () => {
             setOtpSent(true);
-            setAuthMode('OTP');
+            setCountdown(30);
+            setOtp(Array(6).fill(''));
             setError(null);
+            setTimeout(() => {
+                otpInputsRef.current[0]?.focus();
+            }, 50);
         },
         onError: (err: any) => {
             console.error('Send OTP failed', err);
@@ -61,9 +300,7 @@ export const Login: React.FC = () => {
         mutationFn: ({ entityId, sessionName }: { entityId: string; sessionName: string }) =>
             authService.fetchSession(entityId, sessionName),
         onSuccess: (data) => {
-            // Update session with preferred session details
             dispatch(setAcademicSession(data.name));
-            // You might want to update other session details here if added to sessionSlice (superSession, dates etc)
         }
     });
 
@@ -71,7 +308,6 @@ export const Login: React.FC = () => {
         // 1. Extract Entity Details & Theme
         let entityDetails: any = undefined;
         if (response.entity) {
-            // Theme Logic: Use entity preference color, fallback to default (undefined lets CSS variable take over)
             let primaryColour: string | undefined;
             let secondaryColour: string | undefined;
 
@@ -114,9 +350,8 @@ export const Login: React.FC = () => {
             entityDetails: entityDetails
         }));
 
-        // WORKAROUND: Store credentials for micro-frontends to re-login (requested by user)
+        // WORKAROUND: Store credentials for micro-frontends to re-login
         const isSecure = window.location.protocol === 'https:';
-        // Determine root domain dynamically
         const hostname = window.location.hostname;
         const domain = hostname.includes('oderp.in') ? '.oderp.in' : undefined;
 
@@ -130,7 +365,6 @@ export const Login: React.FC = () => {
                 type: response.entity.entityType
             }));
 
-            // Set default active session first
             if (response.entity.activeSession) {
                 dispatch(setAcademicSession(response.entity.activeSession.name));
             }
@@ -146,7 +380,7 @@ export const Login: React.FC = () => {
             return;
         }
 
-        // 4. Default Navigation Logic (if no redirect params)
+        // 4. Default Navigation Logic
         switch (response.userType) {
             case 'od1':
                 navigate('/dashboard');
@@ -154,14 +388,11 @@ export const Login: React.FC = () => {
             case 'od2':
             case 'od3':
                 if (response.entity) {
-                    // Check Active Session
                     if (!response.entity.activeSession) {
-                        // TODO: Alert user "Please Activate A Session First"
                         navigate('/schoolSetup/academicSession');
                         return;
                     }
 
-                    // Check for Preferred Session
                     if (response.userPreferences && response.userPreferences.session) {
                         try {
                             const sessionData = await fetchSessionMutation.mutateAsync({
@@ -178,11 +409,10 @@ export const Login: React.FC = () => {
                         navigate('/entity/dashboard');
                     }
                 } else {
-                    // Fallback if no entity found for od2/od3 (should not happen usually)
                     navigate('/');
                 }
                 break;
-            case 'od4': // Student
+            case 'od4':
                 navigate('/');
                 break;
             default:
@@ -211,8 +441,11 @@ export const Login: React.FC = () => {
 
     const isLoading = sendOtpMutation.isPending || loginMutation.isPending || verifyOtpMutation.isPending || fetchSessionMutation.isPending;
 
+    // ========================================================================
+    // HANDLERS
+    // ========================================================================
     const handleGetOtp = () => {
-        if (!mobile || mobile.length !== 10) {
+        if (!isPhoneValid(mobile)) {
             setError('Please enter a valid 10-digit mobile number');
             return;
         }
@@ -220,196 +453,325 @@ export const Login: React.FC = () => {
     };
 
     const handleVerifyOtp = () => {
-        if (!otp || otp.length !== 6) {
+        const otpCode = otp.join('');
+        if (otpCode.length !== 6) {
             setError('Please enter a valid 6-digit OTP');
             return;
         }
-        verifyOtpMutation.mutate({ mobile, otp });
+        verifyOtpMutation.mutate({ mobile, otp: otpCode });
     };
 
     const handlePasswordLogin = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!mobile || !password) {
-            setError('Mobile and Password are required');
+        if (!isPhoneValid(mobile)) {
+            setError('Please enter a valid 10-digit mobile number');
+            return;
+        }
+        if (!isPasswordValid(password)) {
+            setError('Password must be at least 3 characters');
             return;
         }
         loginMutation.mutate({ mobile, password });
     };
 
+    const handleOtpChange = (index: number, value: string) => {
+        if (!/^\d?$/.test(value)) return;
+        const next = [...otp];
+        next[index] = value;
+        setOtp(next);
+        if (value && index < 5) {
+            otpInputsRef.current[index + 1]?.focus();
+        }
+    };
+
+    const handleOtpKeyDown = (index: number, event: React.KeyboardEvent) => {
+        if (event.key === 'Backspace' && !otp[index] && index > 0) {
+            otpInputsRef.current[index - 1]?.focus();
+        }
+    };
+
+    const handleModeChange = (newMode: 'OTP' | 'PASSWORD') => {
+        setAuthMode(newMode);
+        setOtpSent(false);
+        setError(null);
+        setOtp(Array(6).fill(''));
+    };
+
+    const handleResendOtp = () => {
+        if (countdown > 0) return;
+        sendOtpMutation.mutate(mobile);
+    };
+
+    const getMobileError = () => phoneErrorMessage(mobile);
+    const getPasswordError = () => passwordErrorMessage(password, passwordInvalidAttempt);
+
+    // ========================================================================
+    // RENDER
+    // ========================================================================
     return (
-        <div className="w-screen h-screen bg-[#f2ebf8] flex overflow-hidden lg:p-8 p-4 font-roboto">
-            <div className="w-full h-full bg-[#f2ebf8] grid lg:grid-cols-[2.1fr_0.2fr_0.7fr] grid-cols-1">
+        <div className="min-h-screen animate-fade-in bg-[linear-gradient(144.583deg,#e8f4f8_0%,#d4e8f0_70.711%)] font-sans flex items-center justify-center">
+            <div className="container mx-auto px-4">
+                <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12">
 
-                {/* Left Side: Carousel */}
-                <div className="hidden lg:flex flex-col justify-between h-full">
-                    <div className="flex-1 flex items-center justify-center relative">
-                        {slides.map((slide, index) => (
-                            <div
-                                key={index}
-                                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${index === currentSlide ? 'opacity-100' : 'opacity-0'}`}
-                            >
-                                <img src={slide.img} alt="Slide" className="h-[60vh] object-contain" />
-                                <h3 className="mt-8 text-3xl font-bold text-gray-800 text-center whitespace-pre-line">
-                                    {slide.text}
-                                </h3>
+                    {/* Left: Feature Panel - Hidden on mobile */}
+                    <div className="hidden md:block md:w-1/2 md:pl-6 md:transform md:translate-x-4">
+                        <div className="max-w-lg">
+                            {/* Logo */}
+                            <div className="mb-6">
+                                <img src={logo} alt="Okie Dokie logo" className="h-14 w-auto object-contain" />
                             </div>
-                        ))}
-                    </div>
 
-                    <div className="flex justify-start gap-4 mt-4 h-4 ml-12">
-                        {slides.map((_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => setCurrentSlide(index)}
-                                className={`h-[10px] rounded-full transition-all duration-300 ${index === currentSlide ? 'w-8 bg-gray-800' : 'w-4 bg-white'}`}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="mt-8 text-gray-600 font-bold ml-12">
-                        © {new Date().getFullYear()} Okie Dokie
-                    </div>
-                </div>
-
-                {/* Divider Line (Visual only) */}
-                <div className="hidden lg:flex items-center justify-center">
-                    <div className="w-1 h-full bg-white opacity-50 rounded-full"></div>
-                </div>
-
-                {/* Right Side: Login Card */}
-                <div className="relative flex items-center justify-center h-full">
-                    <div className="bg-white rounded-[28px] shadow-[0px_0px_22px_5px_rgba(0,0,0,0.03)] p-8 w-full max-w-md h-auto lg:h-[90%] flex flex-col justify-between relative overflow-hidden">
-
-                        {/* Auth Notice Alert could go here */}
-                        {error && (
-                            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border-l-4 border-red-500">
-                                {error}
+                            {/* Typing Headline */}
+                            <div className="mb-6">
+                                <h1 className="text-4xl md:text-5xl font-bold text-[#333333] leading-tight">Transform Your</h1>
+                                <p className="text-4xl md:text-5xl font-bold text-[#e95028] leading-tight">{typed || '\u00A0'}</p>
                             </div>
-                        )}
 
-                        {/* Top Logo */}
-                        <div className="absolute top-4 right-[-20px] lg:right-4">
-                            <img src={topLogo} alt="Logo" className="w-32 h-32 object-contain opacity-20 lg:opacity-100" />
+                            {/* Tagline */}
+                            <p className="text-lg text-[#666666] mb-6">
+                                Streamline admissions, track attendance, manage fees — all in one powerful platform.
+                            </p>
+
+                            {/* Feature Cards */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <FeatureCard
+                                    icon={Users}
+                                    title="1000+ Students"
+                                    subtitle="Manage efficiently"
+                                    bgClass="bg-[#f3f0ff]"
+                                    hoverBgClass="hover:bg-[#e6ddff]"
+                                    iconBgClass="bg-[#e5ddff]"
+                                    iconColorClass="text-[#7c3aed]"
+                                />
+                                <FeatureCard
+                                    icon={CreditCard}
+                                    title="Fee Management"
+                                    subtitle="Automated"
+                                    bgClass="bg-[#effcf6]"
+                                    hoverBgClass="hover:bg-[#d9f8ea]"
+                                    iconBgClass="bg-[#dcfce7]"
+                                    iconColorClass="text-[#16a34a]"
+                                />
+                                <FeatureCard
+                                    icon={CalendarCheck2}
+                                    title="Attendance"
+                                    subtitle="Real-time"
+                                    bgClass="bg-[#fff5f5]"
+                                    hoverBgClass="hover:bg-[#ffe1e1]"
+                                    iconBgClass="bg-[#fee2e2]"
+                                    iconColorClass="text-[#e11d48]"
+                                />
+                                <FeatureCard
+                                    icon={BarChart3}
+                                    title="Analytics"
+                                    subtitle="Data insights"
+                                    bgClass="bg-[#fff8ed]"
+                                    hoverBgClass="hover:bg-[#ffeed3]"
+                                    iconBgClass="bg-[#fef3c7]"
+                                    iconColorClass="text-[#f59e0b]"
+                                />
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Welcome Message */}
-                        <div className="mt-24 mb-10 flex items-center gap-4 ml-4">
-                            <img src={welcomeIcon} alt="Welcome" className="w-10 h-10 object-contain" />
-                            <h4 className="text-3xl font-bold text-gray-800">Welcome</h4>
-                        </div>
+                    {/* Right: Auth Card */}
+                    <div className="w-full md:w-1/2 flex justify-center">
+                        <div className="w-full max-w-[480px] rounded-[24px] bg-white p-10 shadow-[0px_25px_50px_rgba(0,0,0,0.15)]">
 
-                        {/* Form */}
-                        <form className="flex-1" onSubmit={(e) => {
-                            e.preventDefault();
-                            if (authMode === 'PASSWORD') handlePasswordLogin(e);
-                        }}>
-                            <div className="space-y-6">
-                                {/* Mobile Input */}
-                                <div>
-                                    <input
-                                        type="text"
-                                        placeholder="Mobile"
-                                        className="w-full bg-[#FAFBFB] text-gray-600 text-lg py-3 px-6 rounded-[14px] outline-none focus:ring-2 focus:ring-[#9C41ED]/20"
-                                        value={mobile}
-                                        onChange={(e) => setMobile(e.target.value.replace(/\D/, ''))} // Only numbers
-                                        maxLength={10}
-                                        disabled={isLoading || otpSent}
-                                        name="mobile"
-                                        autoComplete="tel"
-                                    />
+                            {/* Logo & Welcome */}
+                            <div className="mb-6 flex flex-col items-center gap-2">
+                                <img src={logo} alt="Okie Dokie logo" className="h-10 w-auto object-contain" />
+                                <p className="text-[30px] font-bold leading-[36px] tracking-[-0.5px] text-[#333333]">
+                                    Welcome!
+                                </p>
+                                <p className="text-center text-[16px] leading-[24px] text-[#666666]">
+                                    Sign in to access your campus management portal
+                                </p>
+                            </div>
+
+                            {/* Error Message */}
+                            {error && (
+                                <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm mb-4 border-l-4 border-red-500">
+                                    {error}
                                 </div>
-
-                                {/* OTP Input */}
-                                {authMode === 'OTP' && otpSent && (
-                                    <div>
-                                        <input
-                                            type="text"
-                                            placeholder="OTP"
-                                            className="w-full bg-[#FAFBFB] text-gray-600 text-lg py-3 px-6 rounded-[14px] outline-none focus:ring-2 focus:ring-[#9C41ED]/20"
-                                            value={otp}
-                                            onChange={(e) => setOtp(e.target.value.replace(/\D/, ''))}
-                                            maxLength={6}
-                                            disabled={isLoading}
-                                            name="otp"
-                                            autoComplete="one-time-code"
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Password Input */}
-                                {authMode === 'PASSWORD' && (
-                                    <div>
-                                        <input
-                                            type="password"
-                                            placeholder="Password"
-                                            className="w-full bg-[#FAFBFB] text-gray-600 text-lg py-3 px-6 rounded-[14px] outline-none focus:ring-2 focus:ring-[#9C41ED]/20"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            disabled={isLoading}
-                                            name="password"
-                                            autoComplete="current-password"
-                                        />
-                                    </div>
-                                )}
-
-                            </div>
-
-                            {/* Buttons */}
-                            <div className="mt-8">
-                                {authMode === 'OTP' && !otpSent && (
-                                    <button
-                                        type="button"
-                                        onClick={handleGetOtp}
-                                        disabled={isLoading}
-                                        className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
-                                    >
-                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Get OTP'}
-                                    </button>
-                                )}
-
-                                {authMode === 'OTP' && otpSent && (
-                                    <button
-                                        type="button"
-                                        onClick={handleVerifyOtp}
-                                        disabled={isLoading}
-                                        className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
-                                    >
-                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
-                                    </button>
-                                )}
-
-                                {authMode === 'PASSWORD' && (
-                                    <button
-                                        type="submit"
-                                        disabled={isLoading}
-                                        className="w-full bg-[#9C41ED] hover:bg-[#8a3bd4] text-white font-bold py-3 rounded-[14px] transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-70"
-                                    >
-                                        {isLoading ? <Loader2 className="animate-spin" /> : 'Sign In'}
-                                    </button>
-                                )}
-                            </div>
-                        </form>
-
-                        {/* Switcher */}
-                        <div className="flex items-center justify-center gap-4 mt-6 text-[#9C41ED] font-semibold">
-                            {authMode === 'OTP' && !otpSent && (
-                                <button onClick={() => setAuthMode('PASSWORD')} className="hover:underline">
-                                    Password Login
-                                </button>
                             )}
+
+                            {/* Auth Toggle */}
+                            {!otpSent && <AuthToggle mode={authMode} onChange={handleModeChange} />}
+
+                            {/* OTP MODE */}
+                            {authMode === 'OTP' && (
+                                <>
+                                    {!otpSent ? (
+                                        <div className="mt-2 space-y-4">
+                                            <Input
+                                                label="Mobile Number"
+                                                type="tel"
+                                                value={mobile}
+                                                maxLength={10}
+                                                inputMode="numeric"
+                                                onChange={(e) => setMobile(sanitizePhone(e.target.value))}
+                                                placeholder="Enter mobile number"
+                                                error={getMobileError()}
+                                                disabled={isLoading}
+                                            />
+                                            <Button
+                                                type="button"
+                                                onClick={handleGetOtp}
+                                                disabled={!isPhoneValid(mobile)}
+                                                isLoading={isLoading}
+                                            >
+                                                Send OTP
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-4 space-y-4">
+                                            {/* OTP Header */}
+                                            <div className="space-y-1">
+                                                <p className="text-[16px] font-semibold text-[#111827]">Enter OTP</p>
+                                                <p className="text-[12px] text-[#6b7280]">
+                                                    We&apos;ve sent a 6-digit code to {mobile}
+                                                </p>
+                                            </div>
+
+                                            {/* OTP Input Boxes */}
+                                            <div className="flex justify-between gap-2">
+                                                {otp.map((digit, index) => (
+                                                    <input
+                                                        key={index}
+                                                        ref={(el) => {
+                                                            otpInputsRef.current[index] = el;
+                                                        }}
+                                                        type="tel"
+                                                        inputMode="numeric"
+                                                        maxLength={1}
+                                                        value={digit}
+                                                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                                                        onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                                                        className="h-12 w-10 flex-1 rounded-[8px] border border-[#e5e7eb] text-center text-[18px] font-semibold text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/20"
+                                                        disabled={isLoading}
+                                                    />
+                                                ))}
+                                            </div>
+
+                                            {/* Countdown */}
+                                            <div className="flex items-center justify-between text-[12px] text-[#6b7280]">
+                                                <span>
+                                                    Time remaining:{' '}
+                                                    <span className="font-semibold text-[#111827]">
+                                                        00:{String(countdown).padStart(2, '0')}
+                                                    </span>
+                                                </span>
+                                                {countdown === 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleResendOtp}
+                                                        className="font-semibold text-[#e95028] hover:underline"
+                                                    >
+                                                        Resend OTP
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <Button type="button" onClick={handleVerifyOtp} isLoading={isLoading}>
+                                                Verify OTP
+                                            </Button>
+
+                                            {/* Change Mobile */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setOtpSent(false);
+                                                    setOtp(Array(6).fill(''));
+                                                    setError(null);
+                                                }}
+                                                className="w-full text-center text-[12px] font-medium text-[#6b7280] transition-colors hover:text-[#111827] hover:underline"
+                                            >
+                                                Change Mobile Number
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {/* PASSWORD MODE */}
                             {authMode === 'PASSWORD' && (
-                                <button onClick={() => setAuthMode('OTP')} className="hover:underline">
-                                    OTP Login
-                                </button>
-                            )}
-                            {otpSent && (
-                                <button onClick={() => setOtpSent(false)} className="hover:underline text-sm">
-                                    Change Mobile
-                                </button>
-                            )}
-                        </div>
+                                <form onSubmit={handlePasswordLogin} className="mt-2 space-y-4">
+                                    <Input
+                                        label="Mobile Number"
+                                        type="tel"
+                                        value={mobile}
+                                        maxLength={10}
+                                        inputMode="numeric"
+                                        onChange={(e) => setMobile(sanitizePhone(e.target.value))}
+                                        placeholder="Enter mobile number"
+                                        error={getMobileError()}
+                                        disabled={isLoading}
+                                    />
 
+                                    {/* Password Input with Toggle */}
+                                    <div className="space-y-2">
+                                        <label className="text-[14px] font-semibold text-[#374151]">Password</label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={(e) => {
+                                                    const raw = e.target.value || '';
+                                                    const sanitized = sanitizePassword(raw);
+                                                    if (sanitized !== raw) {
+                                                        setPasswordInvalidAttempt(true);
+                                                        setTimeout(() => setPasswordInvalidAttempt(false), 2000);
+                                                    }
+                                                    setPassword(sanitized);
+                                                }}
+                                                placeholder="Enter password"
+                                                className="h-[54px] w-full rounded-[12px] border border-[#e5e7eb] bg-white px-3 pr-10 text-[16px] text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/10"
+                                                disabled={isLoading}
+                                                autoComplete="current-password"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword((prev) => !prev)}
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#9ca3af] transition-colors hover:text-[#4b5563]"
+                                            >
+                                                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                            </button>
+                                        </div>
+                                        {getPasswordError() && (
+                                            <p className="text-[12px] text-red-500">{getPasswordError()}</p>
+                                        )}
+                                    </div>
+
+                                    {/* Forgot Password */}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            className="text-[12px] font-medium text-[#6b7280] transition-colors hover:text-[#111827] hover:underline"
+                                        >
+                                            Forgot password?
+                                        </button>
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={!isPhoneValid(mobile) || !isPasswordValid(password)}
+                                        isLoading={isLoading}
+                                    >
+                                        Sign In
+                                    </Button>
+                                </form>
+                            )}
+
+                            {/* Footer */}
+                            <div className="mt-10 border-t border-[#f9fafb] pt-4">
+                                <p className="text-center text-[12px] text-[#9ca3af]">
+                                    © {new Date().getFullYear()} Okie Dokie
+                                </p>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
         </div>
