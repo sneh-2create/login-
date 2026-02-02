@@ -5,6 +5,10 @@ export * from './components/Atoms/Button';
 export * from './components/Atoms/Input';
 export * from './components/Atoms/Select';
 export * from './components/Atoms/Badge';
+export * from './components/Atoms/FeatureCard';
+export * from './components/Atoms/AuthToggle';
+export * from './components/Atoms/LoginInput';
+export * from './components/Atoms/LoginButton';
 // Dashboard
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
@@ -19,3 +23,4 @@ export * from './components/LoadingState/LoadingState';
 export * from './components/Header';
 export * from './components/Breadcrumb';
 export { cn } from './utils';
+export { useTypingText } from './hooks/useTypingText';

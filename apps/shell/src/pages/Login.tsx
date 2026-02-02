@@ -4,55 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '@od-erp/api-client';
 import { useAppDispatch } from '@od-erp/store';
 import { setCredentials, setAcademicSession, setEntity } from '@od-erp/store';
-import { Loader2, Users, CreditCard, CalendarCheck2, BarChart3, Eye, EyeOff } from 'lucide-react';
+import { Users, CreditCard, CalendarCheck2, BarChart3, Eye, EyeOff } from 'lucide-react';
 import { useMutation } from '@od-erp/query';
+import { FeatureCard, AuthToggle, LoginInput, LoginButton, useTypingText } from '@od-erp/ui';
+import { LOGIN_HEADING_PHRASES, OTP_COUNTDOWN_SECONDS } from '@od-erp/constants';
 
 // Import Assets
 import logo from '../assets/images/logo.png';
 
 // ============================================================================
-// CUSTOM HOOK: Typing Animation
-// ============================================================================
-const useTypingText = (phrases: string[], options: { typingSpeed?: number; deletingSpeed?: number; pauseTime?: number } = {}) => {
-    const { typingSpeed = 100, deletingSpeed = 50, pauseTime = 2000 } = options;
-    const [index, setIndex] = useState(0);
-    const [text, setText] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    useEffect(() => {
-        if (!phrases || phrases.length === 0) return;
-
-        const current = phrases[index];
-        let timeoutId: ReturnType<typeof setTimeout>;
-
-        if (!isDeleting && text === current) {
-            timeoutId = setTimeout(() => setIsDeleting(true), pauseTime);
-        } else {
-            const delay = isDeleting ? deletingSpeed : typingSpeed;
-            timeoutId = setTimeout(() => {
-                const next = isDeleting
-                    ? current.slice(0, text.length - 1)
-                    : current.slice(0, text.length + 1);
-
-                setText(next);
-
-                if (isDeleting && next === '') {
-                    setIsDeleting(false);
-                    setIndex((prev) => (prev + 1) % phrases.length);
-                }
-            }, delay);
-        }
-
-        return () => {
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }, [phrases, index, text, isDeleting, typingSpeed, deletingSpeed, pauseTime]);
-
-    return text;
-};
-
-// ============================================================================
-// UTILITY: Validation Functions
+// UTILITY: Validation Functions (Keep local as they're specific to login)
 // ============================================================================
 const sanitizePhone = (value: string = ''): string => {
     return String(value).replace(/\D/g, '').slice(0, 10);
@@ -85,159 +46,6 @@ const isPasswordValid = (password: string = ''): boolean => {
 };
 
 // ============================================================================
-// COMPONENTS
-// ============================================================================
-
-// Feature Card Component
-interface FeatureCardProps {
-    icon: React.ElementType;
-    title: string;
-    subtitle: string;
-    bgClass: string;
-    hoverBgClass: string;
-    iconBgClass?: string;
-    iconColorClass?: string;
-}
-
-const FeatureCard: React.FC<FeatureCardProps> = ({
-    icon: Icon,
-    title,
-    subtitle,
-    bgClass,
-    hoverBgClass,
-    iconBgClass = 'bg-slate-50',
-    iconColorClass = 'text-slate-700'
-}) => {
-    return (
-        <div
-            className={`group flex cursor-pointer items-center gap-4 rounded-[12px] px-5 py-4 shadow-sm transition-all duration-300 ${bgClass} ${hoverBgClass} hover:shadow-lg hover:-translate-y-2 hover:scale-[1.05]`}
-        >
-            <div className="flex h-12 w-12 items-center justify-center rounded-[8px] bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
-                <div
-                    className={`flex h-6 w-6 items-center justify-center rounded-md transition-transform duration-300 group-hover:rotate-6 group-hover:scale-125 ${iconBgClass}`}
-                >
-                    <Icon className={`h-4 w-4 ${iconColorClass}`} />
-                </div>
-            </div>
-            <div className="space-y-1">
-                <p className="text-[14px] font-semibold leading-[20px] text-[#1f2937]">{title}</p>
-                <p className="text-[12px] leading-[16px] text-[#6b7280]">{subtitle}</p>
-            </div>
-        </div>
-    );
-};
-
-// Auth Toggle Component
-interface AuthToggleProps {
-    mode: 'OTP' | 'PASSWORD';
-    onChange: (_mode: 'OTP' | 'PASSWORD') => void;
-}
-
-const AuthToggle: React.FC<AuthToggleProps> = ({ mode, onChange }) => {
-    const isOtp = mode === 'OTP';
-
-    return (
-        <div className="mb-6 mt-6 flex h-[52px] w-full rounded-[12px] bg-[#f3f4f6] p-1">
-            <button
-                type="button"
-                onClick={() => onChange('OTP')}
-                className={`flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${isOtp
-                    ? 'bg-[#e95028] text-white shadow-sm'
-                    : 'text-[#6b7280] hover:text-[#374151]'
-                    }`}
-            >
-                OTP Login
-            </button>
-            <button
-                type="button"
-                onClick={() => onChange('PASSWORD')}
-                className={`flex-1 rounded-[8px] text-[14px] font-semibold transition-colors ${!isOtp
-                    ? 'bg-[#e95028] text-white shadow-sm'
-                    : 'text-[#6b7280] hover:text-[#374151]'
-                    }`}
-            >
-                Password
-            </button>
-        </div>
-    );
-};
-
-// Input Component
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    icon?: React.ReactNode;
-    error?: string;
-}
-
-const Input: React.FC<InputProps> = ({ label, icon, error, className = '', ...props }) => {
-    return (
-        <div className="space-y-2">
-            {label && (
-                <label className="text-[14px] font-semibold text-[#374151]">{label}</label>
-            )}
-            <div className="relative">
-                {icon && (
-                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                        {icon}
-                    </span>
-                )}
-                <input
-                    className={`h-[54px] w-full rounded-[12px] border border-[#e5e7eb] bg-white px-3 text-[16px] text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/10 ${icon ? 'pl-10' : ''
-                        } ${error ? 'border-red-500' : ''} ${className}`}
-                    {...props}
-                />
-            </div>
-            {error && <p className="text-[12px] text-red-500">{error}</p>}
-        </div>
-    );
-};
-
-// Button Component
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary';
-    isLoading?: boolean;
-}
-
-const Button: React.FC<ButtonProps> = ({
-    variant = 'primary',
-    isLoading = false,
-    children,
-    className = '',
-    disabled,
-    ...props
-}) => {
-    const baseStyles =
-        'h-[52px] w-full rounded-[12px] text-[16px] font-bold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center gap-2';
-    const variantStyles = {
-        primary:
-            "bg-[#e95028] text-white shadow-[0px_4px_6px_rgba(249,115,22,0.2),0px_10px_15px_rgba(249,115,22,0.2)] hover:bg-[#d04320] focus:ring-[#e95028]/20",
-        secondary:
-            'bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb] focus:ring-[#6b7280]/20'
-    };
-
-    return (
-        <button
-            className={`${baseStyles} ${variantStyles[variant]} ${className} disabled:cursor-not-allowed disabled:opacity-60`}
-            disabled={disabled || isLoading}
-            {...props}
-        >
-            {isLoading ? <Loader2 className="animate-spin" /> : children}
-        </button>
-    );
-};
-
-// ============================================================================
-// HEADING PHRASES FOR TYPING ANIMATION
-// ============================================================================
-const HEADING_PHRASES = [
-    'Campus Automation',
-    'Fees Management',
-    'Campus Management',
-    'Staff Portal',
-    'Academic Portal'
-];
-
-// ============================================================================
 // MAIN LOGIN COMPONENT
 // ============================================================================
 export const Login: React.FC = () => {
@@ -245,7 +53,7 @@ export const Login: React.FC = () => {
     const dispatch = useAppDispatch();
 
     // Typing Animation
-    const typed = useTypingText(HEADING_PHRASES, {
+    const typed = useTypingText([...LOGIN_HEADING_PHRASES], {
         typingSpeed: 100,
         deletingSpeed: 50,
         pauseTime: 2000
@@ -267,7 +75,7 @@ export const Login: React.FC = () => {
     const otpInputsRef = useRef<(HTMLInputElement | null)[]>([]);
 
     // OTP Countdown
-    const [countdown, setCountdown] = useState(30);
+    const [countdown, setCountdown] = useState(OTP_COUNTDOWN_SECONDS);
 
     // Countdown Effect
     useEffect(() => {
@@ -283,7 +91,7 @@ export const Login: React.FC = () => {
         mutationFn: (mobile: string) => authService.sendOtp(mobile),
         onSuccess: () => {
             setOtpSent(true);
-            setCountdown(30);
+            setCountdown(OTP_COUNTDOWN_SECONDS);
             setOtp(Array(6).fill(''));
             setError(null);
             setTimeout(() => {
@@ -509,7 +317,7 @@ export const Login: React.FC = () => {
     // RENDER
     // ========================================================================
     return (
-        <div className="min-h-screen animate-fade-in bg-[linear-gradient(144.583deg,#e8f4f8_0%,#d4e8f0_70.711%)] font-sans flex items-center justify-center">
+        <div className="min-h-screen animate-fade-in bg-[linear-gradient(144.583deg,var(--login-bg-gradient-start)_0%,var(--login-bg-gradient-end)_70.711%)] font-sans flex items-center justify-center">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12">
 
@@ -523,12 +331,12 @@ export const Login: React.FC = () => {
 
                             {/* Typing Headline */}
                             <div className="mb-6">
-                                <h1 className="text-4xl md:text-5xl font-bold text-[#333333] leading-tight">Transform Your</h1>
-                                <p className="text-4xl md:text-5xl font-bold text-[#e95028] leading-tight">{typed || '\u00A0'}</p>
+                                <h1 className="text-4xl md:text-5xl font-bold text-[var(--login-text-primary)] leading-tight">Transform Your</h1>
+                                <p className="text-4xl md:text-5xl font-bold text-[var(--login-primary)] leading-tight">{typed || '\u00A0'}</p>
                             </div>
 
                             {/* Tagline */}
-                            <p className="text-lg text-[#666666] mb-6">
+                            <p className="text-lg text-[var(--login-text-secondary)] mb-6">
                                 Streamline admissions, track attendance, manage fees — all in one powerful platform.
                             </p>
 
@@ -538,37 +346,37 @@ export const Login: React.FC = () => {
                                     icon={Users}
                                     title="1000+ Students"
                                     subtitle="Manage efficiently"
-                                    bgClass="bg-[#f3f0ff]"
-                                    hoverBgClass="hover:bg-[#e6ddff]"
-                                    iconBgClass="bg-[#e5ddff]"
-                                    iconColorClass="text-[#7c3aed]"
+                                    bgClass="bg-[var(--login-feature-purple-bg)]"
+                                    hoverBgClass="hover:bg-[var(--login-feature-purple-hover)]"
+                                    iconBgClass="bg-[var(--login-feature-purple-icon-bg)]"
+                                    iconColorClass="text-[var(--login-feature-purple-icon)]"
                                 />
                                 <FeatureCard
                                     icon={CreditCard}
                                     title="Fee Management"
                                     subtitle="Automated"
-                                    bgClass="bg-[#effcf6]"
-                                    hoverBgClass="hover:bg-[#d9f8ea]"
-                                    iconBgClass="bg-[#dcfce7]"
-                                    iconColorClass="text-[#16a34a]"
+                                    bgClass="bg-[var(--login-feature-green-bg)]"
+                                    hoverBgClass="hover:bg-[var(--login-feature-green-hover)]"
+                                    iconBgClass="bg-[var(--login-feature-green-icon-bg)]"
+                                    iconColorClass="text-[var(--login-feature-green-icon)]"
                                 />
                                 <FeatureCard
                                     icon={CalendarCheck2}
                                     title="Attendance"
                                     subtitle="Real-time"
-                                    bgClass="bg-[#fff5f5]"
-                                    hoverBgClass="hover:bg-[#ffe1e1]"
-                                    iconBgClass="bg-[#fee2e2]"
-                                    iconColorClass="text-[#e11d48]"
+                                    bgClass="bg-[var(--login-feature-red-bg)]"
+                                    hoverBgClass="hover:bg-[var(--login-feature-red-hover)]"
+                                    iconBgClass="bg-[var(--login-feature-red-icon-bg)]"
+                                    iconColorClass="text-[var(--login-feature-red-icon)]"
                                 />
                                 <FeatureCard
                                     icon={BarChart3}
                                     title="Analytics"
                                     subtitle="Data insights"
-                                    bgClass="bg-[#fff8ed]"
-                                    hoverBgClass="hover:bg-[#ffeed3]"
-                                    iconBgClass="bg-[#fef3c7]"
-                                    iconColorClass="text-[#f59e0b]"
+                                    bgClass="bg-[var(--login-feature-yellow-bg)]"
+                                    hoverBgClass="hover:bg-[var(--login-feature-yellow-hover)]"
+                                    iconBgClass="bg-[var(--login-feature-yellow-icon-bg)]"
+                                    iconColorClass="text-[var(--login-feature-yellow-icon)]"
                                 />
                             </div>
                         </div>
@@ -576,15 +384,15 @@ export const Login: React.FC = () => {
 
                     {/* Right: Auth Card */}
                     <div className="w-full md:w-1/2 flex justify-center">
-                        <div className="w-full max-w-[480px] rounded-[24px] bg-white p-10 shadow-[0px_25px_50px_rgba(0,0,0,0.15)]">
+                        <div className="w-full max-w-[480px] rounded-[24px] bg-white p-10 shadow-[0px_25px_50px_var(--login-card-shadow)]">
 
                             {/* Logo & Welcome */}
                             <div className="mb-6 flex flex-col items-center gap-2">
                                 <img src={logo} alt="Okie Dokie logo" className="h-10 w-auto object-contain" />
-                                <p className="text-[30px] font-bold leading-[36px] tracking-[-0.5px] text-[#333333]">
+                                <p className="text-[30px] font-bold leading-[36px] tracking-[-0.5px] text-[var(--login-text-primary)]">
                                     Welcome!
                                 </p>
-                                <p className="text-center text-[16px] leading-[24px] text-[#666666]">
+                                <p className="text-center text-[16px] leading-[24px] text-[var(--login-text-secondary)]">
                                     Sign in to access your campus management portal
                                 </p>
                             </div>
@@ -604,32 +412,32 @@ export const Login: React.FC = () => {
                                 <>
                                     {!otpSent ? (
                                         <div className="mt-2 space-y-4">
-                                            <Input
+                                            <LoginInput
                                                 label="Mobile Number"
                                                 type="tel"
                                                 value={mobile}
                                                 maxLength={10}
                                                 inputMode="numeric"
-                                                onChange={(e) => setMobile(sanitizePhone(e.target.value))}
+                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobile(sanitizePhone(e.target.value))}
                                                 placeholder="Enter mobile number"
                                                 error={getMobileError()}
                                                 disabled={isLoading}
                                             />
-                                            <Button
+                                            <LoginButton
                                                 type="button"
                                                 onClick={handleGetOtp}
                                                 disabled={!isPhoneValid(mobile)}
                                                 isLoading={isLoading}
                                             >
                                                 Send OTP
-                                            </Button>
+                                            </LoginButton>
                                         </div>
                                     ) : (
                                         <div className="mt-4 space-y-4">
                                             {/* OTP Header */}
                                             <div className="space-y-1">
-                                                <p className="text-[16px] font-semibold text-[#111827]">Enter OTP</p>
-                                                <p className="text-[12px] text-[#6b7280]">
+                                                <p className="text-[16px] font-semibold text-[var(--ui-gray-900)]">Enter OTP</p>
+                                                <p className="text-[12px] text-[var(--login-text-muted)]">
                                                     We&apos;ve sent a 6-digit code to {mobile}
                                                 </p>
                                             </div>
@@ -648,17 +456,17 @@ export const Login: React.FC = () => {
                                                         value={digit}
                                                         onChange={(e) => handleOtpChange(index, e.target.value)}
                                                         onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                                        className="h-12 w-10 flex-1 rounded-[8px] border border-[#e5e7eb] text-center text-[18px] font-semibold text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/20"
+                                                        className="h-12 w-10 flex-1 rounded-[8px] border border-[var(--login-border)] text-center text-[18px] font-semibold text-[var(--ui-gray-900)] outline-none transition focus:border-[var(--login-primary)] focus:ring-2 focus:ring-[var(--login-primary)]/20"
                                                         disabled={isLoading}
                                                     />
                                                 ))}
                                             </div>
 
                                             {/* Countdown */}
-                                            <div className="flex items-center justify-between text-[12px] text-[#6b7280]">
+                                            <div className="flex items-center justify-between text-[12px] text-[var(--login-text-muted)]">
                                                 <span>
                                                     Time remaining:{' '}
-                                                    <span className="font-semibold text-[#111827]">
+                                                    <span className="font-semibold text-[var(--ui-gray-900)]">
                                                         00:{String(countdown).padStart(2, '0')}
                                                     </span>
                                                 </span>
@@ -666,16 +474,16 @@ export const Login: React.FC = () => {
                                                     <button
                                                         type="button"
                                                         onClick={handleResendOtp}
-                                                        className="font-semibold text-[#e95028] hover:underline"
+                                                        className="font-semibold text-[var(--login-primary)] hover:underline"
                                                     >
                                                         Resend OTP
                                                     </button>
                                                 )}
                                             </div>
 
-                                            <Button type="button" onClick={handleVerifyOtp} isLoading={isLoading}>
+                                            <LoginButton type="button" onClick={handleVerifyOtp} isLoading={isLoading}>
                                                 Verify OTP
-                                            </Button>
+                                            </LoginButton>
 
                                             {/* Change Mobile */}
                                             <button
@@ -685,7 +493,7 @@ export const Login: React.FC = () => {
                                                     setOtp(Array(6).fill(''));
                                                     setError(null);
                                                 }}
-                                                className="w-full text-center text-[12px] font-medium text-[#6b7280] transition-colors hover:text-[#111827] hover:underline"
+                                                className="w-full text-center text-[12px] font-medium text-[var(--login-text-muted)] transition-colors hover:text-[var(--ui-gray-900)] hover:underline"
                                             >
                                                 Change Mobile Number
                                             </button>
@@ -697,13 +505,13 @@ export const Login: React.FC = () => {
                             {/* PASSWORD MODE */}
                             {authMode === 'PASSWORD' && (
                                 <form onSubmit={handlePasswordLogin} className="mt-2 space-y-4">
-                                    <Input
+                                    <LoginInput
                                         label="Mobile Number"
                                         type="tel"
                                         value={mobile}
                                         maxLength={10}
                                         inputMode="numeric"
-                                        onChange={(e) => setMobile(sanitizePhone(e.target.value))}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setMobile(sanitizePhone(e.target.value))}
                                         placeholder="Enter mobile number"
                                         error={getMobileError()}
                                         disabled={isLoading}
@@ -711,7 +519,7 @@ export const Login: React.FC = () => {
 
                                     {/* Password Input with Toggle */}
                                     <div className="space-y-2">
-                                        <label className="text-[14px] font-semibold text-[#374151]">Password</label>
+                                        <label className="text-[14px] font-semibold text-[var(--ui-gray-700)]">Password</label>
                                         <div className="relative">
                                             <input
                                                 type={showPassword ? 'text' : 'password'}
@@ -726,14 +534,14 @@ export const Login: React.FC = () => {
                                                     setPassword(sanitized);
                                                 }}
                                                 placeholder="Enter password"
-                                                className="h-[54px] w-full rounded-[12px] border border-[#e5e7eb] bg-white px-3 pr-10 text-[16px] text-[#111827] outline-none transition focus:border-[#e95028] focus:ring-2 focus:ring-[#e95028]/10"
+                                                className="h-[54px] w-full rounded-[12px] border border-[var(--login-border)] bg-white px-3 pr-10 text-[16px] text-[var(--ui-gray-900)] outline-none transition focus:border-[var(--login-primary)] focus:ring-2 focus:ring-[var(--login-primary)]/10"
                                                 disabled={isLoading}
                                                 autoComplete="current-password"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => setShowPassword((prev) => !prev)}
-                                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#9ca3af] transition-colors hover:text-[#4b5563]"
+                                                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--ui-gray-400)] transition-colors hover:text-[var(--ui-gray-600)]"
                                             >
                                                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                             </button>
@@ -747,25 +555,25 @@ export const Login: React.FC = () => {
                                     <div className="flex justify-end">
                                         <button
                                             type="button"
-                                            className="text-[12px] font-medium text-[#6b7280] transition-colors hover:text-[#111827] hover:underline"
+                                            className="text-[12px] font-medium text-[var(--login-text-muted)] transition-colors hover:text-[var(--ui-gray-900)] hover:underline"
                                         >
                                             Forgot password?
                                         </button>
                                     </div>
 
-                                    <Button
+                                    <LoginButton
                                         type="submit"
                                         disabled={!isPhoneValid(mobile) || !isPasswordValid(password)}
                                         isLoading={isLoading}
                                     >
                                         Sign In
-                                    </Button>
+                                    </LoginButton>
                                 </form>
                             )}
 
                             {/* Footer */}
-                            <div className="mt-10 border-t border-[#f9fafb] pt-4">
-                                <p className="text-center text-[12px] text-[#9ca3af]">
+                            <div className="mt-10 border-t border-[var(--ui-gray-50)] pt-4">
+                                <p className="text-center text-[12px] text-[var(--ui-gray-400)]">
                                     © {new Date().getFullYear()} Okie Dokie
                                 </p>
                             </div>
