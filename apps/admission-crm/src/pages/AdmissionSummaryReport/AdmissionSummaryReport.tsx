@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import * as xlsx from 'xlsx';
 import { admissionSummaryReportService } from '@od-erp/api-client';
-import { Button, Select, Input, Breadcrumb } from '@od-erp/ui';
-import { DataTable } from '@od-erp/ui';
+import { Button, Dropdown, Checkbox, Breadcrumb, DatePicker } from '@od-erp/ui';
+import { DataTable, Input } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Search, Printer, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import { AdmissionSummaryTableRow } from '@od-erp/types';
@@ -16,9 +16,9 @@ const admissionSummaryReport = () => {
     const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
     const [sessionList, setSessionList] = useState<any[]>([]);
 
-    // Filters
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    // Filters - using timestamps
+    const [startDate, setStartDate] = useState<number>(new Date().setHours(0, 0, 0, 0));
+    const [endDate, setEndDate] = useState<number>(new Date().setHours(23, 59, 59, 999));
     const [selectedSession, setSelectedSession] = useState<string[]>([]);
     const [excludeUnpaid, setExcludeUnpaid] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -70,7 +70,7 @@ const admissionSummaryReport = () => {
                 payload.excludeUnpaid = true;
             }
 
-            if (selectedSession.length > 1) {
+            if (selectedSession.length > 0) { // Changed to > 0 as single select returns array of 1
                 payload.session = selectedSession;
             }
 
@@ -261,42 +261,50 @@ const admissionSummaryReport = () => {
             {/* Collapsible Filter Card */}
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                        <div className="w-full">
                             <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
-                            <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                            <DatePicker 
+                                value={new Date(startDate)} 
+                                onChange={(date) => date && setStartDate(date.getTime())}
+                                maxDate={new Date(endDate)}
+                                className="w-full"
+                            />
                         </div>
-                        <div>
+                        <div className="w-full">
                             <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
-                            <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                            <DatePicker 
+                                value={new Date(endDate)} 
+                                onChange={(date) => date && setEndDate(date.getTime())}
+                                minDate={new Date(startDate)}
+                                className="w-full"
+                            />
                         </div>
-                        <div>
+                        <div className="w-full">
                             <label className="text-xs font-semibold text-gray-500 mb-1 block">Exclude Unpaid</label>
-                            <div className="flex items-center h-10">
-                                <input
-                                    type="checkbox"
-                                    checked={excludeUnpaid}
-                                    onChange={(e) => setExcludeUnpaid(e.target.checked)}
-                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">Yes</span>
-                            </div>
+                            <Checkbox
+                                label="Yes"
+                                checked={excludeUnpaid}
+                                onChange={(e) => setExcludeUnpaid(e.target.checked)}
+                            />
                         </div>
-                        <div>
+                        <div className="w-full">
                             <label className="text-xs font-semibold text-gray-500 mb-1 block">Session</label>
-                            <Select
+                            <Dropdown
                                 value={selectedSession[0] || ''}
-                                onChange={(e) => setSelectedSession([e.target.value])}
+                                onChange={(val) => setSelectedSession([val as string])}
                                 options={[
                                     { value: '', label: 'Select Session' },
                                     ...sessionList.map(s => ({ value: s.name, label: s.name }))
                                 ]}
+                                placeholder="Select Session"
+                                className="w-full"
                             />
                         </div>
                     </div>
                      <div className="flex justify-end mt-4">
                         {/* {hasPermission && ( */}
-                            <Button onClick={() => { handleSearch(); setShowFilter(false); }} isLoading={loading}>Apply Filters</Button>
+                            <Button variant="primary" onClick={() => { handleSearch(); setShowFilter(false); }} isLoading={loading}>Apply Filters</Button>
                         {/* )} */}
                     </div>
                 </div>
@@ -333,8 +341,8 @@ const admissionSummaryReport = () => {
             
             {/* Empty State / Prompt */}
             {!loading && data.length === 0 && (
-                <div className="text-center py-10 text-gray-500">
-                    <p>No data available.</p>
+                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                 </div>
             )}
         </div>

@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button } from '@od-erp/ui';
+import { useState, useEffect } from 'react';
+import { Button, Dropdown, DatePicker } from '@od-erp/ui';
 import { useSessions, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Check, ArrowRight, ChevronDown } from 'lucide-react';
-import { CustomDateInput, CustomSelect } from './CustomInputs';
+import { ArrowRight } from 'lucide-react';
 
 interface TemplateFilterProps {
     startDate: number;
@@ -24,76 +23,8 @@ interface TemplateFilterProps {
     session: string;
 }
 
-const MultiSelectDropdown = ({ 
-    options, 
-    value, 
-    onChange, 
-    placeholder 
-}: { 
-    options: { label: string; value: string }[], 
-    value: string[], 
-    onChange: (_val: string[]) => void, 
-    placeholder: string 
-}) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const toggleOption = (optionValue: string) => {
-        const newValue = value.includes(optionValue)
-            ? value.filter(v => v !== optionValue)
-            : [...value, optionValue];
-        onChange(newValue);
-    };
-
-    return (
-        <div className="relative" ref={containerRef}>
-            <div 
-                className="border border-gray-300 rounded bg-white h-10 px-3 flex items-center justify-between cursor-pointer hover:border-gray-400 transition-colors"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <span className={`text-sm truncate ${value.length === 0 ? 'text-gray-500' : 'text-gray-700'}`}>
-                    {value.length > 0 
-                        ? `${value.length} selected` 
-                        : placeholder}
-                </span>
-                <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-            </div>
-            {isOpen && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded shadow-lg max-h-60 overflow-y-auto z-50 animate-in fade-in zoom-in-95 duration-100">
-                    {options.length > 0 ? options.map(option => (
-                        <div 
-                            key={option.value} 
-                            className="px-3 py-2 hover:bg-gray-50 cursor-pointer flex items-center gap-2 text-sm"
-                            onClick={() => toggleOption(option.value)}
-                        >
-                            <div className={`w-4 h-4 border rounded flex items-center justify-center ${value.includes(option.value) ? 'bg-orange-500 border-orange-500' : 'border-gray-300'}`}>
-                                {value.includes(option.value) && <Check className="w-3 h-3 text-white" />}
-                            </div>
-                            <span>{option.label}</span>
-                        </div>
-                    )) : (
-                        <div className="px-3 py-2 text-sm text-gray-400 italic">No options</div>
-                    )}
-                </div>
-            )}
-        </div>
-    );
-};
-
 const TemplateFilter = (props: TemplateFilterProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
-    // Remove redundant selector that might be empty
-    // const currentSession = useAppSelector((state) => state.session.academicSession) || '';
     
     // Local state to hold changes before "Go"
     const [localStartDate, setLocalStartDate] = useState(props.startDate);
@@ -134,43 +65,47 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Start Date</label>
-                    <CustomDateInput 
-                        value={localStartDate}
-                        onChange={setLocalStartDate}
+                    <DatePicker 
+                        value={new Date(localStartDate)}
+                        onChange={(date) => date && setLocalStartDate(date.getTime())}
+                        maxDate={new Date(localEndDate)}
                         className="w-full"
                     />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">End Date</label>
-                    <CustomDateInput 
-                        value={localEndDate}
-                        onChange={setLocalEndDate}
+                    <DatePicker 
+                        value={new Date(localEndDate)}
+                        onChange={(date) => date && setLocalEndDate(date.getTime())}
+                        minDate={new Date(localStartDate)}
                         className="w-full"
                     />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Payment Mode</label>
-                    <CustomSelect
+                    <Dropdown
                         value={localPaymentMode}
-                        onChange={setLocalPaymentMode}
+                        onChange={(val) => setLocalPaymentMode(val as string)}
                         options={[
                             { label: 'All Payment Modes', value: '' },
                             ...props.paymentModeList.map(mode => ({ label: mode, value: mode }))
                         ]}
                         className="w-full"
+                        placeholder="Select Payment Mode"
                     />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Status</label>
-                    <CustomSelect
+                    <Dropdown
                         value={localStatus}
-                        onChange={setLocalStatus}
+                        onChange={(val) => setLocalStatus(val as string)}
                         options={[
                             { label: 'All Status', value: '' },
                             { label: 'Confirmed', value: 'confirmed' },
                             { label: 'Cancelled', value: 'cancelled' }
                         ]}
                         className="w-full"
+                        placeholder="Select Status"
                     />
                 </div>
             </div>
@@ -180,20 +115,24 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Course</label>
-                    <MultiSelectDropdown
+                    <Dropdown
+                        multiple
                         value={localCourses}
-                        onChange={setLocalCourses}
+                        onChange={(val) => setLocalCourses(val as string[])}
                         options={courses?.map(c => ({ label: c.name, value: c.name })) || []}
                         placeholder="All Courses"
+                        className="w-full"
                     />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Session</label>
-                    <MultiSelectDropdown
+                    <Dropdown
+                        multiple
                         value={localSessions}
-                        onChange={setLocalSessions}
+                        onChange={(val) => setLocalSessions(val as string[])}
                         options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
                         placeholder="Select Sessions"
+                        className="w-full"
                     />
                 </div>
             </div>
@@ -201,8 +140,9 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             {/* Action Button */}
             <div>
                 <Button 
+                    variant="primary"
                     onClick={handleApply}
-                    className="bg-orange-500 hover:bg-orange-600 text-white px-8 h-10 font-medium"
+                    className="px-8 h-10 font-medium"
                 >
                     Go <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

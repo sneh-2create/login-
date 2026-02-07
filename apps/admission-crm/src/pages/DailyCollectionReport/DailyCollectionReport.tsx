@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Select, Breadcrumb } from '@od-erp/ui';
+import { DataTable, Button, Dropdown, Breadcrumb } from '@od-erp/ui';
 import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
@@ -14,7 +14,7 @@ const DailyCollectionReportPage = () => {
     const entityName = (useAppSelector((state) => state.auth.entityDetails) as any)?.name || 'Okie Dokie';
 
     // State
-    const session = useAppSelector((state) => state.session.academicSession) || '2022-23';
+    const session = useAppSelector((state) => state.session.academicSession) || '';
     const [startDate, setStartDate] = useState<number>(new Date().setHours(0, 0, 0, 0));
     const [endDate, setEndDate] = useState<number>(new Date().setHours(23, 59, 59, 999));
     const [statusFilter, setStatusFilter] = useState('confirmed');
@@ -455,12 +455,13 @@ const DailyCollectionReportPage = () => {
                         
                         <div className="flex items-center gap-2 w-full justify-end">
                             {templates && templates.length > 0 && (
-                                <Select 
-                                    value={selectedTemplate}
-                                    onChange={(e) => setSelectedTemplate(e.target.value)}
-                                    options={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-                                    className="w-48 h-8 text-xs"
-                                />
+                                    <Dropdown 
+                                        value={selectedTemplate}
+                                        onChange={(val) => setSelectedTemplate(val as string)}
+                                        options={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
+                                        className="w-48 h-8 text-xs"
+                                        placeholder="Select Template"
+                                    />
                             )}
                         </div>
                     </div>
@@ -472,6 +473,12 @@ const DailyCollectionReportPage = () => {
                             isLoading={isLoading}
                         />
                     </div>
+                </div>
+            )}
+
+            {!isLoading && (!reportData || reportData.length === 0) && (
+                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                 </div>
             )}
         </div>
