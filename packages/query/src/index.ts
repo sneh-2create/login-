@@ -17,6 +17,8 @@ export * from './admissionTransaction';
 export * from './dailyCollectionReport';
 export * from './dailyCollectionReport';
 export * from './useStudentTimeline';
+export * from './excelTemplate';
+export * from './feeMaster';
 
 
 

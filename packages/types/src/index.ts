@@ -82,3 +82,5 @@ export * from './dashboard';
 export * from './admission';
 export * from './table';
 export * from './badge';
+export * from './excelTemplate';
+export * from './feeMaster';

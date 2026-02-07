@@ -282,6 +282,10 @@ export interface AdmissionTransaction {
         category?: string;
         applicationNumber?: string;
     };
+    receipt?: {
+        admissionHead: string;
+        paidAmount: number;
+    }[];
     paymentDetails: {
         refId?: string;
         date: number;
