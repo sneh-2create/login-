@@ -83,26 +83,72 @@ export const transformVacantSeatsForExport = (data: any[], displayNames: any, sh
     });
 };
 
-// Admission Summary Report
+// Process Admission Summary Report Data
 export const processAdmissionSummaryData = (data: any[]): { processedRows: any[], dynamicColumns: string[] } => {
     if (!data || !Array.isArray(data)) return { processedRows: [], dynamicColumns: [] };
 
-    // Identify dynamic columns (keys that are not fixed)
-    const fixedKeys = ['course', 'stream', 'total', 'totalOpen', 'position'];
-    const dynamicColumns = new Set<string>();
+    const dynamicColumnsSet = new Set<string>();
 
+    // 1. First pass: Collect all unique dynamic column names from the nested 'data' array
     data.forEach(row => {
-        Object.keys(row).forEach(key => {
-            if (!fixedKeys.includes(key) && typeof row[key] === 'number') {
-                dynamicColumns.add(key);
-            }
+        if (Array.isArray(row.data)) {
+            row.data.forEach((item: any) => {
+                if (item.name) {
+                    dynamicColumnsSet.add(item.name);
+                }
+            });
+        }
+    });
+
+    const dynamicColumns = Array.from(dynamicColumnsSet);
+
+    // 2. Second pass: Flatten the data and ensure all rows have all columns (init with 0)
+    const processedRows = data.map((row, index) => {
+        const newRow = { ...row, position: index + 1 };
+        
+        // Initialize all dynamic columns to 0
+        dynamicColumns.forEach(col => {
+            newRow[col] = 0;
+        });
+
+        // Fill in actual values
+        if (Array.isArray(row.data)) {
+            row.data.forEach((item: any) => {
+                if (item.name) {
+                    newRow[item.name] = item.value;
+                }
+            });
+        }
+        return newRow;
+    });
+
+    // 3. Calculate Totals Row
+    const totalRow: any = {
+        position: '', 
+        course: 'Total',
+        stream: '',
+        total: 0,
+        totalOpen: 0
+    };
+
+    // Initialize total row dynamic columns
+    dynamicColumns.forEach(col => {
+        totalRow[col] = 0;
+    });
+
+    processedRows.forEach(row => {
+        totalRow.total += (row.total || 0);
+        totalRow.totalOpen += (row.totalOpen || 0);
+
+        dynamicColumns.forEach(col => {
+            totalRow[col] += (row[col] || 0);
         });
     });
 
-    const dynCols = Array.from(dynamicColumns);
-    const processedRows = calculateReportTotals(data, dynCols, ['total', 'totalOpen']);
+    // Append total row
+    processedRows.push(totalRow);
 
-    return { processedRows, dynamicColumns: dynCols };
+    return { processedRows, dynamicColumns };
 };
 
 export const transformAdmissionSummaryForExport = (data: any[], columns: any[]): any[] => {
