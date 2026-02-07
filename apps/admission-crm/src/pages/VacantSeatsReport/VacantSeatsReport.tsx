@@ -3,13 +3,10 @@ import { vacantSeatsReportService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import * as xlsx from 'xlsx';
 import { VacantSeatsReportTableRow } from '@od-erp/types';
-import { processVacantSeatsReportData, transformVacantSeatsForExport } from '@od-erp/utils';
+import { processVacantSeatsReportData } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
-import { ReportHeader } from './components/ReportHeader';
-import { FilterSection } from './components/FilterSection';
-import { SearchInput } from './components/SearchInput';
-import { ReportTable } from './components/ReportTable';
-import { TablePagination } from './components/TablePagination';
+import { Button, Dropdown, Breadcrumb, DataTable, Input } from '@od-erp/ui';
+import { Download, Printer, SlidersHorizontal, RefreshCw, Search } from 'lucide-react';
 
 const vacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
@@ -17,12 +14,10 @@ const vacantSeatsReport = () => {
     const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-
+   
     // Filters
     const [courses, setCourses] = useState<any[]>([]);
-    const [selectedCourse, setSelectedCourse] = useState<any>(null);
+    const [selectedCourse, setSelectedCourse] = useState<string>('');
 
     const [streams, setStreams] = useState<string[]>([]);
     const [selectedStream, setSelectedStream] = useState<string>('');
@@ -30,11 +25,10 @@ const vacantSeatsReport = () => {
     const [batches, setBatches] = useState<string[]>([]);
     const [selectedBatch, setSelectedBatch] = useState<string>('');
 
+    const [showFilter, setShowFilter] = useState(true);
+
     // Metadata
-    // Note: In a real app, these might come from context or a hook
-    // const entityId = localStorage.getItem('entityId') || '5e95a8d3eac1df35dd2d007f';
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
-    // const session = localStorage.getItem('session') || '2025-2026';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
 
@@ -45,31 +39,36 @@ const vacantSeatsReport = () => {
         subjectCombination: entityPreferences.displayNames?.find((item: any) => item.value === 'subjectCombination')?.name || 'Subject Combination',
     };
 
-    // Default showBatch to true if preference is undefined/missing to ensure visibility if data exists
-    // Using loose check or default
     const showBatch = entityPreferences.showBatch !== undefined ? entityPreferences.showBatch : true;
 
     useEffect(() => {
-        console.log("VacancyReport Init: ", { entityId, session, entityPreferences });
         loadCourses();
-    }, []);
+        setupColumns();
+    }, [entityId]);
 
     useEffect(() => {
         setupColumns();
-    }, [showBatch]); // Re-run if showBatch changes (though it's constant per render usually)
+    }, [showBatch]);
 
     const setupColumns = () => {
-        console.log("Setting up columns. ShowBatch:", showBatch);
         const cols: ColumnDef<VacantSeatsReportTableRow>[] = [
             {
                 accessorKey: 'position',
                 header: 'S.No',
-                cell: (info: any) => <span className="text-gray-500">{info.getValue()}</span>
+                cell: (info: any) => {
+                    const row = info.row.original;
+                    if (row.course === 'Total') return '';
+                    return <span className="text-gray-500">{info.getValue()}</span>;
+                }
             },
             {
                 accessorKey: 'course',
                 header: displayNames.course,
-                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+                cell: (info: any) => {
+                    const row = info.row.original;
+                    const val = info.getValue();
+                    return row.course === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                }
             },
             {
                 accessorKey: 'stream',
@@ -90,7 +89,11 @@ const vacantSeatsReport = () => {
             {
                 accessorKey: 'name',
                 header: 'Name',
-                cell: (info: any) => <span className="font-medium text-gray-900">{info.getValue()}</span>
+                cell: (info: any) => {
+                    const row = info.row.original;
+                    if (row.course === 'Total') return '';
+                    return <span className="font-medium text-gray-900">{info.getValue()}</span>;
+                }
             },
             {
                 accessorKey: 'seats',
@@ -120,22 +123,20 @@ const vacantSeatsReport = () => {
     const loadCourses = async () => {
         try {
             if (!entityId) return;
-            // passing undefined for isLeet as per angular code
             const res = await vacantSeatsReportService.getCourseList(entityId, session);
             setCourses(res || []);
-            // Select first course by default if desired, following Angular logic:
-            // if (res && res.length > 0) handleCourseChange(res[0]);
         } catch (err) {
             console.error(err);
         }
     };
 
-    const handleCourseChange = (course: any) => {
-        setSelectedCourse(course);
+    const handleCourseChange = (courseName: string) => {
+        setSelectedCourse(courseName);
+        const course = courses.find(c => c.name === courseName);
+
         if (course) {
             setStreams(course.stream || []);
             setBatches(course.batch || []);
-            // Reset dependent filters
             setSelectedStream('');
             setSelectedBatch('');
         } else {
@@ -147,13 +148,11 @@ const vacantSeatsReport = () => {
     const handleSearch = async () => {
         setLoading(true);
         try {
-            const courseName = selectedCourse ? selectedCourse.name : undefined;
+            const courseName = selectedCourse || undefined;
             const streamName = selectedStream || undefined;
             const batchName = selectedBatch || undefined;
 
             const res = await vacantSeatsReportService.getVacantSeatsReport(entityId, session, courseName, streamName, batchName);
-
-            console.log("VacantSeatsReport response:", res);
 
             let resultData = res;
             if (!Array.isArray(res)) {
@@ -180,11 +179,59 @@ const vacantSeatsReport = () => {
     const handleExport = () => {
         setExportLoading(true);
         try {
-            // Prepare data suitable for export
-            const exportData = transformVacantSeatsForExport(data, displayNames, showBatch);
-
-            const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();
+            const ws: xlsx.WorkSheet = {};
+
+            // Headers
+            xlsx.utils.sheet_add_aoa(ws, [['Subject Combination Report']], { origin: "A1" });
+            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
+            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+
+            // Columns definition for export
+            const exportColumns = [
+                { header: 'S.No', key: 'position' },
+                { header: displayNames.course, key: 'course' },
+                { header: displayNames.stream, key: 'stream' },
+            ];
+
+            if (showBatch) {
+                exportColumns.push({ header: displayNames.batch, key: 'batch' });
+            }
+
+            exportColumns.push(
+                { header: 'Name', key: 'name' },
+                { header: 'Seats', key: 'seats' },
+                { header: 'Available', key: 'availableSeats' },
+                { header: 'Filled', key: 'filledSeats' },
+                { header: 'Pending', key: 'pendingApplications' }
+            );
+
+            // Table Headers
+            const tableHeaders = exportColumns.map(c => c.header);
+            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: "A4" });
+
+            // Data
+            const dataRows = data.map((row: any) => {
+                const isTotalRow = row.course === 'Total';
+
+                return exportColumns.map((col) => {
+                    // S.No logic
+                    if (col.key === 'position') {
+                        if (isTotalRow) return '';
+                        return row.position;
+                    }
+                    
+                    // Name logic for Total row
+                    if (col.key === 'name' && isTotalRow) {
+                        return '';
+                    }
+
+                    return row[col.key] || (row[col.key] === 0 ? 0 : '');
+                });
+            });
+
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
+
             xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
             xlsx.writeFile(wb, 'Subject_Combination_Reports.xlsx');
         } catch (error) {
@@ -195,14 +242,20 @@ const vacantSeatsReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('vacantSeatsReportData', JSON.stringify(data));
+        const printData = data.map(item => {
+             const newItem = { ...item };
+             if (newItem.course === 'Total') {
+                 newItem.name = ''; // Clear name for Total row
+             }
+             return newItem;
+        });
+
+        localStorage.setItem('vacantSeatsReportData', JSON.stringify(printData));
         window.open('/admission/print/vacantSeats', '_blank');
     };
 
-    // Filter data based on search query
     const filteredData = useMemo(() => {
         if (!searchQuery) return data;
-
         return data.filter((row: any) => {
             return Object.values(row).some((value) =>
                 String(value).toLowerCase().includes(searchQuery.toLowerCase())
@@ -210,76 +263,148 @@ const vacantSeatsReport = () => {
         });
     }, [data, searchQuery]);
 
-    // Pagination logic
-    const paginatedData = useMemo(() => {
-        const startIndex = (currentPage - 1) * pageSize;
-        return filteredData.slice(startIndex, startIndex + pageSize);
-    }, [filteredData, currentPage, pageSize]);
-
-    const totalPages = Math.ceil(filteredData.length / pageSize);
-
-    // Reset to page 1 when data or search query changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [data, searchQuery]);
-
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-gray-50 p-8 gap-6">
-            <ReportHeader
-                displayName={displayNames.subjectCombination}
-                onExport={handleExport}
-                onPrint={handlePrint}
-                exportLoading={exportLoading}
-            />
-
-            <FilterSection
-                courses={courses}
-                selectedCourse={selectedCourse}
-                onCourseChange={handleCourseChange}
-                streams={streams}
-                selectedStream={selectedStream}
-                onStreamChange={setSelectedStream}
-                batches={batches}
-                selectedBatch={selectedBatch}
-                onBatchChange={setSelectedBatch}
-                onSearch={handleSearch}
-                loading={loading}
-                showBatch={showBatch}
-                displayNames={{
-                    course: displayNames.course,
-                    stream: displayNames.stream,
-                    batch: displayNames.batch,
-                }}
-            />
-
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-gray-100">
-                    <SearchInput
-                        onSearch={setSearchQuery}
-                        placeholder="Search..."
+        <div className="w-full max-w-full font-sans pb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{displayNames.subjectCombination} Report</h1>
+                    <Breadcrumb 
+                        items={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Reports', href: '/admission/reports' },
+                            { label: `${displayNames.subjectCombination} Report` }
+                        ]}
                     />
                 </div>
+                <div className="flex items-center space-x-2">
+                    <Button 
+                        variant="outline" 
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setShowFilter(!showFilter)}
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
 
-                <ReportTable
-                    columns={columns}
-                    data={paginatedData}
-                    isLoading={loading}
-                />
+                    <Button 
+                        variant="outline" 
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                        onClick={handleSearch}
+                        title="Refresh/Go"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
 
-                {filteredData.length > 0 && (
-                    <TablePagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        pageSize={pageSize}
-                        totalItems={filteredData.length}
-                        onPageChange={setCurrentPage}
-                        onPageSizeChange={(size) => {
-                            setPageSize(size);
-                            setCurrentPage(1);
-                        }}
-                    />
-                )}
+                    {data.length > 0 && (
+                        <>
+                            <Button 
+                                variant="outline" 
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                onClick={handleExport}
+                                isLoading={exportLoading}
+                                title="Export to Excel"
+                            >
+                                <Download className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                                variant="outline" 
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                onClick={handlePrint}
+                                title="Print"
+                            >
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                        </>
+                    )}
+                </div>
             </div>
+
+            {showFilter && (
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.course}</label>
+                            <Dropdown
+                                value={selectedCourse}
+                                onChange={(val) => handleCourseChange(val as string)}
+                                options={[
+                                    { value: '', label: `Select ${displayNames.course}` },
+                                    ...courses.map(c => ({ value: c.name, label: c.name }))
+                                ]}
+                                placeholder={`Select ${displayNames.course}`}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.stream}</label>
+                            <Dropdown
+                                value={selectedStream}
+                                onChange={(val) => setSelectedStream(val as string)}
+                                options={[
+                                    { value: '', label: `Select ${displayNames.stream}` },
+                                    ...streams.map(s => ({ value: s, label: s }))
+                                ]}
+                                placeholder={`Select ${displayNames.stream}`}
+                                className="w-full"
+                            />
+                        </div>
+                        {showBatch && (
+                            <div className="w-full">
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.batch}</label>
+                                <Dropdown
+                                    value={selectedBatch}
+                                    onChange={(val) => setSelectedBatch(val as string)}
+                                    options={[
+                                        { value: '', label: `Select ${displayNames.batch}` },
+                                        ...batches.map(b => ({ value: b, label: b }))
+                                    ]}
+                                    placeholder={`Select ${displayNames.batch}`}
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                         <div className="w-full md:w-auto">
+                            <Button variant="primary" onClick={handleSearch} isLoading={loading} className="w-full md:w-auto">
+                                Go
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {data.length > 0 && (
+                <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
+                    <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-4">
+                        <h3 className="font-semibold text-gray-700 whitespace-nowrap">Report Data</h3>
+                        <div className="relative w-64">
+                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <Input
+                                placeholder="Search..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 h-9 text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="w-full max-w-full overflow-x-auto">
+                        <DataTable
+                            columns={columns}
+                            data={filteredData}
+                            isLoading={loading}
+                            showSearch={false}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {!loading && data.length === 0 && (
+                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
+                </div>
+            )}
         </div>
     );
 };

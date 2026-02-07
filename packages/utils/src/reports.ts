@@ -57,10 +57,7 @@ export const processTableData = (data: any[], keysToSum: string[] = []): any[] =
 
 export const processVacantSeatsReportData = (data: any[]): any[] => {
     if (!data) return [];
-    return data.map((item, index) => ({
-        position: index + 1,
-        ...item
-    }));
+    return calculateReportTotals(data, [], ['seats', 'availableSeats', 'filledSeats', 'pendingApplications']);
 };
 
 export const transformVacantSeatsForExport = (data: any[], displayNames: any, showBatch: boolean): any[] => {
