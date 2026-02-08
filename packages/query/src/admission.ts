@@ -79,8 +79,8 @@ export const useCounselorProductivityReport = (
     entityId: string,
     session: string,
     stageType: 'lead' | 'application',
-    startDate: number,
-    endDate: number,
+    startDate?: number,
+    endDate?: number,
     counselorId?: string
 ) => {
     return useQuery<CounselorProductivityReportData[]>({
@@ -199,3 +199,5 @@ export const useAddAdmissionNote = () => {
         },
     });
 };
+
+
