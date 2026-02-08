@@ -162,7 +162,7 @@ export const transformAdmissionSummaryForExport = (data: any[], columns: any[]):
 // Course Wise Tag Report
 export const processCourseWiseTagData = (data: any[], tags: string[]): any[] => {
     if (!data) return [];
-    return calculateReportTotals(data, tags, ['total']);
+    return calculateReportTotals(data, tags, ['totalCount']);
 };
 
 export const transformCourseWiseTagForExport = (data: any[], tags: string[]): any[] => {
@@ -172,7 +172,7 @@ export const transformCourseWiseTagForExport = (data: any[], tags: string[]): an
             'S.No': item.position,
             'Course': item.course,
             'Stream': item.stream || '-',
-            'Total': item.total
+            'Total Count': item.totalCount
         };
         tags.forEach(tag => {
             row[tag] = item[tag] || 0;
