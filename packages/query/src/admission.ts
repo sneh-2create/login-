@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService, admissionVisitService, admissionNoteService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload } from '@od-erp/types';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload, CounselorTagReportTableRow } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -92,6 +92,27 @@ export const useCounselorProductivityReport = (
             startDate,
             endDate,
             counselorId
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useCounselorTagReport = (
+    entityId: string,
+    session: string,
+    counselorId?: string,
+    startDate?: number,
+    endDate?: number
+) => {
+    return useQuery<CounselorTagReportTableRow[]>({
+        queryKey: ['counselorTagReport', entityId, session, counselorId, startDate, endDate],
+        queryFn: () => counselorTagReportService.counselorTagList(
+            entityId,
+            session,
+            counselorId,
+            startDate,
+            endDate
         ),
         enabled: !!entityId && !!session,
         staleTime: 30000,

@@ -1,129 +1,223 @@
-import { useEffect, useState } from 'react';
-import { counselorTagReportService } from '@od-erp/api-client';
-import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
+import { useEffect, useState, useMemo } from 'react';
+import { useCounselorTagReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
+import { useAppSelector } from '@od-erp/store';
+import { Button, DataTable, Breadcrumb, Dropdown, DatePicker } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { CounselorTagReportTableRow } from '@od-erp/types';
-import { processCounselorTagData, transformCounselorTagForExport } from '@od-erp/utils';
-import { useAppSelector } from '@od-erp/store';
-import { useBreadcrumbs } from '@od-erp/context';
 
-const counselorTagReport = () => {
-    const [loading, setLoading] = useState(false);
+const CounselorTagReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
-    const [columns, setColumns] = useState<ColumnDef<CounselorTagReportTableRow>[]>([]);
-
+    
     // Filters
-    const [counselors, setCounselors] = useState<any[]>([]);
+    const [startDate, setStartDate] = useState<number | undefined>();
+    const [endDate, setEndDate] = useState<number | undefined>();
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
-    const [startDate, setStartDate] = useState<string>('');
-    const [endDate, setEndDate] = useState<string>('');
+    const [loading, setLoading] = useState(false);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
-    const { setBreadcrumbs } = useBreadcrumbs();
+    const user = useAppSelector((state) => state.auth.user) as any;
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
 
-    // Set breadcrumbs
+    // Determine Roles
+    const isAdmissionAdmin = permissions.includes('isAdmissionAdmin');
+    const [isLead, setIsLead] = useState(false);
+    const [counselorOptions, setCounselorOptions] = useState<any[]>([]);
+    const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
+
+    // Data Hooks
+    const { data: counselors } = useCounselors(entityId, 'counselor');
+    const { data: admissionMaster } = useAdmissionMaster(entityId, session);
+
+    // Process Permissions & Lists
     useEffect(() => {
-        setBreadcrumbs([
-            { label: 'Home', href: '/' },
-            { label: 'Reports', href: '/admission/reports' },
-            { label: 'Counselor Tag Report' }
-        ]);
-    }, [setBreadcrumbs]);
+        if (!counselors || !user) return;
 
-    // Dynamic Tags
-    const [tags, setTags] = useState<string[]>([]);
+        let isUserLead = false;
+        let filteredOptions: any[] = [];
 
-    // Pagination
-    const [pageNumber, setPageNumber] = useState(1);
-    const [pageSize] = useState(10);
-
-    useEffect(() => {
-        loadInitialData();
-    }, []);
-
-    useEffect(() => {
-        setupColumns();
-    }, [tags, pageNumber, pageSize]);
-
-    const loadInitialData = async () => {
-        try {
-            // Load tags and admission master data
-            const masterRes = await counselorTagReportService.viewAdmissionMaster(entityId, session);
-            if (masterRes && masterRes.tags) {
-                setTags(masterRes.tags.map((t: any) => t.tag));
+        // Check if user is a lead
+        if (admissionMaster?.teams && admissionMaster.teams.length > 0 && !isAdmissionAdmin) {
+            const myTeam = admissionMaster.teams.find((team: any) => team.leadDetails?.employee === user._id);
+            if (myTeam) {
+                isUserLead = true;
+                // Add Lead (Self)
+                filteredOptions.push({ label: myTeam.leadDetails.employeeName, value: myTeam.leadDetails.employee });
+                // Add Members
+                if (myTeam.memberDetails) {
+                    myTeam.memberDetails.forEach((mem: any) => {
+                        filteredOptions.push({ label: mem.employeeName, value: mem.employee });
+                    });
+                }
             }
-
-            // Load counselors logic
-            const empRes = await counselorTagReportService.listEmployee(entityId, 'counselor');
-            if (empRes) {
-                setCounselors(empRes);
-            }
-
-        } catch (err) {
-            console.error("Error loading initial data", err);
         }
+        setIsLead(isUserLead);
+
+        if (isAdmissionAdmin) {
+            filteredOptions = counselors.map((c: any) => ({ label: c.name, value: c._id }));
+            filteredOptions.unshift({ label: 'All Counselors', value: '' });
+        } else if (isUserLead) {
+            // Already populated above, just add "All Team Members" option if needed or keep specific
+             filteredOptions.unshift({ label: 'All Team Members', value: '' });
+        } else {
+            const myProfile = counselors.find((c: any) => c._id === user._id);
+            if (myProfile) {
+                filteredOptions = [{ label: myProfile.name, value: myProfile._id }];
+                setSelectedCounselor(myProfile._id);
+            }
+        }
+
+        // Deduplicate
+        const uniqueOptions = Array.from(new Set(filteredOptions.map(a => a.value)))
+            .map(value => filteredOptions.find(a => a.value === value));
+
+        setCounselorOptions(uniqueOptions);
+
+        // Tags
+        if (admissionMaster && admissionMaster.tags) {
+            setDynamicColumns(admissionMaster.tags.map((t: any) => t.tag));
+        }
+
+    }, [counselors, admissionMaster, isAdmissionAdmin, user]);
+
+    // Query
+    const getStartTimestamp = () => {
+        if (!startDate) return undefined;
+        const date = new Date(startDate);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime();
     };
 
-    const setupColumns = () => {
-        const cols: ColumnDef<CounselorTagReportTableRow>[] = [
+    const getEndTimestamp = () => {
+        if (!endDate) return undefined;
+        const date = new Date(endDate);
+        date.setHours(23, 59, 59, 999);
+        return date.getTime();
+    };
+
+    const { data: reportData, isLoading, refetch } = useCounselorTagReport(
+        entityId,
+        session,
+        (!isAdmissionAdmin && !isLead) ? (user?._id) : (selectedCounselor || undefined),
+        getStartTimestamp(),
+        getEndTimestamp()
+    );
+
+    useEffect(() => {
+        setLoading(isLoading);
+        if (reportData && Array.isArray(reportData)) {
+            // Calculate Total Row
+            const totalRow: any = {
+                counselorName: 'Total',
+                totalCount: 0,
+                position: 0 // Marker for total row
+            };
+            
+            dynamicColumns.forEach(tag => {
+                totalRow[tag] = 0;
+            });
+
+            const processedData = reportData.map((row: any, index: number) => ({
+                ...row,
+                position: index + 1
+            }));
+
+            processedData.forEach((row: any) => {
+                totalRow.totalCount += Number(row.totalCount || 0);
+                dynamicColumns.forEach(tag => {
+                    totalRow[tag] += Number(row[tag] || 0);
+                });
+            });
+
+            setData([...processedData, totalRow]);
+        } else {
+            setData([]);
+        }
+    }, [reportData, isLoading, dynamicColumns]);
+
+    const handleSearch = () => {
+        refetch();
+    };
+
+    const columns: ColumnDef<any>[] = useMemo(() => {
+        const cols: ColumnDef<any>[] = [
             {
                 accessorKey: 'position',
                 header: 'S.No',
-                cell: info => (pageNumber - 1) * pageSize + info.row.index + 1
+                cell: info => {
+                    const val = info.getValue() as number;
+                    return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                }
             },
-            { accessorKey: 'counselorName', header: 'Counselor Name' },
-            { accessorKey: 'totalCount', header: 'Total Count' },
+            {
+                accessorKey: 'counselorName',
+                header: 'Counselor Name',
+                cell: info => {
+                    const val = info.getValue() as string;
+                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                }
+            },
+            {
+                accessorKey: 'totalCount',
+                header: 'Total Count',
+                cell: info => {
+                    const val = info.getValue() as number;
+                    const isTotal = info.row.original.counselorName === 'Total';
+                    return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
+                }
+            }
         ];
 
-        tags.forEach(tag => {
+        dynamicColumns.forEach(tag => {
             cols.push({
                 accessorKey: tag,
                 header: tag,
-                cell: info => info.getValue() || 0
+                cell: info => {
+                    const val = info.getValue() as number || 0;
+                    const isTotal = info.row.original.counselorName === 'Total';
+                    return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
+                }
             });
         });
 
-        setColumns(cols);
-    };
-
-    const handleSearch = async () => {
-        setLoading(true);
-        try {
-            const start = startDate ? new Date(startDate).setHours(0, 0, 0, 0) : undefined;
-            const end = endDate ? new Date(endDate).setHours(23, 59, 59, 999) : undefined;
-            const res = await counselorTagReportService.counselorTagList(entityId, session, selectedCounselor || undefined, start, end);
-
-            if (!res || !Array.isArray(res)) {
-                console.warn('CounselorTagReport: Invalid response', res);
-                setData([]);
-                return;
-            }
-
-            const processedData = processCounselorTagData(res, tags);
-            setData(processedData);
-
-        } catch (err) {
-            console.error(err);
-            setData([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+        return cols;
+    }, [dynamicColumns]);
 
     const handleExport = () => {
         setExportLoading(true);
         try {
-            const exportData = transformCounselorTagForExport(data, tags);
-
-            const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();
-            xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
+            const ws: xlsx.WorkSheet = {};
+            
+            // Header Info
+            xlsx.utils.sheet_add_aoa(ws, [['Counselor Tag Report']], { origin: "A1" });
+            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
+            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+
+            // Headers
+            const headerRow = ['S.No', 'Counselor Name', 'Total Count', ...dynamicColumns];
+            xlsx.utils.sheet_add_aoa(ws, [headerRow], { origin: "A4" });
+
+            // Data
+            const dataRows = data.map((row, index) => {
+                const isTotal = row.counselorName === 'Total';
+                const rowData = [
+                    isTotal ? '' : index + 1,
+                    row.counselorName,
+                    row.totalCount,
+                    ...dynamicColumns.map(col => row[col] || 0)
+                ];
+                return rowData;
+            });
+
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
+            xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
             xlsx.writeFile(wb, 'Counselor_Tag_Report.xlsx');
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -132,110 +226,128 @@ const counselorTagReport = () => {
     };
 
     const handlePrint = () => {
-        const paginatedData = data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize);
-        localStorage.setItem('counselorWiseLeadData', JSON.stringify(paginatedData));
-        localStorage.setItem('tableHeads', JSON.stringify(tags));
+        localStorage.setItem('counselorWiseLeadData', JSON.stringify(data));
+        localStorage.setItem('tableHeads', JSON.stringify(dynamicColumns));
         window.open('/admission/print/counselorTagReport', '_blank');
     };
 
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-white gap-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <div className="text-xs text-gray-500 mb-1 cursor-pointer">
-                        Dashboard &gt; Admission &gt; <b>Counselor Tag Report</b>
-                    </div>
-                    <Title variant="pageTitle">Counselor Tag Report</Title>
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handlePrint}
-                        leftIcon={<Printer size={16} />}
-                    >
-                        Print
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        isLoading={exportLoading}
-                        leftIcon={<Download size={16} />}
-                    >
-                        Export to Excel
-                    </Button>
-                </div>
-            </div>
-
-            <Card className="p-4 !overflow-visible">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="w-full max-w-full font-sans pb-8">
+            <div className="flex flex-col mb-6 gap-4">
+                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Select Counselor</label>
-                        <Select
-                            value={selectedCounselor}
-                            onChange={(e) => setSelectedCounselor(e.target.value)}
-                            options={[
-                                { value: '', label: 'Select Counselor' },
-                                ...counselors.map(c => ({ value: c._id, label: c.name }))
+                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Counselor Tag Report</h1>
+                        <Breadcrumb
+                            items={[
+                                { label: 'Dashboard', href: '/dashboard' },
+                                { label: 'Admission Reports', href: '/admission/reports' },
+                                { label: 'Counselor Tag Report' }
                             ]}
                         />
                     </div>
-
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
-                        <input
-                            type="date"
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
-                        <input
-                            type="date"
-                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <Button onClick={handleSearch} isLoading={loading}>Go</Button>
-                    </div>
-                </div>
-            </Card>
-
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="w-full max-w-full overflow-x-auto">
-                    <DataTable
-                        columns={columns}
-                        data={data.slice((pageNumber - 1) * pageSize, pageNumber * pageSize)}
-                        isLoading={loading}
-                    />
-                </div>
-                <div className="p-4 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600 rounded-b-lg">
-                    <span>Showing {Math.min((pageNumber - 1) * pageSize + 1, data.length)} to {Math.min(pageNumber * pageSize, data.length)} of {data.length} entries</span>
-                    <div className="flex gap-2">
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={pageNumber === 1}
-                            onClick={() => setPageNumber(p => p - 1)}
+                     <div className="flex items-center space-x-2">
+                         <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                            onClick={handleSearch}
+                            title="Refresh/Go"
                         >
-                            Previous
-                        </button>
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={pageNumber * pageSize >= data.length}
-                            onClick={() => setPageNumber(p => p + 1)}
-                        >
-                            Next
-                        </button>
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                        </Button>
+
+                        {data.length > 0 && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    onClick={handleExport}
+                                    isLoading={exportLoading}
+                                    title="Export to Excel"
+                                >
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    onClick={handlePrint}
+                                    title="Print"
+                                >
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </div>
+
+                {/* Filters */}
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="w-full md:w-1/4">
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
+                            <DatePicker
+                                value={startDate ? new Date(startDate) : undefined}
+                                onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
+                                maxDate={endDate ? new Date(endDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full md:w-1/4">
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
+                            <DatePicker
+                                value={endDate ? new Date(endDate) : undefined}
+                                onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
+                                minDate={startDate ? new Date(startDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                         <div className="w-full md:w-1/4">
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
+                            <Dropdown
+                                options={counselorOptions}
+                                value={selectedCounselor}
+                                onChange={(val) => setSelectedCounselor(val as string)}
+                                placeholder="Select Counselor"
+                                disabled={!isAdmissionAdmin && !isLead}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full md:w-auto">
+                            <Button
+                                variant="primary"
+                                onClick={handleSearch}
+                                isLoading={loading}
+                                className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white border-transparent"
+                            >
+                                Go <span className="ml-1">→</span>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Data Table */}
+                {data.length > 0 && (
+                    <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
+                         <div className="p-4 border-b border-gray-200">
+                            <h3 className="font-semibold text-gray-700">Counselor Tag Report</h3>
+                        </div>
+                        <div className="w-full max-w-full overflow-x-auto">
+                            <DataTable
+                                columns={columns}
+                                data={data}
+                                isLoading={loading}
+                                showSearch={false}
+                            />
+                        </div>
+                    </div>
+                )}
+                 {!loading && data.length === 0 && (
+                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export default counselorTagReport;
+export default CounselorTagReport;
