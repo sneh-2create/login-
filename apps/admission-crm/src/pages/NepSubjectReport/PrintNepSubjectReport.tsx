@@ -19,8 +19,8 @@ const PrintNepSubjectReport = () => {
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="border border-gray-300 p-2 text-left">S.No</th>
-                        <th className="border border-gray-300 p-2 text-left">Subject Name</th>
-                        <th className="border border-gray-300 p-2 text-left">Subject Code</th>
+                        <th className="border border-gray-300 p-2 text-left">Name</th>
+                        <th className="border border-gray-300 p-2 text-left">Code</th>
                         <th className="border border-gray-300 p-2 text-left">Seats</th>
                         <th className="border border-gray-300 p-2 text-left">Available Seats</th>
                         <th className="border border-gray-300 p-2 text-left">Filled Seats</th>

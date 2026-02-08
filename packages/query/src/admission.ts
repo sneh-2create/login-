@@ -56,7 +56,8 @@ export const useNepSubjectReport = (
     stream?: string,
     batch?: string,
     subjectGroupValue?: string,
-    subjectGroupName?: string
+    subjectGroupName?: string,
+    enabled: boolean = true
 ) => {
     return useQuery<NepSubjectReportData[]>({
         queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
@@ -69,7 +70,7 @@ export const useNepSubjectReport = (
             subjectGroupValue,
             subjectGroupName
         ),
-        enabled: !!entityId && !!session,
+        enabled: !!entityId && !!session && enabled,
         staleTime: 30000,
     });
 };
