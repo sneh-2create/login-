@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import { HodDashboardResponse, CommunicationDashboardResponse, AnalyticsDashboardFilters, AnalyticsDashboardResponse, MessDashboardResponse } from '@od-erp/types';
+import { HodDashboardResponse, CommunicationDashboardResponse, AnalyticsDashboardFilters, AnalyticsDashboardResponse, MessDashboardResponse, CalendarResponse } from '@od-erp/types';
 
 export const otherService = {
     getHodDashboard: async (
@@ -39,4 +39,16 @@ export const otherService = {
         });
         return data;
     },
+    getEmployeeCalendar: async (entityId: string, session: string, employeeId: string, startDate: number, endDate: number) => {
+        const { data } = await apiClient.get<CalendarResponse>(`/employeeSchedule/employeeCalendar`, {
+            params: {
+                entity: entityId,
+                session,
+                employee: employeeId,
+                startDate,
+                endDate
+            }
+        });
+        return data;
+    }
 };

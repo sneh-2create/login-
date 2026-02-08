@@ -16,10 +16,12 @@ import {
     CommunicationSection,
     LibrarySection,
     ProfileSection,
-    MessSection
+    // CalendarSection is exported from Placeholders
+    MessSection,
+    CalendarSection
 } from '../components/dashboard/sections/Placeholders';
 import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
-import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
+// CalendarSection removed from here as it is imported from Placeholders
 import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
 import { TabConfig } from '@od-erp/types';
 

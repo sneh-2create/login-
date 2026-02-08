@@ -11,6 +11,7 @@ const PlaceholderValues = ({ title }: { title: string }) => (
 export const StudentOverviewSection = () => <PlaceholderValues title="Student Overview" />;
 export const FeeSection = () => <PlaceholderValues title="Fee Management" />;
 export const AdmissionSectionPlaceholder = () => <PlaceholderValues title="Admission Management" />; // Renamed to avoid conflict if imported
+export { CalendarSection } from '../calendar/CalendarSection';
 export const AttendanceSection = () => <PlaceholderValues title="Attendance" />;
 export const ExaminationSection = () => <PlaceholderValues title="Examination" />;
 export const EmployeeSection = () => <PlaceholderValues title="Employee Management" />;
