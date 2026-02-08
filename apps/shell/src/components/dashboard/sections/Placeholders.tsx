@@ -15,7 +15,7 @@ export const AttendanceSection = () => <PlaceholderValues title="Attendance" />;
 export const AnalyticsSection = () => <PlaceholderValues title="Analytics" />;
 export const ExaminationSection = () => <PlaceholderValues title="Examination" />;
 export const EmployeeSection = () => <PlaceholderValues title="Employee Management" />;
-export const HODSection = () => <PlaceholderValues title="HOD Dashboard" />;
+export { HODSection } from './HODSection';
 export const CommunicationSection = () => <PlaceholderValues title="Communication" />;
 export const LibrarySection = () => <PlaceholderValues title="Library Management" />;
 export const ProfileSection = () => <PlaceholderValues title="My Profile" />;

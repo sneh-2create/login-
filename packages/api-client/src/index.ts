@@ -20,4 +20,6 @@ export { dailyCollectionReportService } from './services/AdmissionCrmServices/da
 export { admissionVisitService } from './services/AdmissionCrmServices/admissionVisit.service';
 export { admissionNoteService } from './services/AdmissionCrmServices/admissionNote.service';
 export { sessionService } from './services/session.service';
+export { hrmService } from './services/hrm.service';
+export { otherService } from './services/other.service';
 export { default as apiClient } from './client';

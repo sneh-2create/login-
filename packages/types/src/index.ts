@@ -15,6 +15,7 @@ export interface User {
     role: string;
     userType: string;
     employeeId?: string;
+    employee_id?: string; // Legacy support
     permissions?: string[];
 }
 
@@ -82,3 +83,4 @@ export * from './dashboard';
 export * from './admission';
 export * from './table';
 export * from './badge';
+export * from './hod';
