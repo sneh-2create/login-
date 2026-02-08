@@ -7,7 +7,7 @@ import { cn } from '@od-erp/ui';
 import {
     StudentOverviewSection,
     FeeSection,
-    AdmissionSection,
+    // AdmissionSection imported separately
     AttendanceSection,
     AnalyticsSection,
     ExaminationSection,
@@ -17,9 +17,10 @@ import {
     LibrarySection,
     ProfileSection,
     MessSection
-} from '../components/Dashboard/Sections/Placeholders';
-import { CalendarSection } from '../components/Dashboard/Sections/CalendarSection';
-import { QuickLinksSection } from '../components/Dashboard/Sections/QuickLinksSection';
+} from '../components/dashboard/sections/Placeholders';
+import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
+import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
+import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';

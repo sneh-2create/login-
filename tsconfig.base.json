@@ -72,6 +72,12 @@
             ],
             "@od-erp/constants/*": [
                 "./packages/constants/src/*"
+            ],
+            "@od-erp/types": [
+                "./packages/types/src"
+            ],
+            "@od-erp/types/*": [
+                "./packages/types/src/*"
             ]
         }
     }
