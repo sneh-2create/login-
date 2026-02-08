@@ -87,4 +87,5 @@ export * from './hod';
 export * from './communication';
 export * from './analytics';
 export * from './calendar';
+export * from './profile';
 export * from './mess';

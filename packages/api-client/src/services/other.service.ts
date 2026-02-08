@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import { HodDashboardResponse, CommunicationDashboardResponse, AnalyticsDashboardFilters, AnalyticsDashboardResponse, MessDashboardResponse, CalendarResponse } from '@od-erp/types';
+import { HodDashboardResponse, CommunicationDashboardResponse, AnalyticsDashboardFilters, AnalyticsDashboardResponse, MessDashboardResponse, CalendarResponse, EmployeeProfile, ProfileBirthdayEmployee, Announcement } from '@od-erp/types';
 
 export const otherService = {
     getHodDashboard: async (
@@ -48,6 +48,24 @@ export const otherService = {
                 startDate,
                 endDate
             }
+        });
+        return data;
+    },
+    viewEmployee: async (id: string) => {
+        const { data } = await apiClient.get<EmployeeProfile>(`/view/employee`, {
+            params: { id }
+        });
+        return data;
+    },
+    getEmployeeBirthday: async (entityId: string) => {
+        const { data } = await apiClient.get<ProfileBirthdayEmployee[]>(`/currentMonthBirthday/employee`, {
+            params: { entity: entityId }
+        });
+        return data;
+    },
+    listLatestAnnouncemets: async (employeeId: string) => {
+        const { data } = await apiClient.post<Announcement[]>(`/listRecentAnnouncementsByEmployeeId/employeeAnnouncement`, {
+            employeeId
         });
         return data;
     }

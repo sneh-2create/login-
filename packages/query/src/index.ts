@@ -23,3 +23,4 @@ export * from './useCommunicationDashboard';
 export * from './useAnalyticsDashboard';
 export * from './useMessDashboard';
 export * from './useCalendar';
+export * from './useProfile';
