@@ -19,3 +19,4 @@ export * from './dailyCollectionReport';
 export * from './useStudentTimeline';
 export * from './useAdmissionDashboard';
 export * from './useHodDashboard';
+export * from './useCommunicationDashboard';

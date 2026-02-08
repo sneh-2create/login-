@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import { HodDashboardResponse } from '@od-erp/types';
+import { HodDashboardResponse, CommunicationDashboardResponse } from '@od-erp/types';
 
 export const otherService = {
     getHodDashboard: async (
@@ -18,6 +18,12 @@ export const otherService = {
         }
 
         const { data } = await apiClient.get<HodDashboardResponse>(`/getHODDashboard/dashboard?${queryParams}`);
+        return data;
+    },
+    getCommunicationData: async (entity: string, session: string) => {
+        const { data } = await apiClient.get<CommunicationDashboardResponse>('/getCommunicationDashboard/dashboard', {
+            params: { entity, session }
+        });
         return data;
     },
 };
