@@ -12,12 +12,12 @@ export const StudentOverviewSection = () => <PlaceholderValues title="Student Ov
 export const FeeSection = () => <PlaceholderValues title="Fee Management" />;
 export const AdmissionSectionPlaceholder = () => <PlaceholderValues title="Admission Management" />; // Renamed to avoid conflict if imported
 export const AttendanceSection = () => <PlaceholderValues title="Attendance" />;
-export const AnalyticsSection = () => <PlaceholderValues title="Analytics" />;
 export const ExaminationSection = () => <PlaceholderValues title="Examination" />;
 export const EmployeeSection = () => <PlaceholderValues title="Employee Management" />;
 // Real Components
 export { HODSection } from './HODSection';
 export { CommunicationSection } from './CommunicationSection';
+export { AnalyticsSection } from './AnalyticsSection';
 export const LibrarySection = () => <PlaceholderValues title="Library Management" />;
 export const ProfileSection = () => <PlaceholderValues title="My Profile" />;
 export const MessSection = () => <PlaceholderValues title="Mess Management" />;

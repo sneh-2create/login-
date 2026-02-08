@@ -1,5 +1,5 @@
 import apiClient from '../client';
-import { HodDashboardResponse, CommunicationDashboardResponse } from '@od-erp/types';
+import { HodDashboardResponse, CommunicationDashboardResponse, AnalyticsDashboardFilters, AnalyticsDashboardResponse } from '@od-erp/types';
 
 export const otherService = {
     getHodDashboard: async (
@@ -24,6 +24,13 @@ export const otherService = {
         const { data } = await apiClient.get<CommunicationDashboardResponse>('/getCommunicationDashboard/dashboard', {
             params: { entity, session }
         });
+        return data;
+    },
+    getAnalyticsData: async (entity: string, session: string, filters: AnalyticsDashboardFilters) => {
+        const { data } = await apiClient.post<AnalyticsDashboardResponse>(
+            `/getAnalyticsData/dashboard?entity=${entity}&session=${session}`,
+            filters
+        );
         return data;
     },
 };

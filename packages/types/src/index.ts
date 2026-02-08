@@ -85,3 +85,4 @@ export * from './table';
 export * from './badge';
 export * from './hod';
 export * from './communication';
+export * from './analytics';
