@@ -20,7 +20,8 @@ export { CommunicationSection } from './CommunicationSection';
 export { AnalyticsSection } from './AnalyticsSection';
 export const LibrarySection = () => <PlaceholderValues title="Library Management" />;
 export const ProfileSection = () => <PlaceholderValues title="My Profile" />;
-export const MessSection = () => <PlaceholderValues title="Mess Management" />;
+// export const MessSection = () => <div className="p-4 bg-white rounded-lg shadow">Mess Management Dashboard Placeholder</div>;
+export { MessSection } from './MessSection';
 
 // Re-export AdmissionSection to satisfy old imports if needed, but we should switch to real component.
 export { AdmissionSectionPlaceholder as AdmissionSection };

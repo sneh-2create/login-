@@ -21,3 +21,4 @@ export * from './useAdmissionDashboard';
 export * from './useHodDashboard';
 export * from './useCommunicationDashboard';
 export * from './useAnalyticsDashboard';
+export * from './useMessDashboard';
