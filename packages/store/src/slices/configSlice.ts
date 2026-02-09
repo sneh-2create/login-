@@ -18,9 +18,14 @@ export interface EntityDisplayNames {
 }
 
 export interface EntityPreferences {
-    displayNames: EntityDisplayNames;
+    // displayNames: EntityDisplayNames;
     studentAttendanceVersion: 'old' | 'new' | 'version3';
     colourTheme: string;
+    displayNames: {
+        value: string;
+        name: string;
+    }[];
+    showBatch: boolean;
 }
 
 export interface ConfigState {

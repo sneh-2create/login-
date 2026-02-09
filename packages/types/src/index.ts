@@ -15,6 +15,8 @@ export interface User {
     role: string;
     userType: string;
     employeeId?: string;
+    myOperatorId?: string;
+    mobile?: string;
     permissions?: string[];
 }
 

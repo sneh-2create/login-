@@ -30,16 +30,15 @@ const vacantSeatsReport = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
-    const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
-
+    const entityPreferences = useAppSelector((state) => state.config.entityPreferences) || null;
     const displayNames = {
-        course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
-        stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
-        batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
-        subjectCombination: entityPreferences.displayNames?.find((item: any) => item.value === 'subjectCombination')?.name || 'Subject Combination',
+        course: entityPreferences?.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
+        stream: entityPreferences?.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
+        batch: entityPreferences?.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+        subjectCombination: entityPreferences?.displayNames?.find((item: any) => item.value === 'subjectCombination')?.name || 'Subject Combination',
     };
 
-    const showBatch = entityPreferences.showBatch !== undefined ? entityPreferences.showBatch : true;
+    const showBatch = entityPreferences?.showBatch !== undefined ? entityPreferences?.showBatch : true;
 
     useEffect(() => {
         loadCourses();

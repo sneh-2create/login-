@@ -25,5 +25,15 @@ export const admissionLeadLogsService = {
     clickToCall: async (formData: any) => {
         const response = await apiClient.post<any>('/peerToPeerCall/admissionLeadLogs', formData);
         return response.data;
+    },
+
+    convertAdmissionLeadLog: async (formData: any) => {
+        const response = await apiClient.post<any>('/convert/admissionLeadLogs', formData);
+        return response.data;
+    },
+
+    listAdmissionStudentDataMobile: async (formData: any) => {
+        const response = await apiClient.post<any>('/list/admissionStudentDataMobile', formData);
+        return response.data;
     }
 };
