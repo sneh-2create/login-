@@ -314,6 +314,7 @@ export interface AdmissionTransactionPayload {
     search?: string;
     pageNumber?: number;
     pageSize?: number;
+    voucherStatus?: string;
 }
 
 

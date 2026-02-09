@@ -841,7 +841,13 @@ importers:
       '@od-erp/types':
         specifier: workspace:*
         version: link:../types
+      react:
+        specifier: ^18.0.0
+        version: 18.3.1
     devDependencies:
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.3.27
       typescript:
         specifier: ^5.3.3
         version: 5.9.3
