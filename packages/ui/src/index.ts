@@ -10,6 +10,7 @@ export * from './components/Atoms/Toggle';
 export * from './components/Atoms/Dropdown';
 export * from './components/Atoms/DatePicker';
 export * from './components/Atoms/HorizontalTabs';
+export * from './components/Atoms/ActionMenu';
 // Dashboard
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
