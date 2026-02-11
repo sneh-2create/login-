@@ -6,7 +6,12 @@ import {
     Pie,
     Cell,
     Tooltip,
-    ResponsiveContainer
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Legend
 } from 'recharts';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -107,6 +112,63 @@ export const ExaminationSection: React.FC = () => {
     const hasData = chartData.some(d => (d.value || 0) > 0);
 
 
+
+    // State for Subject Course Navigation
+    const [selectedSubjectCourseIndex, setSelectedSubjectCourseIndex] = useState(0);
+
+    const groupByCourseSubject = data?.groupByCourseSubject || [];
+
+    // Sort subject courses by _id (Course Name)
+    const sortedSubjectCourses = useMemo(() => {
+        return [...groupByCourseSubject].sort((a, b) => a._id.localeCompare(b._id));
+    }, [groupByCourseSubject]);
+
+    const currentSubjectCourseData = sortedSubjectCourses[selectedSubjectCourseIndex];
+
+    const handlePrevSubjectCourse = () => {
+        if (selectedSubjectCourseIndex > 0) {
+            setSelectedSubjectCourseIndex(prev => prev - 1);
+        }
+    };
+
+    const handleNextSubjectCourse = () => {
+        if (selectedSubjectCourseIndex < sortedSubjectCourses.length - 1) {
+            setSelectedSubjectCourseIndex(prev => prev + 1);
+        }
+    };
+
+    // Prepare Subject Chart Data
+    const subjectChartData = useMemo(() => {
+        if (!currentSubjectCourseData) return [];
+
+        const isGroup1 = ['college', 'university', 'degreeCollege', 'academy'].includes(entityType);
+
+        return currentSubjectCourseData.subjectData.map(subject => {
+            const baseData = {
+                subjectName: subject.subjectName,
+                // Common fields
+                '0-40%': subject.count0to40,
+                '41-60%': subject.count41to60,
+                '61-80%': isGroup1 ? (subject.count61to80 || 0) : 0, // specific to group 1
+                '81-100%': isGroup1 ? (subject.count81to100 || 0) : 0, // specific to group 1
+            };
+
+            if (!isGroup1) {
+                // School specific fields
+                return {
+                    ...baseData,
+                    '61-70%': subject.count61to70 || 0,
+                    '71-80%': subject.count71to80 || 0,
+                    '81-90%': subject.count81to90 || 0,
+                    '91-100%': subject.count91to100 || 0,
+                };
+            }
+            return baseData;
+        });
+    }, [currentSubjectCourseData, entityType]);
+
+    const isGroup1Entity = ['college', 'university', 'degreeCollege', 'academy'].includes(entityType);
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500 font-sans">
             <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-100">
@@ -200,7 +262,78 @@ export const ExaminationSection: React.FC = () => {
                 )}
             </div>
 
-            {/* Placeholders for future sections if needed, or just leave empty for now as requested only for this specific chart */}
+            {/* Range Wise Percentage In Subject Of Standard */}
+            <div className="bg-white p-6 rounded-[6px] mt-6" style={{ boxShadow: THEME.shadow }}>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h3 className="text-lg font-bold text-gray-800">Range Wise Percentage In Subject Of Standard</h3>
+                    {/* Subject Course Switcher */}
+                    {sortedSubjectCourses.length > 0 && (
+                        <div className="flex items-center bg-gray-800 rounded-full px-4 py-1.5 space-x-4">
+                            <ChevronLeft
+                                size={20}
+                                className={`text-white cursor-pointer hover:text-gray-300 transition-colors ${selectedSubjectCourseIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handlePrevSubjectCourse}
+                            />
+                            <span className="text-white font-medium min-w-[100px] text-center truncate max-w-[200px]">
+                                {currentSubjectCourseData?._id}
+                            </span>
+                            <ChevronRight
+                                size={20}
+                                className={`text-white cursor-pointer hover:text-gray-300 transition-colors ${selectedSubjectCourseIndex === sortedSubjectCourses.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                onClick={handleNextSubjectCourse}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {isLoading ? (
+                    <div className="h-[400px] flex items-center justify-center">Loading...</div>
+                ) : (subjectChartData.length > 0) ? (
+                    <div className="h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={subjectChartData}
+                                margin={{
+                                    top: 20,
+                                    right: 30,
+                                    left: 20,
+                                    bottom: 5,
+                                }}
+                            >
+                                <XAxis dataKey="subjectName" />
+                                <YAxis />
+                                <Tooltip
+                                    formatter={(value: any) => [value, 'Students']}
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                />
+                                <Legend verticalAlign="top" align="center" height={36} />
+
+                                <Bar dataKey="0-40%" fill={THEME.pinkDark} radius={[5, 5, 0, 0]} />
+                                <Bar dataKey="41-60%" fill={THEME.blueDark} radius={[5, 5, 0, 0]} />
+
+                                {isGroup1Entity ? (
+                                    <>
+                                        <Bar dataKey="61-80%" fill={THEME.greenDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="81-100%" fill={THEME.orangeDark} radius={[5, 5, 0, 0]} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Bar dataKey="61-70%" fill={THEME.greenDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="71-80%" fill={THEME.orangeDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="81-90%" fill={THEME.yellowLight} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="91-100%" fill={THEME.brownLight} radius={[5, 5, 0, 0]} />
+                                    </>
+                                )}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-[400px] flex flex-col items-center justify-center text-gray-400">
+                        <img src="/assets/images/dataNotFound.png" alt="No Data" className="h-32 opacity-50 mb-2" />
+                        <p>No Data Found</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
