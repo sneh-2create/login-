@@ -13,7 +13,7 @@ import {
     YAxis,
     Legend
 } from 'recharts';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCcw } from 'lucide-react';
 
 // Exact Angular Colors
 const THEME = {
@@ -48,11 +48,15 @@ export const ExaminationSection: React.FC = () => {
 
     const hasPermission = (perm: string) => permissions?.includes(perm);
 
-    const { data, isLoading } = useExaminationDashboard(
+    const { data, isLoading, refetch } = useExaminationDashboard(
         entityId,
         session,
         hasPermission('examinationDashboard')
     );
+
+    // ... (skipping lines)
+
+    <Legend verticalAlign="top" align="right" height={36} />
 
     if (!hasPermission('examinationDashboard')) {
         return null; // Or return a message? Angular hides it.
@@ -318,6 +322,93 @@ export const ExaminationSection: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
+                                        <Bar dataKey="61-70%" fill={THEME.greenDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="71-80%" fill={THEME.orangeDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="81-90%" fill={THEME.yellowLight} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="91-100%" fill={THEME.brownLight} radius={[5, 5, 0, 0]} />
+                                    </>
+                                )}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                ) : (
+                    <div className="h-[400px] flex flex-col items-center justify-center text-gray-400">
+                        <img src="/assets/images/dataNotFound.png" alt="No Data" className="h-32 opacity-50 mb-2" />
+                        <p>No Data Found</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Standard - Wise Marks ( In % ) Comparison */}
+            <div className="bg-white p-6 rounded-[6px] mt-6" style={{ boxShadow: THEME.shadow }}>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h3 className="text-lg font-bold text-gray-800">Standard - Wise Marks ( In % ) Comparison</h3>
+                    <button onClick={() => refetch()} title="Refresh" className="focus:outline-none">
+                        <RefreshCcw
+                            size={20}
+                            className={`text-gray-500 hover:text-gray-700 transition-colors ${isLoading ? 'animate-spin' : ''}`}
+                        />
+                    </button>
+                </div>
+                {isLoading ? (
+                    <div className="h-[400px] flex items-center justify-center">Loading...</div>
+                ) : (sortedCourses.length > 0) ? (
+                    <div className="h-[400px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={sortedCourses.map(course => {
+                                    const baseData = {
+                                        course: course.course,
+                                        '0-40%': course.percentage0to40,
+                                        '41-60%': course.percentage41to60,
+                                    };
+                                    if (isGroup1Entity) {
+                                        // Special colors for Group 1 in this specific chart
+                                        // 0-40%: #FFBC5B (Orange/Yellow) vs Theme Pink
+                                        // 41-60%: #3983BD (Blue) vs Theme Blue
+                                        // 61-80%: #FF224F (Red/Pink) vs Theme Green
+                                        // 81-100%: #D1FFF3 (Light Blue) vs Theme Orange
+                                        return {
+                                            ...baseData,
+                                            '61-80%': course.percentage61to80,
+                                            '81-100%': course.percentage81to100,
+                                        };
+                                    } else {
+                                        return {
+                                            ...baseData,
+                                            '61-70%': course.percentage61to70,
+                                            '71-80%': course.percentage71to80,
+                                            '81-90%': course.percentage81to90,
+                                            '91-100%': course.percentage91to100,
+                                        }
+                                    }
+                                })}
+                                margin={{
+                                    top: 20,
+                                    right: 30,
+                                    left: 20,
+                                    bottom: 5,
+                                }}
+                            >
+                                <XAxis dataKey="course" />
+                                <YAxis label={{ value: 'Percentages', angle: -90, position: 'insideLeft' }} />
+                                <Tooltip
+                                    formatter={(value: any) => [`${value}%`, 'Percentage']}
+                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                />
+                                <Legend verticalAlign="top" align="right" height={36} />
+
+                                {isGroup1Entity ? (
+                                    <>
+                                        <Bar dataKey="0-40%" fill="#FFBC5B" radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="41-60%" fill="#3983BD" radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="61-80%" fill="#FF224F" radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="81-100%" fill="#D1FFF3" stroke="#BEF0CB" strokeWidth={1} radius={[5, 5, 0, 0]} />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Bar dataKey="0-40%" fill={THEME.pinkDark} radius={[5, 5, 0, 0]} />
+                                        <Bar dataKey="41-60%" fill={THEME.blueDark} radius={[5, 5, 0, 0]} />
                                         <Bar dataKey="61-70%" fill={THEME.greenDark} radius={[5, 5, 0, 0]} />
                                         <Bar dataKey="71-80%" fill={THEME.orangeDark} radius={[5, 5, 0, 0]} />
                                         <Bar dataKey="81-90%" fill={THEME.yellowLight} radius={[5, 5, 0, 0]} />
