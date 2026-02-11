@@ -91,3 +91,4 @@ export * from './profile';
 export * from './examination';
 export * from './mess';
 export * from './login';
+export * from './attendance';
