@@ -13,7 +13,9 @@ export const FeeSection = () => <PlaceholderValues title="Fee Management" />;
 export const AdmissionSectionPlaceholder = () => <PlaceholderValues title="Admission Management" />; // Renamed to avoid conflict if imported
 export { CalendarSection } from '../calendar/CalendarSection';
 export const AttendanceSection = () => <PlaceholderValues title="Attendance" />;
-export const ExaminationSection = () => <PlaceholderValues title="Examination" />;
+// export const ExaminationSection = () => <PlaceholderValues title="Examination" />;
+export { ExaminationSection } from './ExaminationSection';
+
 export const EmployeeSection = () => <PlaceholderValues title="Employee Management" />;
 // Real Components
 export { HODSection } from './HODSection';

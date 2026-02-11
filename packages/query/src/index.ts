@@ -24,3 +24,4 @@ export * from './useAnalyticsDashboard';
 export * from './useMessDashboard';
 export * from './useCalendar';
 export * from './useProfile';
+export * from './useExaminationDashboard';

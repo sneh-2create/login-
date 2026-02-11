@@ -1,6 +1,7 @@
 import {
     EntityModuleCount,
-    EntityLocationCount
+    EntityLocationCount,
+    ExaminationDashboardResponse
 } from '@od-erp/types';
 import apiClient from '../client';
 
@@ -40,5 +41,13 @@ export const dashboardService = {
             params: { location }
         });
         return response.data;
+    },
+
+    getExaminationDashboard: async (entity: string, session: string) => {
+        const response = await apiClient.get<ExaminationDashboardResponse>('/getExaminationDashboard/dashboard', {
+            params: { entity, session }
+        });
+        return response.data;
     }
+
 };

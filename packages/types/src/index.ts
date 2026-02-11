@@ -88,5 +88,6 @@ export * from './communication';
 export * from './analytics';
 export * from './calendar';
 export * from './profile';
+export * from './examination';
 export * from './mess';
 export * from './login';
