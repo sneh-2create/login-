@@ -21,7 +21,6 @@ import {
     CalendarSection
 } from '../components/dashboard/sections/Placeholders';
 import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
-// CalendarSection removed from here as it is imported from Placeholders
 import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
 import { TabConfig } from '@od-erp/types';
 
