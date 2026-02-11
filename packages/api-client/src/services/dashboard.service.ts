@@ -18,7 +18,11 @@ export interface AttendanceInstituteSummary {
     sequenceNo?: number;
 }
 
+import { AppliedLeave, LibraryDashboardResponse } from '@od-erp/types';
+export type { AppliedLeave, LibraryDashboardResponse };
+
 export const dashboardService = {
+
     getCount: async () => {
         const response = await apiClient.get('/getCounts/superDashboard');
         return response.data;
@@ -87,24 +91,16 @@ export const dashboardService = {
             params: { entity, session, pageNumber, pageSize }
         });
         return response.data;
+    },
+
+    getLibraryDashboard: async (entity: string, session: string) => {
+        const response = await apiClient.get<LibraryDashboardResponse>('/getLibraryDashboard/dashboard', {
+            params: { entity, session }
+        });
+        return response.data;
     }
 
 };
 
-export interface AppliedLeave {
-    _id: string;
-    studentRegNo: string;
-    course: string;
-    stream: string;
-    batch: string;
-    section: string;
-    student: {
-        name: string;
-        _id: string;
-    };
-    leaveStartDate: number;
-    leaveEndDate: number;
-    leaveStatus: 'applied' | 'cancelled' | 'rejected' | 'approved' | 'partiallyApproved';
-    reason: string;
-    remark: string;
-}
+
+

@@ -2,7 +2,8 @@ export { authService } from './services/auth.service';
 export { configService } from './services/config.service';
 export { commonService } from './services/common.service';
 export { calendarService } from './services/calendar.service';
-export { dashboardService } from './services/dashboard.service';
+export * from './services/dashboard.service';
+
 export { admissionService } from './services/admission.service';
 export { admissionSummaryReportService } from './services/AdmissionCrmServices/admissionSummaryReport.service';
 export { counselorTagReportService } from './services/AdmissionCrmServices/counselorTagReport.service';

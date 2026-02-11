@@ -82,6 +82,8 @@ export interface SubSubMenuItem {
 export * from './dashboard';
 export * from './admission';
 export * from './table';
+export * from './library';
+
 export * from './badge';
 export * from './hod';
 export * from './communication';

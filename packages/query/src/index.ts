@@ -27,4 +27,6 @@ export * from './useCalendar';
 export * from './useProfile';
 export * from './useExaminationDashboard';
 export * from './useAppliedLeaves';
+export * from './useLibraryDashboard';
+
 

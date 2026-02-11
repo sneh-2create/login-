@@ -5,42 +5,37 @@ import { cn } from '@od-erp/ui';
 
 // Section Placeholders - To be replaced with actual implementations or Module MFEs
 import {
-    StudentOverviewSection,
-    FeeSection,
-    // AdmissionSection imported separately
-    AttendanceSection,
-    AnalyticsSection,
-    ExaminationSection,
+    AdmissionSection,
     EmployeeSection,
     HODSection,
     CommunicationSection,
-    LibrarySection,
+    AnalyticsSection,
     ProfileSection,
-    // CalendarSection is exported from Placeholders
     MessSection,
     CalendarSection
 } from '../components/dashboard/sections/Placeholders';
-import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
-import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
+import { ExaminationSection } from '../components/dashboard/sections/ExaminationSection';
+import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
+import { LibrarySection } from '../components/dashboard/sections/LibrarySection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';
 
 const TAB_COMPONENTS: Record<string, React.FC> = {
-    quick_links: QuickLinksSection,
-    overview: StudentOverviewSection,
-    fee: FeeSection,
+    overview: AdmissionSection, // Using AdmissionSection as placeholder for Overview for now
     admission: AdmissionSection,
+    studentOverview: AdmissionSection, // Placeholder
+    fee: AdmissionSection, // Placeholder
     attendance: AttendanceSection,
     examination: ExaminationSection,
-    employee: EmployeeSection,
-    hod: HODSection,
-    communication: CommunicationSection,
+    hr: EmployeeSection,
+    hodDashboard: HODSection,
+    communicationDashboard: CommunicationSection,
     analytics: AnalyticsSection,
     library: LibrarySection,
     profile: ProfileSection,
     calendar: CalendarSection,
-    mess: MessSection,
+    messManagement: MessSection
 };
 
 const allTabs: TabConfig[] = DASHBOARD_TABS_METADATA.map(meta => ({
