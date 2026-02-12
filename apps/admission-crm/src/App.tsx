@@ -5,7 +5,7 @@ import { LoadingState } from '@od-erp/ui';
 import { ToastProvider } from '@od-erp/ui';
 
 const AdmissionSummaryReport = lazy(() => import('./pages/AdmissionSummaryReport/AdmissionSummaryReport'));
-const PrintAdmissionSummaryReport = lazy(() => import('./pages/AdmissionSummaryReport/PrintAdmissionSummaryReport'));
+
 const VacantSeatsReport = lazy(() => import('./pages/VacantSeatsReport/VacantSeatsReport'));
 const PrintVacantSeatsReport = lazy(() => import('./pages/VacantSeatsReport/PrintVacantSeatsReport'));
 const CounselorTagReport = lazy(() => import('./pages/CounselorTagReport/CounselorTagReport'));
@@ -39,7 +39,7 @@ function App() {
                 <Suspense fallback={<LoadingState />}>
                     <Routes>
                         <Route path="admissionSummaryReports" element={<AdmissionSummaryReport />} />
-                        <Route path="print/admissionSummaryReport" element={<PrintAdmissionSummaryReport />} />
+
                         <Route path="vacentSeats" element={<VacantSeatsReport />} />
                         <Route path="print/vacantSeats" element={<PrintVacantSeatsReport />} />
                         <Route path="counselorTagReport" element={<CounselorTagReport />} />
