@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Dropdown, DatePicker } from '@od-erp/ui';
 import { useSessions, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
@@ -33,6 +33,13 @@ const TemplateFilter = (props: TemplateFilterProps) => {
     const [localPaymentMode, setLocalPaymentMode] = useState(props.paymentMode);
     const [localCourses, setLocalCourses] = useState<string[]>(props.selectedCourses);
     const [localSessions, setLocalSessions] = useState<string[]>(props.selectedSession);
+    const entityPreferences = useAppSelector((state: any) => state.auth.entityDetails?.entityPreferences);
+    const displayNames = useMemo(() => {
+        const names = entityPreferences?.displayNames || [];
+        return {
+            course: names.find((d: any) => d.value === 'course')?.name || 'Class'
+        };
+    }, [entityPreferences]);
 
     const { data: sessions } = useSessions(entityId);
     const { data: courses } = useCourses(entityId, props.session);
@@ -58,10 +65,10 @@ const TemplateFilter = (props: TemplateFilterProps) => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2">
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2">
             
             {/* Section 1: Date and Status */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Date and Status Details</h3>
+            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div>
                     <label className="text-sm font-medium text-gray-700 mb-1.5 block">Start Date</label>
@@ -111,16 +118,16 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             </div>
 
             {/* Section 2: Class Information */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-4 uppercase tracking-wider">Class Information</h3>
+            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">{displayNames.course} Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Course</label>
+                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select {displayNames.course}</label>
                     <Dropdown
                         multiple
                         value={localCourses}
                         onChange={(val) => setLocalCourses(val as string[])}
                         options={courses?.map(c => ({ label: c.name, value: c.name })) || []}
-                        placeholder="All Courses"
+                        placeholder={`All ${displayNames.course}`}
                         className="w-full"
                     />
                 </div>

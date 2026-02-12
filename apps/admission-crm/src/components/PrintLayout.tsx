@@ -2,6 +2,8 @@ import { ReactNode } from 'react';
 import { Button } from '@od-erp/ui';
 import { Printer } from 'lucide-react';
 
+import { useAppSelector } from '@od-erp/store';
+
 interface PrintLayoutProps {
     children: ReactNode;
     reportName: string;
@@ -13,10 +15,12 @@ interface PrintLayoutProps {
 const PrintLayout = ({
     children,
     reportName,
-    entityName = localStorage.getItem('entityName') || 'OkieDokie',
+    entityName,
     hidePrintButton = false,
     noHeader = false
 }: PrintLayoutProps) => {
+    const storedEntityName = (useAppSelector((state) => state.auth.entityDetails) as any)?.name || 'Okie Dokie';
+    const finalEntityName = entityName || storedEntityName;
 
     const handlePrint = () => {
         const title = document.title;
@@ -43,7 +47,7 @@ const PrintLayout = ({
             {/* Report Header */}
             {!noHeader && (
                 <div className="text-center mb-8">
-                    <h3 className="text-xl font-bold mb-2 uppercase">{entityName}</h3>
+                    <h3 className="text-xl font-bold mb-2 uppercase">{finalEntityName}</h3>
                     <p className="text-lg text-gray-700">{reportName}</p>
                 </div>
             )}

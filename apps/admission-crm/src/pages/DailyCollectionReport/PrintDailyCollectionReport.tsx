@@ -14,18 +14,34 @@ const PrintDailyCollectionReport = () => {
 
     if (!printData) return <div>Loading...</div>;
 
-    const { reportData, headers, userSummary, totalCollection, startDate, endDate, entityName } = printData;
+    const { reportData, headers, userSummary, totalCollection, startDate, endDate, entityName, filters } = printData;
 
     const paymentModes = Array.from(new Set(Object.values(userSummary || {}).flatMap((u: any) => Object.keys(u).filter(k => k !== 'total'))));
 
     return (
         <PrintLayout 
-            reportName={`Daily Collection Report (${format(new Date(startDate), 'dd-MMM-yyyy')} to ${format(new Date(endDate), 'dd-MMM-yyyy')})`}
+            reportName={`Daily Collection Report from ${format(new Date(startDate), 'dd-MMM-yyyy')} to ${format(new Date(endDate), 'dd-MMM-yyyy')}`}
             entityName={entityName}
         >
-            <div className="w-full text-xs">
+             <div className="w-full text-xs">
+                
+                {/* Subtitle & Filter Summary */}
+                <div className="mb-4">                    
+                    {filters && (
+                        <div className="mt-2 text-xs p-2">
+                             <div className="grid grid-cols-2 gap-x-4">
+                                <div><span className="font-semibold">Start Date:</span> {format(new Date(startDate), 'dd-MMM-yyyy')}</div>
+                                <div><span className="font-semibold">End Date:</span> {format(new Date(endDate), 'dd-MMM-yyyy')}</div>
+                                <div><span className="font-semibold">Payment Mode:</span> {filters.paymentMode || 'All'}</div>
+                                <div><span className="font-semibold">Status:</span> {filters.status || 'All'}</div>
+                                <div className="col-span-2"><span className="font-semibold">Course:</span> {filters.courses || 'All'}</div>
+                             </div>
+                        </div>
+                    )}
+                </div>
+
                 {/* Main Table */}
-                <table className="w-full border-collapse border border-gray-300 mb-8">
+                <table className="w-full border-collapse border border-gray-300 mb-6">
                     <thead>
                         <tr className="bg-gray-100">
                             {headers.map((col: any, idx: number) => (

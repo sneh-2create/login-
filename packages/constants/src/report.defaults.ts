@@ -19,7 +19,22 @@ export const DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS = [
     { name: 'Admission Heads', value: 'admissionHeads', seqNo: 11 }
 ];
 
-// Add more report defaults here as needed
-// Example:
-// export const DEFAULT_STUDENT_REPORT_HEADS = [...];
-// export const DEFAULT_FEE_REPORT_HEADS = [...];
+/**
+ * Default table heads for Daily Admission Collection Report
+ * Source: Angular data.json (defaultDailyAdmissionCollectionReportHeads)
+ */
+export const DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS = [
+    { name: 'Receipt No.', value: 'receiptId', seqNo: 1 },
+    { name: 'Receipt Date', value: 'date', seqNo: 2 },
+    { name: 'RegNo', value: 'studentRegNo', seqNo: 3 },
+    { name: 'Name', value: 'studentName', seqNo: 4 },
+    { name: 'Class', value: 'applicationDetailsCourse', seqNo: 5 },
+    { name: 'Pay Mode', value: 'paymentDetailsPaymentMode', seqNo: 6 },
+    { name: 'Remarks', value: 'remark', seqNo: 7 },
+    { name: 'Bank Name', value: 'paymentDetailsBankName', seqNo: 8 },
+    { name: 'Cheque Date', value: 'paymentDetailsDate', seqNo: 9 },
+    { name: 'Installments', value: 'installments', seqNo: 10 },
+    { name: 'Ref/ Chqno', value: 'paymentDetailsRefId', seqNo: 11 },
+    { name: 'User Name', value: 'userName', seqNo: 12 },
+    { name: 'Roll No', value: 'rollNo', seqNo: 13 }
+];

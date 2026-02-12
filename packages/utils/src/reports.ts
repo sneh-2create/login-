@@ -1,4 +1,7 @@
 
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
+
 export const calculateReportTotals = (data: any[], keysToSum: string[], additionalKeysToSum: string[] = []) => {
     if (!data || data.length === 0) return [];
 
@@ -281,3 +284,27 @@ export const transformNepSubjectReportForExport = (data: any[]): any[] => {
         'Pending Applications': item.pendingApplications
     }));
 };
+
+export const addExcelReportHeader = (ws: XLSX.WorkSheet, entityName: string, reportName: string, filterSummary?: string[][]) => {
+    XLSX.utils.sheet_add_aoa(ws, [['This is a system-generated report by Okie Dokie']], { origin: "A1" });
+    XLSX.utils.sheet_add_aoa(ws, [[`Generated At: ${format(new Date(), 'dd-MMM-yyyy HH:mm a')}`]], { origin: "A2" });
+    XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+    XLSX.utils.sheet_add_aoa(ws, [[entityName]], { origin: "A4" });
+    XLSX.utils.sheet_add_aoa(ws, [[reportName]], { origin: "A5" });
+
+    let currentRow = 6;
+
+    if (filterSummary && filterSummary.length > 0) {
+        XLSX.utils.sheet_add_aoa(ws, [['Filter Summary:']], { origin: { r: currentRow - 1, c: 0 } });
+        XLSX.utils.sheet_add_aoa(ws, filterSummary, { origin: { r: currentRow, c: 0 } });
+        currentRow += filterSummary.length + 1;
+    }
+
+    XLSX.utils.sheet_add_aoa(ws, [[]], { origin: { r: currentRow, c: 0 } });
+    return currentRow + 1;
+};
+
+export const addExcelReportFooter = (ws: XLSX.WorkSheet, startRow: number) => {
+    XLSX.utils.sheet_add_aoa(ws, [['Principal\'s Signature', '', '', '', 'Authorised Signature']], { origin: { r: startRow, c: 0 } });
+};
+// ... (content will be generated after checking package.json)
