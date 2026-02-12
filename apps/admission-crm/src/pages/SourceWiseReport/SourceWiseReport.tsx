@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useSourceWiseReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, Select } from '@od-erp/ui';
+import { Button, DataTable, Breadcrumb, Dropdown, DatePicker } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { SourceWiseReportData } from '@od-erp/types';
+import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
+import { format } from 'date-fns';
 
 const SourceWiseReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<SourceWiseReportData[]>([]);
-    
+
     // Filters
     const [startDate, setStartDate] = useState<number | undefined>();
     const [endDate, setEndDate] = useState<number | undefined>();
@@ -21,6 +23,8 @@ const SourceWiseReport = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
+    
     const user = useAppSelector((state) => state.auth.user) as any;
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
 
@@ -128,7 +132,7 @@ const SourceWiseReport = () => {
                 totalApplicationCount: 0,
                 position: 0 // Marker for total row
             };
-            
+
             dynamicColumns.forEach(tag => {
                 totalRow[tag] = 0;
             });
@@ -206,15 +210,15 @@ const SourceWiseReport = () => {
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
-            
-            // Header Info
-            xlsx.utils.sheet_add_aoa(ws, [['Source Wise Report']], { origin: "A1" });
-            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
-            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+
+            // Header Info using common utility
+            const filterSummary: string[][] = [];
+
+            const tableStartRow = addExcelReportHeader(ws, entityName, 'Source Wise Report', filterSummary);
 
             // Headers
             const headerRow = ['S.No', 'Source', 'Total Lead Count', 'Total Application Count', ...dynamicColumns];
-            xlsx.utils.sheet_add_aoa(ws, [headerRow], { origin: "A4" });
+            xlsx.utils.sheet_add_aoa(ws, [headerRow], { origin: { r: tableStartRow, c: 0 } });
 
             // Data
             const dataRows = data.map((row, index) => {
@@ -229,9 +233,14 @@ const SourceWiseReport = () => {
                 return rowData;
             });
 
-            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+             // Footer / Signatures
+            const signatureRow = tableStartRow + 1 + dataRows.length + 4;
+            addExcelReportFooter(ws, signatureRow);
+
             xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
-            xlsx.writeFile(wb, 'Source_Wise_Report.xlsx');
+            xlsx.writeFile(wb, `Source_Wise_Report_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -249,7 +258,7 @@ const SourceWiseReport = () => {
     return (
         <div className="w-full max-w-full font-sans pb-8">
             <div className="flex flex-col mb-6 gap-4">
-                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">Source Wise Report</h1>
                         <Breadcrumb
@@ -260,8 +269,8 @@ const SourceWiseReport = () => {
                             ]}
                         />
                     </div>
-                     <div className="flex items-center space-x-2">
-                         <Button
+                    <div className="flex items-center space-x-2">
+                        <Button
                             variant="outline"
                             className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
                             onClick={handleSearch}
@@ -274,7 +283,7 @@ const SourceWiseReport = () => {
                             <>
                                 <Button
                                     variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                     onClick={handleExport}
                                     isLoading={exportLoading}
                                     title="Export to Excel"
@@ -283,7 +292,7 @@ const SourceWiseReport = () => {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                     onClick={handlePrint}
                                     title="Print"
                                 >
@@ -298,13 +307,14 @@ const SourceWiseReport = () => {
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="w-full md:w-1/4">
-                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Source</label>
-                             <Select
+                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Source</label>
+                            <Dropdown
                                 value={selectedSource}
-                                onChange={(e) => setSelectedSource(e.target.value)}
+                                onChange={(val) => setSelectedSource(val as string)}
                                 options={sourceOptions}
+                                placeholder="Select Source"
                                 className="w-full"
-                             />
+                            />
                         </div>
                         <div className="w-full md:w-1/4">
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
@@ -324,7 +334,7 @@ const SourceWiseReport = () => {
                                 className="w-full"
                             />
                         </div>
-                         <div className="w-full md:w-1/4">
+                        <div className="w-full md:w-1/4">
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
                             <Dropdown
                                 options={counselorOptions}
@@ -340,7 +350,7 @@ const SourceWiseReport = () => {
                                 variant="primary"
                                 onClick={handleSearch}
                                 isLoading={loading}
-                                className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white border-transparent"
+                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white border-transparent"
                             >
                                 Go <span className="ml-1">→</span>
                             </Button>
@@ -350,21 +360,16 @@ const SourceWiseReport = () => {
 
                 {/* Data Table */}
                 {data.length > 0 && (
-                    <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-                         <div className="p-4 border-b border-gray-200">
-                            <h3 className="font-semibold text-gray-700">Source Wise Report</h3>
-                        </div>
-                        <div className="w-full max-w-full overflow-x-auto">
-                            <DataTable
-                                columns={columns}
-                                data={data}
-                                isLoading={loading}
-                                showSearch={false}
-                            />
-                        </div>
+                    <div className="w-full max-w-full overflow-x-auto">
+                        <DataTable
+                            columns={columns}
+                            data={data}
+                            isLoading={loading}
+                            showSearch={true}
+                        />
                     </div>
                 )}
-                 {!loading && data.length === 0 && (
+                {!loading && data.length === 0 && (
                     <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                         <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                     </div>
