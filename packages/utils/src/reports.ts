@@ -76,9 +76,9 @@ export const transformVacantSeatsForExport = (data: any[], displayNames: any, sh
         }
         row['Name'] = item.name;
         row['Seats'] = item.seats;
-        row['Available'] = item.availableSeats;
-        row['Filled'] = item.filledSeats;
-        row['Pending'] = item.pendingApplications;
+        row['Available Seats'] = item.availableSeats;
+        row['Filled Seats'] = item.filledSeats;
+        row['Pending Applications'] = item.pendingApplications;
         return row;
     });
 };

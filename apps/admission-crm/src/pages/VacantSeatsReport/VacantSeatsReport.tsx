@@ -1,20 +1,19 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { vacantSeatsReportService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import * as xlsx from 'xlsx';
 import { VacantSeatsReportTableRow } from '@od-erp/types';
-import { processVacantSeatsReportData } from '@od-erp/utils';
+import { processVacantSeatsReportData, addExcelReportHeader, addExcelReportFooter, transformVacantSeatsForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
-import { Button, Dropdown, Breadcrumb, DataTable, Input } from '@od-erp/ui';
-import { Download, Printer, SlidersHorizontal, RefreshCw, Search } from 'lucide-react';
+import { Button, Dropdown, Breadcrumb, DataTable } from '@od-erp/ui';
+import { Download, Printer, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
-const vacantSeatsReport = () => {
+const VacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-   
+
     // Filters
     const [courses, setCourses] = useState<any[]>([]);
     const [selectedCourse, setSelectedCourse] = useState<string>('');
@@ -30,6 +29,7 @@ const vacantSeatsReport = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const entityPreferences = useAppSelector((state) => state.config.entityPreferences) || null;
     const displayNames = {
         course: entityPreferences?.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
@@ -107,7 +107,7 @@ const vacantSeatsReport = () => {
             {
                 accessorKey: 'filledSeats',
                 header: 'Filled Seats',
-                cell: (info: any) => <span className="font-medium text-blue-600">{info.getValue()}</span>
+                cell: (info: any) => <span className="font-medium text-primary">{info.getValue()}</span>
             },
             {
                 accessorKey: 'pendingApplications',
@@ -134,9 +134,17 @@ const vacantSeatsReport = () => {
         const course = courses.find(c => c.name === courseName);
 
         if (course) {
-            setStreams(course.stream || []);
+            const courseStreams = course.stream || [];
+            setStreams(courseStreams);
             setBatches(course.batch || []);
-            setSelectedStream('');
+            
+            // Auto Select 1st Stream
+            if (courseStreams.length > 0) {
+                setSelectedStream(courseStreams[0]);
+            } else {
+                 setSelectedStream('');
+            }
+           
             setSelectedBatch('');
         } else {
             setStreams([]);
@@ -181,55 +189,23 @@ const vacantSeatsReport = () => {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
 
-            // Headers
-            xlsx.utils.sheet_add_aoa(ws, [['Subject Combination Report']], { origin: "A1" });
-            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
-            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+            const tableStartRow = addExcelReportHeader(ws, entityName, `${displayNames.subjectCombination} Report`);
 
-            // Columns definition for export
-            const exportColumns = [
-                { header: 'S.No', key: 'position' },
-                { header: displayNames.course, key: 'course' },
-                { header: displayNames.stream, key: 'stream' },
-            ];
+            // Transform Data using common utility
+            const exportData = transformVacantSeatsForExport(data, displayNames, showBatch);
+            
+            // Get Headers dynamically from the first row of exportData
+            if(exportData.length > 0) {
+                 const headers = Object.keys(exportData[0]);
+                 xlsx.utils.sheet_add_aoa(ws, [headers], { origin: { r: tableStartRow, c: 0 } });
+                 
+                 // Process Data rows to match headers order
+                  const dataRows = exportData.map(row => headers.map(header => row[header]));
+                  xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
 
-            if (showBatch) {
-                exportColumns.push({ header: displayNames.batch, key: 'batch' });
+                  const signatureRow = tableStartRow + 1 + dataRows.length + 4;
+                  addExcelReportFooter(ws, signatureRow);
             }
-
-            exportColumns.push(
-                { header: 'Name', key: 'name' },
-                { header: 'Seats', key: 'seats' },
-                { header: 'Available', key: 'availableSeats' },
-                { header: 'Filled', key: 'filledSeats' },
-                { header: 'Pending', key: 'pendingApplications' }
-            );
-
-            // Table Headers
-            const tableHeaders = exportColumns.map(c => c.header);
-            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: "A4" });
-
-            // Data
-            const dataRows = data.map((row: any) => {
-                const isTotalRow = row.course === 'Total';
-
-                return exportColumns.map((col) => {
-                    // S.No logic
-                    if (col.key === 'position') {
-                        if (isTotalRow) return '';
-                        return row.position;
-                    }
-                    
-                    // Name logic for Total row
-                    if (col.key === 'name' && isTotalRow) {
-                        return '';
-                    }
-
-                    return row[col.key] || (row[col.key] === 0 ? 0 : '');
-                });
-            });
-
-            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
 
             xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
             xlsx.writeFile(wb, 'Subject_Combination_Reports.xlsx');
@@ -242,32 +218,23 @@ const vacantSeatsReport = () => {
 
     const handlePrint = () => {
         const printData = data.map(item => {
-             const newItem = { ...item };
-             if (newItem.course === 'Total') {
-                 newItem.name = ''; // Clear name for Total row
-             }
-             return newItem;
+            const newItem = { ...item };
+            if (newItem.course === 'Total') {
+                newItem.name = ''; // Clear name for Total row
+            }
+            return newItem;
         });
 
-        localStorage.setItem('vacantSeatsReportData', JSON.stringify(printData));
+        localStorage.setItem('subjectCombinationData', JSON.stringify(printData));
         window.open('/admission/print/vacantSeats', '_blank');
     };
-
-    const filteredData = useMemo(() => {
-        if (!searchQuery) return data;
-        return data.filter((row: any) => {
-            return Object.values(row).some((value) =>
-                String(value).toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        });
-    }, [data, searchQuery]);
 
     return (
         <div className="w-full max-w-full font-sans pb-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">{displayNames.subjectCombination} Report</h1>
-                    <Breadcrumb 
+                    <Breadcrumb
                         items={[
                             { label: 'Dashboard', href: '/dashboard' },
                             { label: 'Admission Reports', href: '/admission/reports' },
@@ -276,17 +243,17 @@ const vacantSeatsReport = () => {
                     />
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button 
-                        variant="outline" 
-                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    <Button
+                        variant="outline"
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
                         onClick={() => setShowFilter(!showFilter)}
                         title="Filter"
                     >
                         <SlidersHorizontal className="h-4 w-4" />
                     </Button>
 
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
                         onClick={handleSearch}
                         title="Refresh/Go"
@@ -296,18 +263,18 @@ const vacantSeatsReport = () => {
 
                     {data.length > 0 && (
                         <>
-                            <Button 
-                                variant="outline" 
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                 onClick={handleExport}
                                 isLoading={exportLoading}
                                 title="Export to Excel"
                             >
                                 <Download className="h-4 w-4" />
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                 onClick={handlePrint}
                                 title="Print"
                             >
@@ -362,7 +329,7 @@ const vacantSeatsReport = () => {
                                 />
                             </div>
                         )}
-                         <div className="w-full md:w-auto">
+                        <div className="w-full md:w-auto">
                             <Button variant="primary" onClick={handleSearch} isLoading={loading} className="w-full md:w-auto">
                                 Go
                             </Button>
@@ -372,30 +339,14 @@ const vacantSeatsReport = () => {
             )}
 
             {data.length > 0 && (
-                <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-                    <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-4">
-                        <h3 className="font-semibold text-gray-700 whitespace-nowrap">Report Data</h3>
-                        <div className="relative w-64">
-                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-4 w-4 text-gray-400" />
-                            </div>
-                            <Input
-                                placeholder="Search..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 h-9 text-sm"
-                            />
-                        </div>
-                    </div>
 
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={filteredData}
-                            isLoading={loading}
-                            showSearch={false}
-                        />
-                    </div>
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
                 </div>
             )}
 
@@ -408,4 +359,4 @@ const vacantSeatsReport = () => {
     );
 };
 
-export default vacantSeatsReport;
+export default VacantSeatsReport;

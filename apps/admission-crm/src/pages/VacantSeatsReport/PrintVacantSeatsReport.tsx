@@ -17,7 +17,7 @@ const printVacantSeatsReport = () => {
     const showBatch = entityPreferences.showBatch;
 
     useEffect(() => {
-        const storedData = localStorage.getItem('vacantSeatsReportData');
+        const storedData = localStorage.getItem('subjectCombinationData');
         if (storedData) {
             setData(JSON.parse(storedData));
         }

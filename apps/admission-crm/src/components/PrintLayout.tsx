@@ -19,7 +19,7 @@ const PrintLayout = ({
     hidePrintButton = false,
     noHeader = false
 }: PrintLayoutProps) => {
-    const storedEntityName = (useAppSelector((state) => state.auth.entityDetails) as any)?.name || 'Okie Dokie';
+    const storedEntityName = (useAppSelector((state) => state.session.entityName)) || 'Okie Dokie';
     const finalEntityName = entityName || storedEntityName;
 
     const handlePrint = () => {
