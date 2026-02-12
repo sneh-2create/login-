@@ -15,10 +15,22 @@ interface ActionMenuProps {
     items: ActionMenuItem[];
 }
 
+// Global state to track which menu is currently open
+const menuCallbacks: Map<string, () => void> = new Map();
+
 export const ActionMenu: React.FC<ActionMenuProps> = ({ items }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [position, setPosition] = useState<{ top?: number; left: number; bottom?: number }>({ left: 0 });
     const buttonRef = useRef<HTMLButtonElement>(null);
+    const menuId = useRef<string>(`menu-${Math.random().toString(36).substr(2, 9)}`);
+
+    // Register this menu's close callback
+    useEffect(() => {
+        menuCallbacks.set(menuId.current, () => setIsOpen(false));
+        return () => {
+            menuCallbacks.delete(menuId.current);
+        };
+    }, []);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -49,6 +61,16 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ items }) => {
 
     const handleToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
+        
+        // Close all other open menus
+        if (!isOpen) {
+            menuCallbacks.forEach((closeCallback, id) => {
+                if (id !== menuId.current) {
+                    closeCallback();
+                }
+            });
+        }
+        
         if (!isOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;

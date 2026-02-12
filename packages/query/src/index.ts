@@ -19,6 +19,7 @@ export * from './dailyCollectionReport';
 export * from './useStudentTimeline';
 export * from './excelTemplate';
 export * from './feeMaster';
+export * from './useCommunication';
 
 
 

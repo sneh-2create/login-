@@ -49,16 +49,6 @@ export const useAddAdmissionStudentData = () => {
     });
 };
 
-export const useEditAdmissionStudentData = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: admissionStudentDataService.editAdmissionStudentData,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
-        },
-    });
-};
-
 export const useAdmissionStudentTransactions = (entityId: string, session: string, studentId: string) => {
     return useQuery<any[]>({
         queryKey: ['admissionStudentTransactions', entityId, session, studentId],
@@ -111,14 +101,7 @@ export const useViewAdmissionStudentData = (studentId: string) => {
     });
 };
 
-export const useCourses = (entityId: string, session: string) => {
-    return useQuery<any[]>({
-        queryKey: ['courses', entityId, session],
-        queryFn: () => admissionStudentDataService.listCourses(entityId, session),
-        enabled: !!entityId && !!session,
-        staleTime: 10 * 60 * 1000,
-    });
-};
+
 
 export const usePartnerInstitutes = (entityId: string) => {
     return useQuery<any[]>({

@@ -24,3 +24,4 @@ export { excelTemplateService } from './services/excelTemplate.service';
 export { feeMasterService } from './services/feeMaster.service';
 export { pdfTemplateService } from './services/pdfTemplate.service';
 export { default as apiClient } from './client';
+export { communicationService } from './services/communication.service';

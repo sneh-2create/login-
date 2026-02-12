@@ -133,6 +133,11 @@ export interface AdmissionLeadLogPayload {
     memberDetails?: boolean;
     search?: string;
     phone?: string;
+    studentData?: string;
+    sourceId?: string;
+    remark?: string;
+    visitDate?: number;
+    tags?: string[];
 }
 
 export interface AdmissionLeadLogResponse {
@@ -218,10 +223,20 @@ export interface AdmissionLeadPayload {
     pageNumber: number;
     pageSize: number;
     search?: string;
-    searchType?: string; // 'name', 'phone', 'applicationNumber', 'fatherName', 'references'
+    searchBy?: string; // 'name', 'phone', 'applicationNumber', 'fatherName', 'references'
     counselorId?: string;
     startDate?: number;
     endDate?: number;
+    course?: string[];
+    stream?: string[];
+    batch?: string[];
+    tag?: string[];
+    source?: string[];
+    engagementStatus?: string[];
+    followUpStartDate?: number;
+    followUpEndDate?: number;
+    memberDetails?: boolean;
+    stage?: string;
 }
 
 export interface AdmissionStudentDataPayload {
@@ -252,6 +267,8 @@ export interface AdmissionStageSetup {
     entity: string;
     session: string;
     stage: string;
+    stageName: string; // Added stageName
+    stageType?: string; // Added stageType
     sequence: number;
     txnRequired: boolean;
     fields: any[];
@@ -259,6 +276,7 @@ export interface AdmissionStageSetup {
 }
 
 export interface AdmissionStageCount {
+    _id: string; // Added _id
     stage: string;
     count: number;
     currentStage?: string; // keeping for backward compatibility if any
