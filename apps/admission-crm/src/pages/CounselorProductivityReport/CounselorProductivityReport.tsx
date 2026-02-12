@@ -1,10 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useCounselorProductivityReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { processCounselorProductivityReportData } from '@od-erp/utils';
-import { Button, DataTable, Input, Breadcrumb, Dropdown, DatePicker } from '@od-erp/ui';
+import { processCounselorProductivityReportData, addExcelReportFooter, addExcelReportHeader } from '@od-erp/utils';
+import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, HorizontalTabs } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer, RefreshCw, Search } from 'lucide-react';
+import { Download, Printer, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { CounselorProductivityReportData } from '@od-erp/types';
 import { useNavigate } from 'react-router-dom';
@@ -13,19 +13,16 @@ const CounselorProductivityReport = () => {
     const navigate = useNavigate();
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CounselorProductivityReportData[]>([]);
-    const [stageType, setStageType] = useState<'lead' | 'application'>('lead');
+    const [stageType, setStageType] = useState<string>('lead');
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
-    // UI States
-    // UI States
-    const [searchQuery, setSearchQuery] = useState('');
-
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const session = useAppSelector((state) => state.session.academicSession) || '';
-    const user = useAppSelector((state) => state.auth.user) as any; // Cast to any to avoid strict type checks on _id vs id
+    const user = useAppSelector((state) => state.auth.user) as any;
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
 
     // Date Filter - using timestamps
@@ -62,8 +59,7 @@ const CounselorProductivityReport = () => {
 
         let isUserLead = false;
         let filteredOptions: any[] = [];
-
-        // ... (existing logic) ...
+        let defaultCounselorId = '';
 
         // Check if user is a lead
         if (admissionMaster?.teams && admissionMaster.teams.length > 0 && !isAdmissionAdmin) {
@@ -86,15 +82,18 @@ const CounselorProductivityReport = () => {
             // Admin sees all
             filteredOptions = counselors.map((c: any) => ({ label: c.name, value: c._id }));
             filteredOptions.unshift({ label: 'All Counselors', value: '' });
+            defaultCounselorId = '';
         } else if (isUserLead) {
-            // Lead sees team + self (already populated above)
             filteredOptions.unshift({ label: 'All Team Members', value: '' });
+            defaultCounselorId = '';
         } else {
-            // Regular Counselor sees only self
             const myProfile = counselors.find((c: any) => c._id === user._id);
             if (myProfile) {
                 filteredOptions = [{ label: myProfile.name, value: myProfile._id }];
-                setSelectedCounselor(myProfile._id); // Auto-select self
+                defaultCounselorId = myProfile._id;
+            } else {
+                 filteredOptions = [{ label: user.name, value: user._id }];
+                 defaultCounselorId = user._id;
             }
         }
 
@@ -103,6 +102,7 @@ const CounselorProductivityReport = () => {
             .map(value => filteredOptions.find(a => a.value === value));
 
         setCounselorOptions(uniqueOptions);
+        setSelectedCounselor(defaultCounselorId);
 
     }, [counselors, admissionMaster, isAdmissionAdmin, user]);
 
@@ -119,22 +119,21 @@ const CounselorProductivityReport = () => {
     const { data: reportData, isLoading, refetch } = useCounselorProductivityReport(
         entityId,
         session,
-        stageType,
+        stageType as 'lead' | 'application',
         getStartTimestamp(),
         getEndTimestamp(),
-        // If not admin and not lead, force selectedCounselor (which is self). 
-        // If admin/lead, use selectedCounselor (which defaults to '' i.e. All).
-        (!isAdmissionAdmin && !isLead) ? (user?._id) : (selectedCounselor || undefined)
+        selectedCounselor || undefined
     );
 
     useEffect(() => {
         setLoading(isLoading);
+        const type = stageType as 'lead' | 'application';
         if (reportData && Array.isArray(reportData)) {
             // We ignore the dynamicColumns returned here and use the master ones
-            const { processedRows } = processCounselorProductivityReportData(reportData, stageType);
+            const { processedRows } = processCounselorProductivityReportData(reportData, type);
             setData(processedRows);
         } else {
-            const { processedRows } = processCounselorProductivityReportData([], stageType);
+            const { processedRows } = processCounselorProductivityReportData([], type);
             setData(processedRows);
         }
     }, [reportData, stageType, isLoading]);
@@ -148,28 +147,29 @@ const CounselorProductivityReport = () => {
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
-
-            // Headers
-            xlsx.utils.sheet_add_aoa(ws, [[`Counselor Productivity ${stageType === 'lead' ? 'Lead' : 'Application'} Report`]], { origin: "A1" });
-            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
-            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+            
+            // Common Header
+            const reportName = `Counselor Wise Productivity ${stageType === 'lead' ? 'Lead' : 'Application'} Report`;
+            
+            // Use shared header function, passing empty array for filterSummary to exclude it as per previous requirement
+            const tableStartRow = addExcelReportHeader(ws, entityName, reportName, []);
 
             // Prepare headers from columns definition
             const tableHeaders = columns.map(c => (c as any).header);
-            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: "A4" });
+            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: { r: tableStartRow, c: 0 } });
 
             // Data
-            const dataRows = filteredData.map((row, index) => {
+            const dataRows = data.map((row, index) => {
                 const isTotalRow = row.position === 0 || row.counselorName === 'Total';
 
                 return columns.map((col, colIdx) => {
                     const key = (col as any).accessorKey;
                     const header = (col as any).header;
-                    
+
                     // Robust check for S.No Column
                     if (header === 'S.No' || key === 'position' || colIdx === 0) {
-                         if (isTotalRow) return '';
-                         return index + 1;
+                        if (isTotalRow) return '';
+                        return index + 1;
                     }
 
                     // Extract value
@@ -178,15 +178,19 @@ const CounselorProductivityReport = () => {
                     if (key.startsWith('tag_')) {
                         val = row[key] || 0;
                     }
-                    
+
                     return val !== undefined ? val : '';
                 });
             });
 
-            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+            // Common Footer
+            const footerStartRow = tableStartRow + 1 + dataRows.length + 2;
+            addExcelReportFooter(ws, footerStartRow);
 
             xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
-            xlsx.writeFile(wb, `Counselor_Productivity_${stageType}_Report.xlsx`);
+            xlsx.writeFile(wb, `Counselor_Productivity_${stageType === 'lead' ? 'Lead' : 'Application'}_Report.xlsx`);
         } catch (error) {
             console.error(error);
         } finally {
@@ -194,17 +198,16 @@ const CounselorProductivityReport = () => {
         }
     };
 
-    const handlePrint = () => {
-        // Filter out Search Query for print if needed, or pass current view
-        localStorage.setItem('counselorProductivityData', JSON.stringify(filteredData));
+    const handlePrint = () => {        
+        localStorage.setItem('counselorProductivityData', JSON.stringify(data));
         localStorage.setItem('counselorProductivityDynamicColumns', JSON.stringify(dynamicColumns));
         localStorage.setItem('counselorProductivityStageType', stageType);
+        
         window.open('/admission/print/counselorProductivityReport', '_blank');
     };
 
     const handleDrillDown = (type: string, row: any) => {
         // Allow drilling down on Total row too, as per requirement
-
         const formatDate = (timestamp?: number) => {
             if (!timestamp) return '';
             return new Date(timestamp).toISOString().split('T')[0];
@@ -213,14 +216,8 @@ const CounselorProductivityReport = () => {
         const filterObj: any = {
             startDate: formatDate(startDate),
             endDate: formatDate(endDate),
-            // Use specific row counselorId, or fallback to selected filter (for Total row), or undefined (All)
             counselorId: row.counselorId || selectedCounselor || undefined
         };
-
-        // For Total Row, counselorId might be undefined or specific if row structure differs
-        // Utility sets counselorName='Total', but check row.counselorId. 
-        // Usually for Total row we want ALL counselors, so undefined is fine.
-
 
         // Different paths based on type
         if (type === 'engaged' || type === 'untouched') {
@@ -255,7 +252,7 @@ const CounselorProductivityReport = () => {
         {
             accessorKey: 'totalCount',
             header: stageType === 'lead' ? 'Total Leads' : 'Application Count',
-            cell: info => <span className="text-blue-600 font-medium">{info.getValue() as number}</span>
+            cell: info => <span className="text-gray-700 font-medium">{info.getValue() as number}</span>
         },
         {
             accessorKey: 'engagedCount',
@@ -265,7 +262,7 @@ const CounselorProductivityReport = () => {
                 const row = info.row.original;
                 return (
                     <span
-                        className="text-blue-600 cursor-pointer hover:underline font-medium"
+                        className="text-primary cursor-pointer hover:underline font-medium"
                         onClick={() => handleDrillDown('engaged', row)}
                     >
                         {val}
@@ -281,7 +278,7 @@ const CounselorProductivityReport = () => {
                 const row = info.row.original;
                 return (
                     <span
-                        className="text-blue-600 cursor-pointer hover:underline font-medium"
+                        className="text-primary cursor-pointer hover:underline font-medium"
                         onClick={() => handleDrillDown('untouched', row)}
                     >
                         {val}
@@ -297,7 +294,7 @@ const CounselorProductivityReport = () => {
                 const row = info.row.original;
                 return (
                     <span
-                        className="text-blue-600 cursor-pointer hover:underline font-medium"
+                        className="text-primary cursor-pointer hover:underline font-medium"
                         onClick={() => handleDrillDown('allFollowUp', row)}
                     >
                         {val}
@@ -313,7 +310,7 @@ const CounselorProductivityReport = () => {
                 const row = info.row.original;
                 return (
                     <span
-                        className="text-blue-600 cursor-pointer hover:underline font-medium"
+                        className="text-primary cursor-pointer hover:underline font-medium"
                         onClick={() => handleDrillDown('overdueFollowUp', row)}
                     >
                         {val}
@@ -337,17 +334,6 @@ const CounselorProductivityReport = () => {
             }
         });
     });
-
-    // Client-side filtering
-    const filteredData = useMemo(() => {
-        if (!searchQuery) return data;
-        return data.filter((row: any) => {
-            return Object.values(row).some((value) =>
-                String(value).toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        });
-    }, [data, searchQuery]);
-
 
     return (
         <div className="w-full max-w-full font-sans pb-8">
@@ -377,20 +363,20 @@ const CounselorProductivityReport = () => {
                             <>
                                 <Button
                                     variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                    onClick={handlePrint}
+                                    title="Print"
+                                >
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                     onClick={handleExport}
                                     isLoading={exportLoading}
                                     title="Export to Excel"
                                 >
                                     <Download className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
-                                    onClick={handlePrint}
-                                    title="Print"
-                                >
-                                    <Printer className="h-4 w-4" />
                                 </Button>
                             </>
                         )}
@@ -398,44 +384,39 @@ const CounselorProductivityReport = () => {
                 </div>
 
                 {/* Main Content Card */}
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-3">
 
-                    {/* Tabs - Segmented Control Style */}
-                    <div className="flex mb-6">
-                        <div className="inline-flex bg-gray-100 rounded-md p-1">
-                            <button
-                                onClick={() => setStageType('lead')}
-                                className={`${stageType === 'lead'
-                                        ? 'bg-orange-600 text-white shadow-sm'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                    } px-4 py-2 text-sm font-medium rounded-md transition-all duration-200`}
-                            >
-                                Lead Summary
-                            </button>
-                            <button
-                                onClick={() => setStageType('application')}
-                                className={`${stageType === 'application'
-                                        ? 'bg-orange-600 text-white shadow-sm'
-                                        : 'text-gray-600 hover:text-gray-900'
-                                    } px-4 py-2 text-sm font-medium rounded-md transition-all duration-200`}
-                            >
-                                Application Summary
-                            </button>
-                        </div>
-                    </div>
+                    {/* Tabs - HorizontalTabs */}
+                    <HorizontalTabs
+                        tabs={[
+                            { label: 'Lead Summary', value: 'lead' },
+                            { label: 'Application Summary', value: 'application' }
+                        ]}
+                        activeTab={stageType}
+                        onTabChange={setStageType}
+                        className="mb-6 px-0"
+                    />
 
                     {/* Filters Row */}
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                            <Dropdown
-                                options={counselorOptions}
-                                value={selectedCounselor}
-                                onChange={(val) => setSelectedCounselor(val as string)}
-                                placeholder="Select Counselor"
-                                disabled={!isAdmissionAdmin && !isLead}
-                                className="w-full"
-                            />
+                            {!isAdmissionAdmin && !isLead ? (
+                                <div className="flex flex-col">
+                                     <label className="text-xs font-semibold text-gray-600 mb-1 block">Name</label>
+                                     <p className="text-gray-900 font-medium py-2">{user?.name}</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
+                                    <Dropdown
+                                        options={counselorOptions}
+                                        value={selectedCounselor}
+                                        onChange={(val) => setSelectedCounselor(val as string)}
+                                        placeholder="Select Counselor"
+                                        className="w-full"
+                                    />
+                                </>
+                            )}
                         </div>
                         <div className="w-full md:w-1/4">
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
@@ -460,7 +441,7 @@ const CounselorProductivityReport = () => {
                                 variant="primary"
                                 onClick={handleSearch}
                                 isLoading={loading}
-                                className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white border-transparent"
+                                className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white border-transparent"
                             >
                                 Go <span className="ml-1">→</span>
                             </Button>
@@ -469,40 +450,19 @@ const CounselorProductivityReport = () => {
                 </div>
 
                 {data.length > 0 && (
-                    <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-                        <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-4">
-                            <div className="flex gap-4 items-center">
-                                <h3 className="font-semibold text-gray-700 whitespace-nowrap">
-                                    {stageType === 'lead' ? 'Lead Summary' : 'Application Summary'}
-                                </h3>
-                            </div>
-                            <div className="relative w-64">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-4 w-4 text-gray-400" />
-                                </div>
-                                <Input
-                                    placeholder="Search..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-10 h-9 text-sm"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="w-full max-w-full overflow-x-auto">
-                            <DataTable
-                                columns={columns}
-                                data={filteredData}
-                                isLoading={loading}
-                                showSearch={false}
-                            />
-                        </div>
+                    <div className="w-full max-w-full overflow-x-auto">
+                        <DataTable
+                            columns={columns}
+                            data={data}
+                            isLoading={loading}
+                            showSearch={true}
+                        />
                     </div>
                 )}
 
                 {!loading && data.length === 0 && (
                     <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
+                        <span className="text-gray-400 text-lg font-medium">No Data Found*</span>
                     </div>
                 )}
             </div>
