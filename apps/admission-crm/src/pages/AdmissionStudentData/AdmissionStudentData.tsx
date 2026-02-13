@@ -1,11 +1,28 @@
 import React, { useState, useMemo } from 'react';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
-import { Card, DataTable, Button, Select, Badge } from '@od-erp/ui';
+import { Card, DataTable, Button, Select, Badge, Breadcrumb, NeedHelpPanel } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta } from '@od-erp/types';
+// import { AdmissionStudentData as AdmissionStudentDataType } from '@od-erp/types';
+
 import { admissionStudentDataService } from '@od-erp/api-client';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
+import { 
+    FileSpreadsheet, 
+    Printer, 
+    SlidersHorizontal, 
+    RefreshCw, 
+    Plus, 
+    Upload,
+    HelpCircle,
+    MoreVertical, 
+    Clock, 
+    FileText, 
+    Landmark, 
+    Receipt, 
+    MessageSquare, 
+    User 
+} from 'lucide-react';
 import AddStudentModal from './components/AddStudentModal';
 import FilterModal from './components/FilterModal';
 import UploadExcelModal from './components/UploadExcelModal';
@@ -15,14 +32,26 @@ import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import ViewAdmissionDetails from './components/ViewAdmissionDetails';
-import { MoreVertical, Clock, FileText, Landmark, Receipt, MessageSquare, User } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
 const AdmissionStudentData = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    // const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
+    // const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
     const dispatch = useAppDispatch();
+
+    // Display Names
+    // const displayNames = useMemo(() => ({
+    //     course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
+    //     stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
+    //     batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+    // }), [entityPreferences]);
+
+    // Primary Color (not used directly, Tailwind's text-primary class is used instead)
+    // const primaryColor = entityPreferences.primaryColor || '#1e429f';
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
@@ -34,6 +63,7 @@ const AdmissionStudentData = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
     const [isExporting, setIsExporting] = useState(false);
     const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
@@ -100,6 +130,14 @@ const AdmissionStudentData = () => {
     }, [entityId, session, pageNumber, pageSize, searchTerm, searchBy, selectedStage, currentFilters]);
 
     const { data, isLoading, refetch, isFetching } = useAdmissionStudentData(payload);
+
+    // hasError: true when no data, false when data is loaded
+    const hasError = !data || !data.data || data.data.length === 0;
+
+    // Permission check helper
+    const checkPermission = (permission: string): boolean => {
+        return permissions.includes(permission);
+    };
 
     // Handlers
     const handleAddStudent = async (formData: any) => {
@@ -183,7 +221,18 @@ const AdmissionStudentData = () => {
     };
 
     const handleGenerateReport = () => {
-        alert('Report generation feature is coming soon!');
+        // TODO: Implement report generation dialog
+        // For now, show a message
+        alert('Generate Report functionality will open a dialog to configure and save report templates. This feature is coming soon!');
+        
+        // Future implementation will call an API similar to Angular:
+        // const reportData = {
+        //     reportType: 'AdmissionStudentData',
+        //     tableHeads: columns,
+        //     filterValues: currentFilters,
+        //     entity: entityId,
+        // };
+        // await addReportFile(reportData);
     };
 
     const handleRefresh = () => {
@@ -192,8 +241,8 @@ const AdmissionStudentData = () => {
     };
 
     const handleNeedHelp = () => {
-        alert('For support, please contact admin@okiedokie.com');
-    }
+        setIsHelpPanelOpen(true);
+    };
 
     const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         dispatch(setAcademicSession(e.target.value));
@@ -456,16 +505,26 @@ const AdmissionStudentData = () => {
     }, [stageSetup, stageCounts]);
 
 
+    const breadcrumbItems = [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Admissions', href: '/admissions' },
+        { label: 'Application Data' }
+    ];
+
     return (
-        <div className="w-full max-w-full min-w-0 p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="w-full max-w-full font-sans pb-8 px-4">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Application Data</h1>
-                    <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <span className="mr-2">Select Session</span>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Application Data</h1>
+                    <Breadcrumb items={breadcrumbItems} />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Session Selector */}
+                    <div className="text-xs text-gray-500 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <select
-                            className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
+                            className="bg-transparent font-semibold text-gray-700 focus:ring-0 border-none p-0 cursor-pointer text-sm outline-none"
                             value={session}
                             onChange={handleSessionChange}
                         >
@@ -474,22 +533,97 @@ const AdmissionStudentData = () => {
                             ))}
                         </select>
                     </div>
-                </div>
 
-                <div className="flex space-x-2">
-                    <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>Add Application Data</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleExportExcel} disabled={isExporting}>
-                        <FileSpreadsheet className="mr-1 h-4 w-4" /> {isExporting ? 'Exporting...' : 'Excel'}
+                    {/* Filter Button */}
+                    <Button
+                        variant="outline"
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${isFilterModalOpen ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" className="flex items-center" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" /> Print</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleGenerateReport}>Generate Report</Button>
-                    <Button variant="outline" className="flex items-center" onClick={() => setIsUploadModalOpen(true)}>Upload Excel</Button>
-                    <Button variant="outline" className="flex items-center" onClick={() => setIsFilterModalOpen(true)}><Filter className="mr-1 h-4 w-4" /> Filter</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleRefresh}>
-                        <RefreshCw className={`mr-1 h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} /> Refresh
-                    </Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleNeedHelp}>Need Help</Button>
 
+                    {/* Refresh Button */}
+                    <Button
+                        variant="outline"
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={handleRefresh}
+                        title="Refresh"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} />
+                    </Button>
+
+                    {/* Upload Excel Button - Show if has permission */}
+                    {checkPermission('uploadAdmissionStudentData') && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={() => setIsUploadModalOpen(true)}
+                            title="Upload Excel"
+                        >
+                            <Upload className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Excel Export Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleExportExcel}
+                            disabled={isExporting}
+                            title="Export to Excel"
+                        >
+                            <FileSpreadsheet className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Print Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handlePrint}
+                            title="Print"
+                        >
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Generate Report Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleGenerateReport}
+                            title="Generate Report"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Need Help Button - Always show */}
+                    <Button
+                        variant="outline"
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={handleNeedHelp}
+                        title="Need Help"
+                    >
+                        <HelpCircle className="h-4 w-4" />
+                    </Button>
+
+                    {/* Add Application Data Button - Show if has permission */}
+                    {checkPermission('addAdmissionStudentData') && (
+                        <Button
+                            variant="primary"
+                            onClick={() => setIsAddModalOpen(true)}
+                            title="Add Application Data"
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Application Data
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -704,6 +838,12 @@ const AdmissionStudentData = () => {
                 student={followUpStudent}
             />
 
+            {/* Need Help Panel */}
+            <NeedHelpPanel
+                isOpen={isHelpPanelOpen}
+                onClose={() => setIsHelpPanelOpen(false)}
+                page="applicationData"
+            />
 
         </div>
     );
