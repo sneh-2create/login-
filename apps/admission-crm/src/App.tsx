@@ -56,7 +56,7 @@ function App() {
                         <Route path="followUps" element={<AdmissionFollowUps />} />
                         <Route path="admissionLeads" element={<AdmissionLeads />} />
                         <Route path="studentData" element={<AdmissionStudentData />} />
-                        <Route path="print/admissionStudentData" element={<PrintAdmissionStudentData />} />
+                        <Route path="print/admission-student-data" element={<PrintAdmissionStudentData />} />
                         <Route path="transaction" element={<AdmissionTransactionPage />} />
                         <Route path="print/admissionTransaction" element={<PrintAdmissionTransaction />} />
                         <Route path="dailyCollectionReport" element={<DailyCollectionReportPage />} />

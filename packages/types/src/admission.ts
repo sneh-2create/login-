@@ -393,3 +393,29 @@ export interface AdmissionNotePayload {
     pageSize?: number;
     pageNumber?: number;
 }
+
+// --- Template Types ---
+export interface AdmissionTableHead {
+    value: string;
+    name: string;
+    seqNo: number;
+}
+
+export interface TemplateFilterValue {
+    filter: 'stage' | 'course' | 'startDate' | 'endDate' | 'tags' | 
+            'engagementStatus' | 'counselor' | 'source';
+    value: any;
+}
+
+export interface AdmissionTemplate {
+    _id: string;
+    viewName: string;
+    tableHeads: AdmissionTableHead[];
+    filterValues?: TemplateFilterValue[];
+    sortBy?: string;
+    sortOrder?: 'ascending' | 'descending';
+}
+
+export interface DefaultTemplateResponse {
+    tableHeads: AdmissionTableHead[];
+}

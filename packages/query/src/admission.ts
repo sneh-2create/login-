@@ -307,4 +307,14 @@ export const useSources = (entityId: string, session: string) => {
     });
 };
 
+export const useAddReportFile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionService.addReportFile,
+        onSuccess: () => {
+            // Invalidate templates cache if it exists
+            queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+        },
+    });
+};
 

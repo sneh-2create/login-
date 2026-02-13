@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
-import { Card, DataTable, Button, Select, Badge, Breadcrumb, NeedHelpPanel } from '@od-erp/ui';
-import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta } from '@od-erp/types';
-// import { AdmissionStudentData as AdmissionStudentDataType } from '@od-erp/types';
+import { useNavigate } from 'react-router-dom';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile } from '@od-erp/query';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs } from '@od-erp/ui';
+import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
+import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
 
-import { admissionStudentDataService } from '@od-erp/api-client';
+import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { 
@@ -33,15 +34,16 @@ import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import ViewAdmissionDetails from './components/ViewAdmissionDetails';
 import * as XLSX from 'xlsx';
-import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
+import { useAppSelector } from '@od-erp/store';
 
 const AdmissionStudentData = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
-    // const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     // const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
-    const dispatch = useAppDispatch();
+    const navigate = useNavigate();
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
     // Display Names
     // const displayNames = useMemo(() => ({
@@ -49,9 +51,6 @@ const AdmissionStudentData = () => {
     //     stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
     //     batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
     // }), [entityPreferences]);
-
-    // Primary Color (not used directly, Tailwind's text-primary class is used instead)
-    // const primaryColor = entityPreferences.primaryColor || '#1e429f';
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
@@ -65,7 +64,6 @@ const AdmissionStudentData = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
-    const [isExporting, setIsExporting] = useState(false);
     const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
     const [documentStudent, setDocumentStudent] = useState<AdmissionLead | null>(null);
@@ -83,10 +81,60 @@ const AdmissionStudentData = () => {
 
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
+    const addReportFileMutation = useAddReportFile();
 
     // Queries
     const { data: sessions } = useSessions(entityId);
     const { data: counselors } = useCounselors(entityId || '', 'counselor');
+
+    // Get entityType and QAC from Redux (consistent with other pages)
+    const entityType = useAppSelector((state) => state.session.entityType) || '';
+    const qac = useAppSelector((state) => state.auth.entityDetails?.qac) || '';
+
+    // Template Queries - 3-tier fallback: Custom Templates → API Defaults → Hardcoded Defaults
+    const { data: templates } = useAdmissionTemplates(entityId);
+    const { data: defaultTemplateData } = useDefaultAdmissionTemplate(entityId, entityType);
+    const [selectedTemplate, setSelectedTemplate] = useState<string>(''); // viewName of selected template
+    
+    // Find the template object by viewName
+    const selectedTemplateObj = useMemo(() => {
+        return templates?.find(t => t.viewName === selectedTemplate);
+    }, [templates, selectedTemplate]);
+    
+    const { data: selectedTemplateData } = useAdmissionTemplate(selectedTemplateObj?._id || null, !!selectedTemplateObj?._id);
+
+    // Auto-select first template when templates load
+    useMemo(() => {
+        if (templates && templates.length > 0 && !selectedTemplate) {
+            setSelectedTemplate(templates[0].viewName);
+        }
+    }, [templates, selectedTemplate]);
+
+    // Row selection handlers
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = new Set(data?.data.map((item: AdmissionLead) => item._id) || []);
+            setSelectedRows(allIds);
+        } else {
+            setSelectedRows(new Set());
+        }
+    };
+
+    const handleSelectRow = (id: string, checked: boolean) => {
+        const newSelected = new Set(selectedRows);
+        if (checked) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedRows(newSelected);
+    };
+
+    // Navigate to admission details
+    const navigateToAdmissionDetails = (id: string) => {
+        navigate(`/admission/student-data/${id}`);
+    };
+
 
     const handlePrintForm = (student: AdmissionLead) => {
         if (!student) return;
@@ -157,49 +205,81 @@ const AdmissionStudentData = () => {
         }
     };
 
-    const handleExportExcel = async () => {
-        setIsExporting(true);
-        try {
-            // Create payload to fetch all data
-            const exportPayload: AdmissionStudentDataPayload = {
-                ...payload,
-                pageNumber: 1,
-                pageSize: 100000, // Fetch all data
-            };
+    // Handle Excel Export (matching Angular - no display names, no filters)
+    const handleExportExcel = () => {
+        if (!data?.data || data.data.length === 0) return;
 
-            const response = await admissionStudentDataService.listAdmissionStudentData(exportPayload);
+        const wb = XLSX.utils.book_new();
+        const ws: XLSX.WorkSheet = {};
 
-            if (!response?.data) return;
+        // No filter summary (matching Angular)
+        const filterSummary: any[] = [];
 
-            const worksheet = XLSX.utils.json_to_sheet(response.data.map((item, index) => ({
-                'S.No': index + 1,
-                'Name': item.name,
-                'Application No': item.applicationNumber,
-                'Phone': item.phone,
-                'Course': item.course,
-                'Father Name': item.fatherName,
-                'Stage': item.currentStage,
-                'Date': item.date ? format(new Date(item.date), 'dd-MMM-yyyy') : '-'
-            })));
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-            XLSX.writeFile(workbook, `StudentData_${session}.xlsx`);
-        } catch (error) {
-            console.error('Failed to export excel:', error);
-            alert('Failed to export excel. Please try again.');
-        } finally {
-            setIsExporting(false);
-        }
+        // Header
+        const tableStartRow = addExcelReportHeader(ws, entityName, selectedTemplate || 'Student Admission', filterSummary);
+        
+        // Table Headers (from tableHeads + Current Stage)
+        const tableHeader = [...tableHeads.map(h => h.name), 'Current Stage'];
+        XLSX.utils.sheet_add_aoa(ws, [tableHeader], { origin: { r: tableStartRow, c: 0 } });
+
+        // Data Rows
+        const dataRows = data.data.map((item: AdmissionLead) => {
+            const row: any[] = [];
+            
+            // Map each column from tableHeads
+            tableHeads.forEach((head: TableHead) => {
+                if (head.value === 'tag' || head.value === 'selectedTags') {
+                    row.push(item.tags?.map(t => typeof t === 'string' ? t : t.tag).join(', ') || '');
+                } else {
+                    let value = item[head.value];
+                    
+                    // Format dates (check if field name contains 'date' or 'Date' and value is a valid date string)
+                    if (value && (head.value.toLowerCase().includes('date') || head.name.toLowerCase().includes('date'))) {
+                        try {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                value = format(date, 'dd-MMM-yyyy');
+                            }
+                        } catch (e) {
+                            // Keep original value if date parsing fails
+                        }
+                    }
+                    
+                    row.push(value || '');
+                }
+            });
+            
+            // Add Current Stage column (hardcoded, not from template)
+            row.push(item.currentStage || '');
+            
+            return row;
+        });
+
+        XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+        // Signatures
+        const signatureRow = tableStartRow + 1 + dataRows.length + 4;
+        addExcelReportFooter(ws, signatureRow);
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        XLSX.writeFile(wb, 'AdmissionApplication_Reports.xlsx');
     };
 
+    // Handle Print Report (matching Angular - no display names)
     const handlePrint = () => {
-        if (!data?.data) return;
-        localStorage.setItem('admissionStudentData', JSON.stringify({
+        if (!data?.data || data.data.length === 0) return;
+
+        // Store in localStorage (matching Angular)
+        localStorage.setItem('admissionStudentDataPrint', JSON.stringify({
             data: data.data,
-            pageNumber,
-            pageSize
+            tableHeads: tableHeads,
+            viewName: selectedTemplate,
+            entityName: entityName,
+            stage: selectedStage !== 'Total' ? selectedStage : undefined,
         }));
-        window.open('/admission/print/admissionStudentData', '_blank');
+
+        // Open print window
+        window.open('/admission/print/admission-student-data', '_blank');
     };
 
     const handleApplyFilters = (filters: Partial<AdmissionStudentDataPayload>) => {
@@ -220,19 +300,132 @@ const AdmissionStudentData = () => {
         }, 1000);
     };
 
-    const handleGenerateReport = () => {
-        // TODO: Implement report generation dialog
-        // For now, show a message
-        alert('Generate Report functionality will open a dialog to configure and save report templates. This feature is coming soon!');
-        
-        // Future implementation will call an API similar to Angular:
-        // const reportData = {
-        //     reportType: 'AdmissionStudentData',
-        //     tableHeads: columns,
-        //     filterValues: currentFilters,
-        //     entity: entityId,
-        // };
-        // await addReportFile(reportData);
+    const handleGenerateReport = async () => {
+        try {
+            // Prepare filter values array
+            const filterValues: any[] = [];
+            
+            // Add stage filter
+            if (selectedStage && selectedStage !== 'Total') {
+                filterValues.push({
+                    filter: 'stage',
+                    value: selectedStage
+                });
+            }
+            
+            // Add filters from currentFilters
+            if (currentFilters.course && currentFilters.course.length > 0) {
+                filterValues.push({
+                    filter: 'course',
+                    value: currentFilters.course
+                });
+            }
+            
+            if (currentFilters.stream && currentFilters.stream.length > 0) {
+                filterValues.push({
+                    filter: 'stream',
+                    value: currentFilters.stream
+                });
+            }
+            
+            if (currentFilters.batch && currentFilters.batch.length > 0) {
+                filterValues.push({
+                    filter: 'batch',
+                    value: currentFilters.batch
+                });
+            }
+            
+            // Date range filter
+            if (currentFilters.startDate) {
+                const startDate = new Date(currentFilters.startDate).getTime();
+                const endDate = currentFilters.endDate 
+                    ? new Date(currentFilters.endDate).getTime() 
+                    : undefined;
+                
+                filterValues.push({
+                    filter: 'date',
+                    type: 'date',
+                    value: '',
+                    startDate,
+                    endDate
+                });
+            }
+            
+            // Updated At date range filter
+            if (currentFilters.updatedAtStartDate) {
+                const updatedAtStartDate = new Date(currentFilters.updatedAtStartDate).getTime();
+                const updatedAtEndDate = currentFilters.updatedAtEndDate 
+                    ? new Date(currentFilters.updatedAtEndDate).getTime() 
+                    : undefined;
+                
+                filterValues.push({
+                    filter: 'updatedAt',
+                    type: 'date',
+                    value: '',
+                    startDate: updatedAtStartDate,
+                    endDate: updatedAtEndDate
+                });
+            }
+            
+            // Counselor filter
+            if (currentFilters.counselorId) {
+                filterValues.push({
+                    filter: 'counselorId',
+                    value: currentFilters.counselorId
+                });
+            }
+            
+            // Tag filter
+            if (currentFilters.tag && currentFilters.tag.length > 0) {
+                filterValues.push({
+                    filter: 'tag',
+                    value: currentFilters.tag
+                });
+            }
+            
+            // Source filter
+            if (currentFilters.source && currentFilters.source.length > 0) {
+                filterValues.push({
+                    filter: 'source',
+                    value: currentFilters.source
+                });
+            }
+            
+            // Engagement status filter
+            if (currentFilters.engagementStatus && currentFilters.engagementStatus.length > 0) {
+                filterValues.push({
+                    filter: 'engagementStatus',
+                    value: currentFilters.engagementStatus
+                });
+            }
+            
+            // No counselor filter
+            if (currentFilters.noCounselor !== undefined) {
+                filterValues.push({
+                    filter: 'noCounselor',
+                    value: currentFilters.noCounselor
+                });
+            }
+            
+            // Prepare report data
+            const reportData = {
+                reportType: 'AdmissionStudentData',
+                tableHeads: tableHeads,
+                filterValues: filterValues,
+                sortBy: 'date', // Default sort
+                entity: entityId,
+                qac: qac
+            };
+            
+            // Call API
+            await addReportFileMutation.mutateAsync(reportData);
+            
+            // Show success message
+            alert('Report template saved successfully!');
+        } catch (error) {
+            console.error('Failed to generate report:', error);
+            alert('Failed to save report template. Please try again.');
+        }
     };
 
     const handleRefresh = () => {
@@ -244,8 +437,8 @@ const AdmissionStudentData = () => {
         setIsHelpPanelOpen(true);
     };
 
-    const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        dispatch(setAcademicSession(e.target.value));
+    const handleSessionChange = (_e: React.ChangeEvent<HTMLSelectElement>) => {
+        // Session change handled by controlled component
     };
 
     const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -256,8 +449,6 @@ const AdmissionStudentData = () => {
         } else {
             const rect = event.currentTarget.getBoundingClientRect();
             setOpenActionId(id);
-            // Position: below the button, aligned to the right if possible, or left
-            // Using fixed positioning relative to viewport
             setActionMenuPosition({
                 top: rect.bottom + 5,
                 left: rect.left
@@ -337,82 +528,101 @@ const AdmissionStudentData = () => {
         setPageNumber(1);
     };
 
-    // Columns with dynamic styling
-    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
-        {
-            header: 'S.No',
-            accessorKey: 'sno',
-            cell: info => (pageNumber - 1) * pageSize + info.row.index + 1,
-            meta: {
-                width: 78,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Action',
-            id: 'actions',
-            cell: info => {
-                const id = info.row.original._id;
-                return (
-                    <div className="relative">
-                        <button
-                            onClick={(e) => toggleActionMenu(id, e)}
-                            className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-                        >
-                            <MoreVertical size={16} />
-                        </button>
+    // 3-Tier Fallback for Table Heads: Custom Template → API Default → Hardcoded Default
+    const tableHeads = useMemo<TableHead[]>(() => {
+        // Priority 1: Selected custom template
+        if (selectedTemplateData?.tableHeads) {
+            return selectedTemplateData.tableHeads;
+        }
+        // Priority 2: API default template
+        if (defaultTemplateData?.tableHeads) {
+            return defaultTemplateData.tableHeads;
+        }
+        // Priority 3: Hardcoded fallback
+        return DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS as TableHead[];
+    }, [selectedTemplateData, defaultTemplateData]);
 
-                    </div>
-                )
-            }
-        },
-        {
-            header: 'Current Stage',
-            accessorKey: 'currentStage',
-            cell: info => {
+    // Helper function to convert TableHead to DataTable Column
+    const convertTableHeadToColumn = (head: TableHead): ColumnDef<AdmissionLead> => {
+        const baseColumn: ColumnDef<AdmissionLead> = {
+            header: head.name,
+            accessorKey: head.value,
+            meta: {
+                width: 150,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
+        };
+
+        // Special formatting for name field
+        if (head.value === 'name') {
+            baseColumn.cell = (info) => {
                 const val = info.getValue() as string;
-                return <Badge variant={val}>{val}</Badge>;
-            },
-            meta: {
-                width: 132,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Student Name',
-            accessorKey: 'name',
-            cell: info => <span className="font-medium cursor-pointer">{info.getValue() as string}</span>,
-            meta: {
-                width: 217,
-                align: 'left' as const,
-                isBold: true, // This will make it black via DataTable
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Form No.',
-            accessorKey: 'applicationNumber',
-            meta: {
-                width: 133,
-                align: 'center' as const,
-                fontWeight: 500,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Date',
-            accessorKey: 'date',
-            cell: info => {
+                return (
+                    <span 
+                        className="text-primary cursor-pointer hover:underline" 
+                        title="Click to view application details"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToAdmissionDetails(info.row.original._id);
+                        }}
+                    >
+                        {val}
+                    </span>
+                );
+            };
+            return baseColumn;
+        }
+
+        // Special formatting for application number
+        if (head.value === 'applicationNumber') {
+            baseColumn.cell = (info) => {
+                const val = info.getValue() as string;
+                return (
+                    <span 
+                        className="text-primary cursor-pointer hover:underline" 
+                        title="Click to view application details"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToAdmissionDetails(info.row.original._id);
+                        }}
+                    >
+                        {val}
+                    </span>
+                );
+            };
+            return baseColumn;
+        }
+        // Special formatting for specific fields
+        if (head.value === 'date' || head.value === 'dob' || head.value === 'doa') {
+            baseColumn.cell = (info) => {
                 const val = info.getValue();
                 return val ? format(new Date(val as number), 'dd-MMM-yyyy') : '-';
-            },
-            meta: {
-                width: 140,
+            };
+        }
+
+        if (head.value === 'name') {
+            baseColumn.cell = (info) => <span className="font-medium">{info.getValue() as string}</span>;
+            baseColumn.meta = {
+                width: 217,
+                align: 'left' as const,
+                isBold: true,
+            } as ExtendedColumnMeta<AdmissionLead>;
+        }
+
+        if (head.value === 'currentStage') {
+            baseColumn.cell = (info) => {
+                const val = info.getValue() as string;
+                return <Badge variant={val}>{val}</Badge>;
+            };
+            baseColumn.meta = {
+                width: 132,
                 align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Tags',
-            accessorKey: 'tags',
-            cell: info => {
+            } as ExtendedColumnMeta<AdmissionLead>;
+        }
+
+        if (head.value === 'tag' || head.value === 'selectedTags') {
+            baseColumn.accessorKey = 'tags'; // API returns 'tags' field
+            baseColumn.cell = (info) => {
                 const tags = info.getValue() as any[];
                 return (
                     <div className="flex flex-wrap gap-1">
@@ -423,47 +633,87 @@ const AdmissionStudentData = () => {
                         )) : '-'}
                     </div>
                 );
+            };
+        }
+
+        return baseColumn;
+    };
+
+    // Columns with dynamic styling
+    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => {
+        const dynamicColumns: ColumnDef<AdmissionLead>[] = [
+            {
+                id: 'select',
+                header: () => (
+                    <div className="flex items-center justify-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={(data?.data?.length || 0) > 0 && selectedRows.size === (data?.data?.length || 0)}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            className="cursor-pointer"
+                        />
+                        <span>S.No</span>
+                    </div>
+                ),
+                cell: ({ row }) => (
+                    <div className="flex items-center justify-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={selectedRows.has(row.original._id)}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                handleSelectRow(row.original._id, e.target.checked);
+                            }}
+                            className="cursor-pointer"
+                        />
+                        <span>{(pageNumber - 1) * pageSize + row.index + 1}</span>
+                    </div>
+                ),
+                meta: {
+                    width: 100,
+                    align: 'center' as const,
+                } as ExtendedColumnMeta<AdmissionLead>,
             },
-            meta: {
-                width: 150,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Course',
-            accessorKey: 'course',
-            meta: {
-                width: 164,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Phone',
-            accessorKey: 'phone',
-            meta: {
-                width: 120,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Father Name',
-            accessorKey: 'fatherName',
-            cell: info => info.getValue() || '-',
-            meta: {
-                width: 150,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Receipt Id',
-            id: 'receiptId',
-            cell: () => '-',
-            meta: {
-                width: 120,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-    ], [pageNumber, pageSize]);
+            {
+                header: 'Action',
+                id: 'actions',
+                cell: info => {
+                    const id = info.row.original._id;
+                    return (
+                        <div className="relative">
+                            <button
+                                onClick={(e) => toggleActionMenu(id, e)}
+                                className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                            >
+                                <MoreVertical size={16} />
+                            </button>
+
+                        </div>
+                    )
+                }
+            },
+            {
+                header: 'Current Stage',
+                accessorKey: 'currentStage',
+                cell: info => {
+                    const val = info.getValue() as string;
+                    return <Badge variant={val}>{val}</Badge>;
+                },
+                meta: {
+                    width: 132,
+                    align: 'center' as const,
+                } as ExtendedColumnMeta<AdmissionLead>,
+            },
+        ];
+
+        // Add columns from template heads
+        tableHeads.forEach((head) => {
+            dynamicColumns.push(convertTableHeadToColumn(head));
+        });
+
+        return dynamicColumns;
+    }, [pageNumber, pageSize, tableHeads]);
+
 
 
     // Tabs Logic
@@ -572,7 +822,6 @@ const AdmissionStudentData = () => {
                             variant="outline"
                             className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                             onClick={handleExportExcel}
-                            disabled={isExporting}
                             title="Export to Excel"
                         >
                             <FileSpreadsheet className="h-4 w-4" />
@@ -653,35 +902,28 @@ const AdmissionStudentData = () => {
                 />
             )}
 
-            {/* Search Bar */}
-            <Card className="mb-4 !p-4">
-                <div className="w-1/4">
-                    <Select
-                        label="Search By"
-                        options={[
-                            { label: 'Name', value: 'name' },
-                            { label: 'Application Number', value: 'applicationNumber' },
-                            { label: 'Mobile No.', value: 'phone' },
-                            { label: 'Father Name', value: 'fatherName' }
-                        ]}
-                        value={searchBy}
-                        onChange={(e) => setSearchBy(e.target.value)}
-                    />
-                </div>
-            </Card>
+            {/* Template Selection Tabs - Show if templates exist */}
+            {templates && templates.length > 0 && (
+                <HorizontalTabs
+                    tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
+                    activeTab={selectedTemplate}
+                    onTabChange={setSelectedTemplate}
+                    className="px-0 mb-4"
+                />
+            )}
 
-            {/* Data Table with built-in search */}
-            <Card className="overflow-hidden">
-                <div className="p-4 border-b font-semibold text-gray-700 uppercase text-sm tracking-wider text-center">
-                    APPLICATIONS
-                </div>
+            {/* Data Table with integrated Search By */}
+            {!hasError && (
                 <DataTable
                     columns={columns}
                     data={data?.data || []}
                     isLoading={isLoading}
                     showSearch={true}
-                    searchPlaceholder="Search by Name/Application No./Mobile No./Father Name"
+                    searchPlaceholder="Search..."
                     onSearch={handleSearch}
+                    searchByOptions={ADMISSION_SEARCH_BY_OPTIONS}
+                    searchByValue={searchBy}
+                    onSearchByChange={(value) => setSearchBy(value)}
                     showPagination={true}
                     manualPagination={true}
                     rowCount={data?.totalCount || 0}
@@ -692,7 +934,7 @@ const AdmissionStudentData = () => {
                     }}
                     maxHeight="600px"
                 />
-            </Card>
+            )}
 
             <AddStudentModal
                 isOpen={isAddModalOpen}

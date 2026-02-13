@@ -10,7 +10,7 @@ export interface DropdownOption {
 }
 
 export interface DropdownProps {
-    options: DropdownOption[];
+    options: ReadonlyArray<DropdownOption> | DropdownOption[];
     value?: string | number | (string | number)[];
     onChange: (_value: string | number | (string | number)[]) => void;
     placeholder?: string;
