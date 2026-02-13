@@ -707,6 +707,7 @@ const AdmissionStudentData = () => {
                 onClose={() => setIsFilterModalOpen(false)}
                 onApply={handleApplyFilters}
                 currentFilters={currentFilters}
+                stages={stageCounts?.map((s: any) => s.stage) || []}
             />
 
             <UploadExcelModal

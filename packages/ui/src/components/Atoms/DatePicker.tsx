@@ -163,7 +163,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 </button>
 
                 {isOpen && (
-                    <div className="absolute z-50 mt-1 w-64 rounded-md bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                    <div className="absolute z-[10001] mt-1 w-64 rounded-md bg-white p-4 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                         {renderHeader()}
                         {renderDays()}
                         {renderCells()}
