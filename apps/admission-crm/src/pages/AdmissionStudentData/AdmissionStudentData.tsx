@@ -35,6 +35,8 @@ import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import ViewAdmissionDetails from './components/ViewAdmissionDetails';
+import MoveApplicationModal from './components/MoveApplicationModal';
+import MoveStudentModal from './components/MoveStudentModal';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
@@ -62,7 +64,7 @@ const AdmissionStudentData = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [searchBy, setSearchBy] = useState('name');
+    const [searchBy, setSearchBy] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -80,6 +82,13 @@ const AdmissionStudentData = () => {
     const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
     const [viewAdmissionStudentId, setViewAdmissionStudentId] = useState<string | null>(null);
     const [isViewAdmissionOpen, setIsViewAdmissionOpen] = useState(false);
+    // Move Application Modal State
+    const [moveApplicationStudent, setMoveApplicationStudent] = useState<AdmissionLead | null>(null);
+    const [isMoveApplicationOpen, setIsMoveApplicationOpen] = useState(false);
+
+    // Move Student Modal State
+    const [moveStudentStudent, setMoveStudentStudent] = useState<AdmissionLead | null>(null);
+    const [isMoveStudentOpen, setIsMoveStudentOpen] = useState(false);
 
 
     // Mutations
@@ -175,18 +184,14 @@ const AdmissionStudentData = () => {
 
     const handleMoveApplication = (student: AdmissionLead) => {
         if (!student) return;
-        
-        // TODO: Implement move application modal/dialog
-        console.log('Move application:', student);
-        alert('Move Application functionality to be implemented');
+        setMoveApplicationStudent(student);
+        setIsMoveApplicationOpen(true);
     };
 
     const handleMoveStudent = (student: AdmissionLead) => {
         if (!student) return;
-        
-        // TODO: Implement move student modal/dialog
-        console.log('Move student:', student);
-        alert('Move Student functionality to be implemented');
+        setMoveStudentStudent(student);
+        setIsMoveStudentOpen(true);
     };
 
     const handleClickToCall = async (student: AdmissionLead) => {
@@ -782,25 +787,21 @@ const AdmissionStudentData = () => {
                                     onClick: () => handleViewBankDetails(student), 
                                     icon: <Landmark size={14} className="text-purple-500" /> 
                                 },
-                                // 9. Move Application - Permission-based, stage-dependent, disabled for Rejected/Withdrawn/Moved
+                                // 9. Move Application - Permission-based, hidden for Approved, disabled for Moved
                                 { 
                                     label: 'Move Application', 
                                     onClick: () => handleMoveApplication(student), 
                                     icon: <ArrowRight size={14} className="text-blue-500" />,
                                     hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage === 'Approved',
-                                    disabled: student.currentStage === 'Rejected' || 
-                                              student.currentStage === 'Withdrawn' || 
-                                              student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                    disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
                                 },
-                                // 10. Move Student - Permission-based, stage-dependent, disabled for Rejected/Withdrawn/Moved
+                                // 10. Move Student - Permission-based, hidden for non-Approved, disabled for Moved
                                 { 
                                     label: 'Move Student', 
                                     onClick: () => handleMoveStudent(student), 
                                     icon: <ArrowRight size={14} className="text-green-500" />,
                                     hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage !== 'Approved',
-                                    disabled: student.currentStage === 'Rejected' || 
-                                              student.currentStage === 'Withdrawn' || 
-                                              student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                    disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
                                 },
                                 // 11. Click to Call - Permission-based
                                 { 
@@ -1113,6 +1114,26 @@ const AdmissionStudentData = () => {
                 isOpen={isFollowUpOpen}
                 onClose={() => setIsFollowUpOpen(false)}
                 student={followUpStudent}
+            />
+
+            <MoveApplicationModal
+                isOpen={isMoveApplicationOpen}
+                onClose={() => setIsMoveApplicationOpen(false)}
+                student={moveApplicationStudent}
+                onSuccess={() => {
+                    // Refresh data after successful move
+                    refetch();
+                }}
+            />
+
+            <MoveStudentModal
+                isOpen={isMoveStudentOpen}
+                onClose={() => setIsMoveStudentOpen(false)}
+                student={moveStudentStudent}
+                onSuccess={() => {
+                    // Refresh data after successful move
+                    refetch();
+                }}
             />
 
             {/* Need Help Panel */}

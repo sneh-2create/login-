@@ -18,6 +18,7 @@ export interface User {
     myOperatorId?: string;
     mobile?: string;
     permissions?: string[];
+    entityGroup?: string[];
 }
 
 export interface EntityDetails {

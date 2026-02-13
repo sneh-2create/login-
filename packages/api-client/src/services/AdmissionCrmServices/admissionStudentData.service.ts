@@ -104,5 +104,43 @@ export const admissionStudentDataService = {
         const response = await apiClient.get<any>(`/delete/AdmissionStudentData?id=${id}`);
         return response.data;
     },
-};
 
+    // Move Application Methods
+    moveAdmissionStudentData: async (payload: any) => {
+        const response = await apiClient.post<any>('/moveToEntity/admissionStudentData', payload);
+        return response.data;
+    },
+
+    getAdmissionStudentDataStageCount: async (payload: {
+        course: string;
+        stream: string;
+        category: string;
+        oldNew: string;
+        stages: string[];
+        entity: string;
+        session: string;
+    }) => {
+        const response = await apiClient.post<number>('/getStageCount/admissionStudentData', payload);
+        return response.data;
+    },
+
+    listSubjectCombination: async (entity: string, session: string, course: string, stream: string) => {
+        const response = await apiClient.get<any[]>(`/list/subjectCombination?entity=${entity}&session=${session}&course=${course}&stream=${stream}`);
+        return response.data;
+    },
+
+    getCourseData: async (courseId: string) => {
+        const response = await apiClient.get<any>(`/view/course?id=${courseId}`);
+        return response.data;
+    },
+
+    viewFeeMasterData: async (entity: string, session: string) => {
+        const response = await apiClient.get<any>(`/view/feeMaster?entity=${entity}&session=${session}`);
+        return response.data;
+    },
+
+    viewStudentMaster: async (entity: string, session: string) => {
+        const response = await apiClient.get<any>(`/view/studentMaster?entity=${entity}&session=${session}`);
+        return response.data;
+    },
+};

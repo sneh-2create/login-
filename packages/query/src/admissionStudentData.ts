@@ -123,3 +123,71 @@ export const useDeleteAdmissionStudentData = () => {
     });
 };
 
+// Move Application Hooks
+export const useMoveAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.moveAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionStages'] });
+            queryClient.invalidateQueries({ queryKey: ['viewAdmissionStudentData'] });
+        },
+    });
+};
+
+export const useAdmissionStudentDataStageCount = (
+    payload: {
+        course: string;
+        stream: string;
+        category: string;
+        oldNew: string;
+        stages: string[];
+        entity: string;
+        session: string;
+    },
+    enabled: boolean = true
+) => {
+    return useQuery<number>({
+        queryKey: ['admissionStudentDataStageCount', payload],
+        queryFn: () => admissionStudentDataService.getAdmissionStudentDataStageCount(payload),
+        enabled: enabled && !!payload.entity && !!payload.session && !!payload.course && !!payload.stream && !!payload.category && !!payload.oldNew,
+        staleTime: 0, // Always fresh for seat availability
+    });
+};
+
+export const useSubjectCombinations = (entity: string, session: string, course: string, stream: string, enabled: boolean = true) => {
+    return useQuery<any[]>({
+        queryKey: ['subjectCombinations', entity, session, course, stream],
+        queryFn: () => admissionStudentDataService.listSubjectCombination(entity, session, course, stream),
+        enabled: enabled && !!entity && !!session && !!course && !!stream,
+        staleTime: 5 * 60 * 1000,
+    });
+};
+
+export const useCourseData = (courseId: string, enabled: boolean = true) => {
+    return useQuery<any>({
+        queryKey: ['courseData', courseId],
+        queryFn: () => admissionStudentDataService.getCourseData(courseId),
+        enabled: enabled && !!courseId,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+
+export const useFeeMasterData = (entity: string, session: string, enabled: boolean = true) => {
+    return useQuery<any>({
+        queryKey: ['feeMasterData', entity, session],
+        queryFn: () => admissionStudentDataService.viewFeeMasterData(entity, session),
+        enabled: enabled && !!entity && !!session,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+
+export const useStudentMaster = (entity: string, session: string, enabled: boolean = true) => {
+    return useQuery<any>({
+        queryKey: ['studentMaster', entity, session],
+        queryFn: () => admissionStudentDataService.viewStudentMaster(entity, session),
+        enabled: enabled && !!entity && !!session,
+        staleTime: 10 * 60 * 1000,
+    });
+};

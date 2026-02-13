@@ -21,6 +21,7 @@ export * from './excelTemplate';
 export * from './feeMaster';
 export * from './useCommunication';
 export * from './faq';
+export * from './common';
 export * from './hooks/admission/useAdmissionTemplates';
 
 

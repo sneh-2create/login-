@@ -108,6 +108,7 @@ export const Login: React.FC = () => {
                 userType: response.userType,
                 employeeId: response.employee || response.employeeId,
                 permissions: response.permissions ? (Array.isArray(response.permissions) ? response.permissions : []) : [],
+                entityGroup: response.entityGroup || [],
             },
             token: response.token,
             preferences: response.userPreferences || null,
