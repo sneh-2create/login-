@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile } from '@od-erp/query';
-import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown } from '@od-erp/ui';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
 
@@ -16,7 +16,6 @@ import {
     Plus, 
     Upload,
     HelpCircle,
-    MoreVertical, 
     Clock, 
     FileText, 
     Landmark, 
@@ -77,8 +76,7 @@ const AdmissionStudentData = () => {
     const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
     const [viewAdmissionStudentId, setViewAdmissionStudentId] = useState<string | null>(null);
     const [isViewAdmissionOpen, setIsViewAdmissionOpen] = useState(false);
-    const [openActionId, setOpenActionId] = useState<string | null>(null);
-    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
+
 
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
@@ -149,8 +147,6 @@ const AdmissionStudentData = () => {
 
         localStorage.setItem('print_student_data', JSON.stringify(studentWithCounselor));
         window.open('/admission/print/open/admissionForm', '_blank');
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     // Set default session
@@ -463,85 +459,36 @@ const AdmissionStudentData = () => {
         refetchStages();
     };
 
-    const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        if (openActionId === id) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        } else {
-            const rect = event.currentTarget.getBoundingClientRect();
-            setOpenActionId(id);
-            setActionMenuPosition({
-                top: rect.bottom + 5,
-                left: rect.left
-            });
-        }
-    };
-
-    // Close dropdown when clicking outside
-    const handleDocumentClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        // Check if click is inside the menu
-        if (!target.closest('.action-menu-dropdown')) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        }
-    };
-
-    // Add event listener for clicking outside
-    useMemo(() => {
-        if (typeof document !== 'undefined') {
-            document.addEventListener('click', handleDocumentClick);
-        }
-        return () => {
-            if (typeof document !== 'undefined') {
-                document.removeEventListener('click', handleDocumentClick);
-            }
-        };
-    }, []);
 
     const handleViewTimeline = (student: AdmissionLead) => {
         setTimelineStudent(student);
         setIsTimelineOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewDocuments = (student: AdmissionLead) => {
         setDocumentStudent(student);
         setIsViewDocumentsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
-
 
 
     const handleViewBankDetails = (student: AdmissionLead) => {
         setBankDetailsStudent(student);
         setIsBankDetailsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewTransactions = (student: AdmissionLead) => {
         setTransactionsStudent(student);
         setIsTransactionsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewFollowUp = (student: AdmissionLead) => {
         setFollowUpStudent(student);
         setIsFollowUpOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewAdmission = (id: string) => {
         setViewAdmissionStudentId(id);
         setIsViewAdmissionOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     // Handle search from DataTable - debounced to avoid too many API calls
@@ -700,17 +647,52 @@ const AdmissionStudentData = () => {
                 header: 'Action',
                 id: 'actions',
                 cell: info => {
-                    const id = info.row.original._id;
+                    const student = info.row.original;
                     return (
-                        <div className="relative">
-                            <button
-                                onClick={(e) => toggleActionMenu(id, e)}
-                                className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-                            >
-                                <MoreVertical size={16} />
-                            </button>
-
-                        </div>
+                        <ActionMenu
+                            items={[
+                                { 
+                                    label: 'Print Form', 
+                                    onClick: () => handlePrintForm(student), 
+                                    icon: <Printer size={14} className="text-gray-500" /> 
+                                },
+                                { 
+                                    label: 'View Admission', 
+                                    onClick: () => handleViewAdmission(student._id), 
+                                    icon: <User size={14} className="text-blue-500" /> 
+                                },
+                                { 
+                                    label: 'View Timeline', 
+                                    onClick: () => handleViewTimeline(student), 
+                                    icon: <Clock size={14} className="text-blue-500" /> 
+                                },
+                                { 
+                                    label: 'Verify Documents', 
+                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_blank'), 
+                                    icon: <FileText size={14} className="text-blue-600" /> 
+                                },
+                                { 
+                                    label: 'View Documents', 
+                                    onClick: () => handleViewDocuments(student), 
+                                    icon: <FileText size={14} className="text-green-500" /> 
+                                },
+                                { 
+                                    label: 'View Bank Details', 
+                                    onClick: () => handleViewBankDetails(student), 
+                                    icon: <Landmark size={14} className="text-purple-500" /> 
+                                },
+                                { 
+                                    label: 'View Transactions', 
+                                    onClick: () => handleViewTransactions(student), 
+                                    icon: <Receipt size={14} className="text-orange-500" /> 
+                                },
+                                { 
+                                    label: 'View Follow Up', 
+                                    onClick: () => handleViewFollowUp(student), 
+                                    icon: <MessageSquare size={14} className="text-blue-500" /> 
+                                },
+                            ]}
+                        />
                     )
                 }
             },
@@ -977,98 +959,7 @@ const AdmissionStudentData = () => {
                 onUpload={handleUploadExcel}
             />
 
-            {/* Fixed Position Dropdown Menu */}
-            {openActionId && actionMenuPosition && (
-                <div
-                    className="fixed bg-white rounded-md shadow-lg border border-gray-100 z-[9999] overflow-hidden w-40 action-menu-dropdown"
-                    style={{
-                        top: actionMenuPosition.top,
-                        left: actionMenuPosition.left
-                    }}
-                >
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handlePrintForm(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Printer size={14} className="mr-2 text-gray-500" />
-                        Print Form
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewAdmission(openActionId);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <User size={14} className="mr-2 text-blue-500" />
-                        View Admission
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewTimeline(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Clock size={14} className="mr-2 text-blue-500" />
-                        View Timeline
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            // Navigate to verify page
-                            if (student) window.open(`/admission/verify-documents/${student._id}`, '_blank');
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <FileText size={14} className="mr-2 text-blue-600" />
-                        Verify Documents
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewDocuments(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <FileText size={14} className="mr-2 text-green-500" />
-                        View Documents
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewBankDetails(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Landmark size={14} className="mr-2 text-purple-500" />
-                        View Bank Details
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewTransactions(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Receipt size={14} className="mr-2 text-orange-500" />
-                        View Transactions
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewFollowUp(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <MessageSquare size={14} className="mr-2 text-blue-500" />
-                        View Follow Up
-                    </button>
-                </div>
-            )}
+
 
             <TimelineModal
                 isOpen={isTimelineOpen}

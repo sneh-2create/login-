@@ -111,7 +111,7 @@ export const ActionMenu: React.FC<ActionMenuProps> = ({ items }) => {
 
             {isOpen && createPortal(
                 <div 
-                    className="fixed z-[9999] w-40 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    className="fixed z-[9999] w-50 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                     style={{ 
                         top: position.top, 
                         bottom: position.bottom,
