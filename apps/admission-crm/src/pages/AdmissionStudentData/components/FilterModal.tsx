@@ -17,6 +17,7 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
     
     // Display Names
     const displayNames = {
@@ -100,7 +101,19 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
 
     const handleDateChange = (field: 'startDate' | 'endDate' | 'updatedAtStartDate' | 'updatedAtEndDate', date: Date | null) => {
         if (date) {
-            const timestamp = date.getTime();
+            const dateObj = new Date(date);
+            
+            // Set to beginning of day for start dates (00:00:00.000)
+            if (field === 'startDate' || field === 'updatedAtStartDate') {
+                dateObj.setHours(0, 0, 0, 0);
+            }
+            
+            // Set to end of day for end dates (23:59:59.999)
+            if (field === 'endDate' || field === 'updatedAtEndDate') {
+                dateObj.setHours(23, 59, 59, 999);
+            }
+            
+            const timestamp = dateObj.getTime();
             setFilters(prev => ({ ...prev, [field]: timestamp }));
         } else {
             setFilters(prev => ({ ...prev, [field]: undefined }));
@@ -314,11 +327,13 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                                     onChange={(e) => setShowMemberDetails(e.target.checked)}
                                 />
 
-                                <Checkbox
-                                    label="No Counselor"
-                                    checked={filters.noCounselor || false}
-                                    onChange={(e) => handleChange('noCounselor', e.target.checked)}
-                                />
+                                {permissions.includes('isAdmissionAdmin') && (
+                                    <Checkbox
+                                        label="No Counselor"
+                                        checked={filters.noCounselor || false}
+                                        onChange={(e) => handleChange('noCounselor', e.target.checked)}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
