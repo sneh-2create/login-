@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile } from '@od-erp/query';
-import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs } from '@od-erp/ui';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
 
@@ -34,12 +34,13 @@ import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import ViewAdmissionDetails from './components/ViewAdmissionDetails';
 import * as XLSX from 'xlsx';
-import { useAppSelector } from '@od-erp/store';
+import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 
 const AdmissionStudentData = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
+    const dispatch = useAppDispatch();
     // const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
     const navigate = useNavigate();
@@ -437,8 +438,29 @@ const AdmissionStudentData = () => {
         setIsHelpPanelOpen(true);
     };
 
-    const handleSessionChange = (_e: React.ChangeEvent<HTMLSelectElement>) => {
-        // Session change handled by controlled component
+    const handleSessionChange = (value: string | number | (string | number)[]) => {
+        // Handle single value (session dropdown is not multi-select)
+        const sessionValue = Array.isArray(value) ? value[0] : value;
+        
+        // Update Redux state
+        dispatch(setAcademicSession(sessionValue as string));
+        
+        // Reset all filters
+        setCurrentFilters({});
+        
+        // Reset pagination
+        setPageNumber(1);
+        setPageSize(10);
+        
+        // Reset stage selection
+        setSelectedStage('Total');
+        
+        // Clear row selections
+        setSelectedRows(new Set());
+        
+        // Refetch data (will happen automatically via useEffect dependencies)
+        refetch();
+        refetchStages();
     };
 
     const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
@@ -772,17 +794,14 @@ const AdmissionStudentData = () => {
 
                 <div className="flex items-center gap-2">
                     {/* Session Selector */}
-                    <div className="text-xs text-gray-500 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
-                        <select
-                            className="bg-transparent font-semibold text-gray-700 focus:ring-0 border-none p-0 cursor-pointer text-sm outline-none"
-                            value={session}
-                            onChange={handleSessionChange}
-                        >
-                            {sessions?.map(s => (
-                                <option key={s._id} value={s.name}>{s.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <Dropdown
+                        options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
+                        value={session}
+                        onChange={handleSessionChange}
+                        placeholder="Select Session"
+                        containerClassName="min-w-[200px]"
+                        className="!py-1.5 !min-h-[36px] text-sm font-semibold"
+                    />
 
                     {/* Filter Button */}
                     <Button
