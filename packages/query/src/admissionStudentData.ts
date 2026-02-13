@@ -111,3 +111,15 @@ export const usePartnerInstitutes = (entityId: string) => {
         staleTime: 10 * 60 * 1000,
     });
 };
+
+export const useDeleteAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.deleteAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionStages'] });
+        },
+    });
+};
+

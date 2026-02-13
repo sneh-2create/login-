@@ -28,6 +28,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
     const [remark, setRemark] = useState<string>('');
     const [editId, setEditId] = useState<string | null>(null);
     const [status, setStatus] = useState<string>('pending');
+    const [remarkError, setRemarkError] = useState<string>('');
     // State for inline completion remarks
     const completionRemarksRef = useRef<Record<string, string>>({});
 
@@ -37,6 +38,56 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
         setRemark('');
         setEditId(null);
         setStatus('pending');
+        setRemarkError('');
+    };
+
+    // Time validation handler (matching Angular)
+    const handleTimeChange = (newTime: string) => {
+        setTime(newTime);
+        
+        if (newTime) {
+            const currentTime = new Date();
+            const selectedTime = new Date(followUpDate);
+            const [hours, minutes] = newTime.split(':').map(Number);
+            selectedTime.setHours(hours, minutes);
+
+            if (selectedTime < currentTime) {
+                alert("Can't set time before current time");
+                // Reset to current time
+                const currentHour = ('0' + currentTime.getHours()).slice(-2);
+                const currentMinute = ('0' + currentTime.getMinutes()).slice(-2);
+                setTime(`${currentHour}:${currentMinute}`);
+            }
+        }
+    };
+
+    // Remark validation (matching Angular: 2-100 chars, alphanumeric with ', -, .)
+    const validateRemark = (value: string): boolean => {
+        if (!value || value.trim().length < 2) {
+            setRemarkError('Remark must be at least 2 characters');
+            return false;
+        }
+        if (value.length > 100) {
+            setRemarkError('Remark must not exceed 100 characters');
+            return false;
+        }
+        // Pattern: alphanumeric with special chars (', -, .)
+        const pattern = /^[a-zA-Z0-9\s',.-]+$/;
+        if (!pattern.test(value)) {
+            setRemarkError("Remark can only contain letters, numbers, and special characters (', -, .)");
+            return false;
+        }
+        setRemarkError('');
+        return true;
+    };
+
+    const handleRemarkChange = (value: string) => {
+        setRemark(value);
+        if (value) {
+            validateRemark(value);
+        } else {
+            setRemarkError('');
+        }
     };
 
     const handleMarkCompleted = async (row: any) => {
@@ -57,6 +108,11 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
 
     const handleSubmit = async () => {
         if (!student) return;
+
+        // Validate remark before submission
+        if (!validateRemark(remark)) {
+            return;
+        }
 
         const date = new Date(followUpDate);
         const [hours, minutes] = time.split(':').map(Number);
@@ -259,7 +315,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                                         label="Time"
                                         type="time"
                                         value={time}
-                                        onChange={(e) => setTime(e.target.value)}
+                                        onChange={(e) => handleTimeChange(e.target.value)}
                                         disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                     />
                                 </div>
@@ -269,11 +325,16 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                                 <textarea
                                     rows={5}
                                     value={remark}
-                                    onChange={(e) => setRemark(e.target.value)}
+                                    onChange={(e) => handleRemarkChange(e.target.value)}
                                     placeholder="Enter remark here..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:text-gray-500"
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 resize-none disabled:bg-gray-100 disabled:text-gray-500 ${
+                                        remarkError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                                    }`}
                                     disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                 />
+                                {remarkError && (
+                                    <p className="mt-1 text-sm text-red-600">{remarkError}</p>
+                                )}
                             </div>
                         </div>
                     </div>

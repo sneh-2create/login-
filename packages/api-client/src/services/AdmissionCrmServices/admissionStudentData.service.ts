@@ -99,5 +99,10 @@ export const admissionStudentDataService = {
         const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
         return response.data;
     },
+    
+    deleteAdmissionStudentData: async (id: string) => {
+        const response = await apiClient.get<any>(`/delete/AdmissionStudentData?id=${id}`);
+        return response.data;
+    },
 };
 

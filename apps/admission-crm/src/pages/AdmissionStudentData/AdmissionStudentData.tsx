@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile } from '@od-erp/query';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
 import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
@@ -21,7 +21,10 @@ import {
     Landmark, 
     Receipt, 
     MessageSquare, 
-    User 
+    User,
+    Trash2,
+    ArrowRight,
+    Phone
 } from 'lucide-react';
 import AddStudentModal from './components/AddStudentModal';
 import FilterModal from './components/FilterModal';
@@ -42,6 +45,7 @@ const AdmissionStudentData = () => {
     const dispatch = useAppDispatch();
     // const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
+    const myOperatorId = useAppSelector((state) => state.auth.user?.myOperatorId) || localStorage.getItem('myOperatorId') || '';
     const navigate = useNavigate();
     const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
@@ -81,6 +85,7 @@ const AdmissionStudentData = () => {
     // Mutations
     const addStudentMutation = useAddAdmissionStudentData();
     const addReportFileMutation = useAddReportFile();
+    const clickToCallMutation = useClickToCall();
 
     // Queries
     const { data: sessions } = useSessions(entityId);
@@ -134,6 +139,8 @@ const AdmissionStudentData = () => {
         navigate(`/admission/student-data/${id}`);
     };
 
+    // Mutations
+    const deleteStudentMutation = useDeleteAdmissionStudentData();
 
     const handlePrintForm = (student: AdmissionLead) => {
         if (!student) return;
@@ -147,6 +154,60 @@ const AdmissionStudentData = () => {
 
         localStorage.setItem('print_student_data', JSON.stringify(studentWithCounselor));
         window.open('/admission/print/open/admissionForm', '_blank');
+    };
+
+    const handleDeleteAdmission = async (id: string) => {
+        if (!id) return;
+        
+        const confirmed = window.confirm('Are you sure you want to delete this Student Admission Data? This action cannot be undone.');
+        if (!confirmed) return;
+        
+        try {
+            await deleteStudentMutation.mutateAsync(id);
+            alert('Student Admission deleted successfully');
+            refetch(); // Refresh the list
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete admission';
+            alert(`Error: ${errorMessage}`);
+            console.error('Delete error:', error);
+        }
+    };
+
+    const handleMoveApplication = (student: AdmissionLead) => {
+        if (!student) return;
+        
+        // TODO: Implement move application modal/dialog
+        console.log('Move application:', student);
+        alert('Move Application functionality to be implemented');
+    };
+
+    const handleMoveStudent = (student: AdmissionLead) => {
+        if (!student) return;
+        
+        // TODO: Implement move student modal/dialog
+        console.log('Move student:', student);
+        alert('Move Student functionality to be implemented');
+    };
+
+    const handleClickToCall = async (student: AdmissionLead) => {
+        if (!student) return;
+        
+        const formData = {
+            entity: entityId,
+            session: session,
+            phone: student.phone,
+            applicationNumber: student.applicationNumber,
+            myOperatorId: myOperatorId
+        };
+        
+        try {
+            const result = await clickToCallMutation.mutateAsync(formData);
+            alert(result.message || 'Call initiated successfully');
+        } catch (error: any) {
+            console.error('Click to call failed:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to initiate call';
+            alert(`Error: ${errorMessage}`);
+        }
     };
 
     // Set default session
@@ -248,6 +309,20 @@ const AdmissionStudentData = () => {
             
             // Add Current Stage column (hardcoded, not from template)
             row.push(item.currentStage || '');
+            
+            // Add Bank Details columns (matching Angular implementation)
+            if (item.bankDetails) {
+                // Handle legacy array format
+                const bankData = Array.isArray(item.bankDetails) ? item.bankDetails[0] : item.bankDetails;
+                row.push(bankData?.bankName || '');
+                row.push(bankData?.branchName || '');
+                row.push(bankData?.accountNumber || '');
+                row.push(bankData?.ifscCode || '');
+                row.push(bankData?.studentName || '');
+            } else {
+                // Empty columns if no bank details
+                row.push('', '', '', '', '');
+            }
             
             return row;
         });
@@ -482,6 +557,10 @@ const AdmissionStudentData = () => {
     };
 
     const handleViewFollowUp = (student: AdmissionLead) => {
+        if (!student.counselorId) {
+            alert('Please assign counselor first');
+            return;
+        }
         setFollowUpStudent(student);
         setIsFollowUpOpen(true);
     };
@@ -651,45 +730,90 @@ const AdmissionStudentData = () => {
                     return (
                         <ActionMenu
                             items={[
-                                { 
-                                    label: 'Print Form', 
-                                    onClick: () => handlePrintForm(student), 
-                                    icon: <Printer size={14} className="text-gray-500" /> 
-                                },
+                                // 1. View Admission - Always visible
                                 { 
                                     label: 'View Admission', 
                                     onClick: () => handleViewAdmission(student._id), 
                                     icon: <User size={14} className="text-blue-500" /> 
                                 },
-                                { 
-                                    label: 'View Timeline', 
-                                    onClick: () => handleViewTimeline(student), 
-                                    icon: <Clock size={14} className="text-blue-500" /> 
-                                },
-                                { 
-                                    label: 'Verify Documents', 
-                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_blank'), 
-                                    icon: <FileText size={14} className="text-blue-600" /> 
-                                },
-                                { 
-                                    label: 'View Documents', 
-                                    onClick: () => handleViewDocuments(student), 
-                                    icon: <FileText size={14} className="text-green-500" /> 
-                                },
-                                { 
-                                    label: 'View Bank Details', 
-                                    onClick: () => handleViewBankDetails(student), 
-                                    icon: <Landmark size={14} className="text-purple-500" /> 
-                                },
+                                // 2. View Transactions - Always visible
                                 { 
                                     label: 'View Transactions', 
                                     onClick: () => handleViewTransactions(student), 
                                     icon: <Receipt size={14} className="text-orange-500" /> 
                                 },
+                                // 3. View Timeline - Always visible
+                                { 
+                                    label: 'View Timeline', 
+                                    onClick: () => handleViewTimeline(student), 
+                                    icon: <Clock size={14} className="text-blue-500" /> 
+                                },
+                                // 4. View Documents - Always visible
+                                { 
+                                    label: 'View Documents', 
+                                    onClick: () => handleViewDocuments(student), 
+                                    icon: <FileText size={14} className="text-green-500" /> 
+                                },
+                                // 5. Verify Documents - Always visible
+                                { 
+                                    label: 'Verify Documents', 
+                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_blank'), 
+                                    icon: <FileText size={14} className="text-blue-600" /> 
+                                },
+                                // 6. Delete Admission - Permission-based, disabled if has transactions
+                                { 
+                                    label: 'Delete Admission', 
+                                    onClick: () => handleDeleteAdmission(student._id), 
+                                    icon: <Trash2 size={14} className="text-red-500" />,
+                                    hidden: !checkPermission('deleteAdmissionStudentData'),
+                                    disabled: (student.transactions?.length || 0) > 0,
+                                    className: 'text-red-600 hover:text-red-700'
+                                },
+                                // 7. View Follow Up - Permission-based
                                 { 
                                     label: 'View Follow Up', 
                                     onClick: () => handleViewFollowUp(student), 
-                                    icon: <MessageSquare size={14} className="text-blue-500" /> 
+                                    icon: <MessageSquare size={14} className="text-blue-500" />,
+                                    hidden: !checkPermission('viewAdmissionStudentData')
+                                },
+                                // 8. View Bank Details - Always visible
+                                { 
+                                    label: 'View Bank Details', 
+                                    onClick: () => handleViewBankDetails(student), 
+                                    icon: <Landmark size={14} className="text-purple-500" /> 
+                                },
+                                // 9. Move Application - Permission-based, stage-dependent, disabled for Rejected/Withdrawn/Moved
+                                { 
+                                    label: 'Move Application', 
+                                    onClick: () => handleMoveApplication(student), 
+                                    icon: <ArrowRight size={14} className="text-blue-500" />,
+                                    hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage === 'Approved',
+                                    disabled: student.currentStage === 'Rejected' || 
+                                              student.currentStage === 'Withdrawn' || 
+                                              student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                },
+                                // 10. Move Student - Permission-based, stage-dependent, disabled for Rejected/Withdrawn/Moved
+                                { 
+                                    label: 'Move Student', 
+                                    onClick: () => handleMoveStudent(student), 
+                                    icon: <ArrowRight size={14} className="text-green-500" />,
+                                    hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage !== 'Approved',
+                                    disabled: student.currentStage === 'Rejected' || 
+                                              student.currentStage === 'Withdrawn' || 
+                                              student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                },
+                                // 11. Click to Call - Permission-based
+                                { 
+                                    label: 'Click to Call', 
+                                    onClick: () => handleClickToCall(student), 
+                                    icon: <Phone size={14} className="text-green-500" />,
+                                    hidden: !checkPermission('peerToPeerCallForAdmission')
+                                },
+                                // 12. Print Form - Always visible
+                                { 
+                                    label: 'Print Form', 
+                                    onClick: () => handlePrintForm(student), 
+                                    icon: <Printer size={14} className="text-gray-500" /> 
                                 },
                             ]}
                         />
