@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import { useAppSelector } from '@od-erp/store';
 import PrintLayout from '../../components/PrintLayout';
 
 const PrintCourseWiseTagReport = () => {
@@ -7,15 +8,28 @@ const PrintCourseWiseTagReport = () => {
     const [tableHeads, setTableHeads] = useState<string[]>([]);
     const [reportName, setReportName] = useState('Course Wise Tag Report');
 
+    // Get entity preferences from Redux
+    const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
+
+    // Extract display names
+    const displayNames = useMemo(() => ({
+        course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
+        stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
+        batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+    }), [entityPreferences]);
+
+    const showBatch = entityPreferences.showBatch !== undefined ? entityPreferences.showBatch : true;
+
     useEffect(() => {
         const storedData = localStorage.getItem('courseWiseLeadData');
         const storedHeads = localStorage.getItem('tableHeads');
-        const storedName = localStorage.getItem('reportName');
 
         if (storedData) setData(JSON.parse(storedData));
         if (storedHeads) setTableHeads(JSON.parse(storedHeads));
-        if (storedName) setReportName(storedName);
-    }, []);
+
+        // Update report name with display name
+        setReportName(`${displayNames.course} Wise Tag Report`);
+    }, [displayNames.course]);
 
     return (
         <PrintLayout reportName={reportName}>
@@ -23,8 +37,11 @@ const PrintCourseWiseTagReport = () => {
                 <thead>
                     <tr className="bg-gray-100">
                         <th className="border border-gray-300 p-2 text-left">S.No</th>
-                        <th className="border border-gray-300 p-2 text-left">Course</th>
-                        <th className="border border-gray-300 p-2 text-left">Stream</th>
+                        <th className="border border-gray-300 p-2 text-left">{displayNames.course}</th>
+                        <th className="border border-gray-300 p-2 text-left">{displayNames.stream}</th>
+                        {showBatch && (
+                            <th className="border border-gray-300 p-2 text-left">{displayNames.batch}</th>
+                        )}
                         <th className="border border-gray-300 p-2 text-left">Total Count</th>
                         {tableHeads.map((head, index) => (
                             <th key={index} className="border border-gray-300 p-2 text-left">{head}</th>
@@ -39,6 +56,9 @@ const PrintCourseWiseTagReport = () => {
                                 <td className="border border-gray-300 p-2 text-center">{isTotal ? '' : row.position}</td>
                                 <td className="border border-gray-300 p-2">{row.course}</td>
                                 <td className="border border-gray-300 p-2">{row.stream || ''}</td>
+                                {showBatch && (
+                                    <td className="border border-gray-300 p-2">{row.batch || ''}</td>
+                                )}
                                 <td className="border border-gray-300 p-2">{row.totalCount}</td>
                                 {tableHeads.map((head, i) => (
                                     <td key={i} className="border border-gray-300 p-2">
@@ -50,7 +70,7 @@ const PrintCourseWiseTagReport = () => {
                     })}
                     {data.length === 0 && (
                         <tr>
-                            <td colSpan={4 + tableHeads.length} className="border border-gray-300 p-4 text-center">
+                            <td colSpan={4 + tableHeads.length + (showBatch ? 1 : 0)} className="border border-gray-300 p-4 text-center">
                                 No records found
                             </td>
                         </tr>

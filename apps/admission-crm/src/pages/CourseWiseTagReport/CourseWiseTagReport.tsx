@@ -1,29 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useCourseWiseTagReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { Button, DataTable, Breadcrumb, Dropdown, DatePicker } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer, RefreshCw } from 'lucide-react';
+import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { CourseWiseTagReportTableRow } from '@od-erp/types';
+import { processCourseWiseTagData, addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
+import { format } from 'date-fns';
 
 const CourseWiseTagReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
-    
+
     // Filters
     const [startDate, setStartDate] = useState<number | undefined>();
     const [endDate, setEndDate] = useState<number | undefined>();
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [showFilter, setShowFilter] = useState(false);
 
-    // Metadata
+    // Redux Selectors
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
     const user = useAppSelector((state) => state.auth.user) as any;
-    const permissions = useAppSelector((state) => state.auth.permissions) || [];
+
+    // Display Names
+    const displayNames = useMemo(() => ({
+        course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
+        stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
+        batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+    }), [entityPreferences]);
+
+    const showBatch = entityPreferences.showBatch !== undefined ? entityPreferences.showBatch : true;
 
     // Determine Roles
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
     const isAdmissionAdmin = permissions.includes('isAdmissionAdmin');
     const [isLead, setIsLead] = useState(false);
     const [counselorOptions, setCounselorOptions] = useState<any[]>([]);
@@ -111,26 +125,9 @@ const CourseWiseTagReport = () => {
     useEffect(() => {
         setLoading(isLoading);
         if (reportData && Array.isArray(reportData)) {
-            // Calculate Total Row
-            const totalRow: any = {
-                course: 'Total',
-                totalCount: 0,
-                position: 0 // Marker for total row
-            };
-            
-            dynamicColumns.forEach(tag => {
-                totalRow[tag] = 0;
-            });
-
-            const processedReportData = reportData.map((row: any, index: number) => {
-                totalRow.totalCount += Number(row.totalCount || 0);
-                dynamicColumns.forEach(tag => {
-                    totalRow[tag] += Number(row[tag] || 0);
-                });
-                return { ...row, position: index + 1 };
-            });
-
-            setData([...processedReportData, totalRow]);
+            // Use common utility for data processing
+            const processedData = processCourseWiseTagData(reportData, dynamicColumns);
+            setData(processedData);
         } else {
             setData([]);
         }
@@ -141,33 +138,49 @@ const CourseWiseTagReport = () => {
         refetch();
     };
 
-    const columns: ColumnDef<any>[] = [
-        {
-            accessorKey: 'position',
-            header: 'S.No',
-            cell: info => {
-                const val = info.getValue() as number;
-                return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+    const columns: ColumnDef<any>[] = useMemo(() => {
+        const cols: ColumnDef<any>[] = [
+            {
+                accessorKey: 'position',
+                header: 'S.No',
+                cell: info => {
+                    const val = info.getValue() as number;
+                    return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                }
+            },
+            {
+                accessorKey: 'course',
+                header: displayNames.course,
+                cell: info => {
+                    const val = info.getValue() as string;
+                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                }
+            },
+            {
+                accessorKey: 'stream',
+                header: displayNames.stream,
+                cell: info => {
+                    const val = info.getValue() as string || '';
+                    const isTotal = info.row.original.course === 'Total';
+                    return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
+                }
             }
-        },
-        {
-            accessorKey: 'course',
-            header: 'Course',
-            cell: info => {
-                const val = info.getValue() as string;
-                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
-            }
-        },
-        {
-            accessorKey: 'stream',
-            header: 'Stream',
-            cell: info => {
-                const val = info.getValue() as string || '';
-                const isTotal = info.row.original.course === 'Total';
-                return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
-            }
-        },
-        {
+        ];
+
+        // Conditional Batch Column
+        if (showBatch) {
+            cols.push({
+                accessorKey: 'batch',
+                header: displayNames.batch,
+                cell: info => {
+                    const val = info.getValue() as string || '';
+                    const isTotal = info.row.original.course === 'Total';
+                    return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
+                }
+            });
+        }
+
+        cols.push({
             accessorKey: 'totalCount',
             header: 'Total Count',
             cell: info => {
@@ -175,52 +188,68 @@ const CourseWiseTagReport = () => {
                 const isTotal = info.row.original.course === 'Total';
                 return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
             }
-        }
-    ];
+        });
 
-    dynamicColumns.forEach(tag => {
-        columns.push({
+        return cols;
+    }, [displayNames, showBatch]);
+
+    // Add dynamic tag columns
+    const allColumns = useMemo(() => {
+        const tagCols: ColumnDef<any>[] = dynamicColumns.map(tag => ({
             accessorKey: tag,
             header: tag,
-            cell: info => {
+            cell: (info: any) => {
                 const val = info.getValue() as number || 0;
                 const isTotal = info.row.original.course === 'Total';
                 return <span className={isTotal ? "font-bold" : ""}>{val}</span>;
             }
-        });
-    });
+        }));
+        return [...columns, ...tagCols];
+    }, [columns, dynamicColumns]);
 
     const handleExport = () => {
         setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
-            
-            // Header Info
-            xlsx.utils.sheet_add_aoa(ws, [['Course Wise Tag Report']], { origin: "A1" });
-            xlsx.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
-            xlsx.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
 
-            // Headers
-            const headerRow = ['S.No', 'Course', 'Stream', 'Total Count', ...dynamicColumns];
-            xlsx.utils.sheet_add_aoa(ws, [headerRow], { origin: "A4" });
+            // Common Header
+            const tableStartRow = addExcelReportHeader(ws, entityName, 'Course Wise Tag Report', []);
+
+            // Headers with display names
+            const headerRow = ['S.No', displayNames.course, displayNames.stream];
+            if (showBatch) {
+                headerRow.push(displayNames.batch);
+            }
+            headerRow.push('Total Count', ...dynamicColumns);
+            xlsx.utils.sheet_add_aoa(ws, [headerRow], { origin: { r: tableStartRow, c: 0 } });
 
             // Data
             const dataRows = data.map((row, index) => {
                 const isTotal = row.course === 'Total';
-                const rowData = [
+                const rowData: any[] = [
                     isTotal ? '' : index + 1,
                     row.course,
-                    row.stream || '',
+                    row.stream || ''
+                ];
+                if (showBatch) {
+                    rowData.push(row.batch || '');
+                }
+                rowData.push(
                     row.totalCount,
                     ...dynamicColumns.map(col => row[col] || 0)
-                ];
+                );
                 return rowData;
             });
 
-            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
-            xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
-            xlsx.writeFile(wb, 'Course_Wise_Tag_Report.xlsx');
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+            // Common Footer
+            const footerStartRow = tableStartRow + 1 + dataRows.length + 2;
+            addExcelReportFooter(ws, footerStartRow);
+
+            xlsx.utils.book_append_sheet(wb, ws, "CourseWiseTagReport");
+            xlsx.writeFile(wb, `Course_Wise_Tag_Report_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -238,7 +267,7 @@ const CourseWiseTagReport = () => {
     return (
         <div className="w-full max-w-full font-sans pb-8">
             <div className="flex flex-col mb-6 gap-4">
-                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">Course Wise Tag Report</h1>
                         <Breadcrumb
@@ -249,8 +278,18 @@ const CourseWiseTagReport = () => {
                             ]}
                         />
                     </div>
-                     <div className="flex items-center space-x-2">
-                         <Button
+                    <div className="flex items-center space-x-2">
+                        {/* Filter Toggle */}
+                        <Button
+                            variant="outline"
+                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                            onClick={() => setShowFilter(!showFilter)}
+                            title="Filter"
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+
+                        <Button
                             variant="outline"
                             className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
                             onClick={handleSearch}
@@ -263,7 +302,7 @@ const CourseWiseTagReport = () => {
                             <>
                                 <Button
                                     variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                     onClick={handleExport}
                                     isLoading={exportLoading}
                                     title="Export to Excel"
@@ -272,7 +311,7 @@ const CourseWiseTagReport = () => {
                                 </Button>
                                 <Button
                                     variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
                                     onClick={handlePrint}
                                     title="Print"
                                 >
@@ -283,68 +322,68 @@ const CourseWiseTagReport = () => {
                     </div>
                 </div>
 
-                {/* Filters */}
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
-                            <DatePicker
-                                value={startDate ? new Date(startDate) : undefined}
-                                onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
-                                maxDate={endDate ? new Date(endDate) : undefined}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
-                            <DatePicker
-                                value={endDate ? new Date(endDate) : undefined}
-                                onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
-                                minDate={startDate ? new Date(startDate) : undefined}
-                                className="w-full"
-                            />
-                        </div>
-                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                            <Dropdown
-                                options={counselorOptions}
-                                value={selectedCounselor}
-                                onChange={(val) => setSelectedCounselor(val as string)}
-                                placeholder="Select Counselor"
-                                disabled={!isAdmissionAdmin && !isLead}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="w-full md:w-auto">
-                            <Button
-                                variant="primary"
-                                onClick={handleSearch}
-                                isLoading={loading}
-                                className="w-full md:w-auto bg-orange-600 hover:bg-orange-700 text-white border-transparent"
-                            >
-                                Go <span className="ml-1">→</span>
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Data Table */}
-                {data.length > 0 && (
-                    <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-                         <div className="p-4 border-b border-gray-200">
-                            <h3 className="font-semibold text-gray-700">Course Wise Tag Report</h3>
-                        </div>
-                        <div className="w-full max-w-full overflow-x-auto">
-                            <DataTable
-                                columns={columns}
-                                data={data}
-                                isLoading={loading}
-                                showSearch={false}
-                            />
+                {/* Collapsible Filter Card */}
+                {showFilter && (
+                    <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
+                        <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="w-full md:w-1/4">
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
+                                <DatePicker
+                                    value={startDate ? new Date(startDate) : undefined}
+                                    onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
+                                    maxDate={endDate ? new Date(endDate) : undefined}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="w-full md:w-1/4">
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
+                                <DatePicker
+                                    value={endDate ? new Date(endDate) : undefined}
+                                    onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
+                                    minDate={startDate ? new Date(startDate) : undefined}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="w-full md:w-1/4">
+                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
+                                <Dropdown
+                                    options={counselorOptions}
+                                    value={selectedCounselor}
+                                    onChange={(val) => setSelectedCounselor(val as string)}
+                                    placeholder="Select Counselor"
+                                    disabled={!isAdmissionAdmin && !isLead}
+                                    className="w-full"
+                                />
+                            </div>
+                            <div className="w-full md:w-auto">
+                                <Button
+                                    variant="primary"
+                                    onClick={() => {
+                                        handleSearch();
+                                        setShowFilter(false);
+                                    }}
+                                    isLoading={loading}
+                                    className="w-full md:w-auto"
+                                >
+                                    Apply Filters
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
-                 {!loading && data.length === 0 && (
+
+                {/* Data Table */}
+                {data.length > 0 && (
+                    <div className="w-full max-w-full overflow-x-auto">
+                        <DataTable
+                            columns={allColumns}
+                            data={data}
+                            isLoading={loading}
+                            showSearch={true}
+                        />
+                    </div>
+                )}
+                {!loading && data.length === 0 && (
                     <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                         <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                     </div>
