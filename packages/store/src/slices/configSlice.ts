@@ -26,6 +26,7 @@ export interface EntityPreferences {
         name: string;
     }[];
     showBatch: boolean;
+    editFeeDocument?: boolean;
 }
 
 export interface ConfigState {
