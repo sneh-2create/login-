@@ -29,7 +29,7 @@ const DailyCollectionReportPage = lazy(() => import('./pages/DailyCollectionRepo
 const PrintDailyCollectionReport = lazy(() => import('./pages/DailyCollectionReport/PrintDailyCollectionReport'));
 const PrintStudentTimeline = lazy(() => import('./pages/AdmissionStudentData/PrintStudentTimeline'));
 const PrintAdmissionForm = lazy(() => import('./pages/AdmissionStudentData/PrintAdmissionForm'));
-const VerifyDocuments = lazy(() => import('./pages/AdmissionStudentData/VerifyDocuments'));
+const VerifyDocuments = lazy(() => import('./pages/AdmissionStudentData/components/VerifyDocuments'));
 const PrintAdmissionTransactionReceipt = lazy(() => import('./pages/AdmissionTransaction/PrintAdmissionTransactionReceipt'));
 
 function App() {

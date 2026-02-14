@@ -168,6 +168,8 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
                             role: userRole,
                             userType: userRole,
                             employeeId: decoded.employeeId,
+                            mobile: decoded.mobile,
+                            myOperatorId: decoded.myOperatorId,
                             permissions: finalPermissions,
                             entityGroup: decoded.entityGroup || []
                         },

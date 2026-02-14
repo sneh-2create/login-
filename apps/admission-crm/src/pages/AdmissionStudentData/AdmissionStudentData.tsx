@@ -762,7 +762,7 @@ const AdmissionStudentData = () => {
                                 // 5. Verify Documents - Always visible
                                 { 
                                     label: 'Verify Documents', 
-                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_blank'), 
+                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_self'), 
                                     icon: <FileText size={14} className="text-blue-600" /> 
                                 },
                                 // 6. Delete Admission - Permission-based, disabled if has transactions
