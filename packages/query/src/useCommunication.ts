@@ -34,3 +34,15 @@ export const useSendAdmissionWhatsapp = () => {
         mutationFn: communicationService.sendMultipleAdmissionReminderWhatsAppCommunication
     });
 };
+
+export const useSendAdmissionEmail = () => {
+    return useMutation({
+        mutationFn: communicationService.sendMultipleAdmissionReminderEmailCommunication
+    });
+};
+
+export const useSendAdmissionWhatsappWeb = () => {
+    return useMutation({
+        mutationFn: communicationService.sendMultipleAdmissionReminderWhatsAppWebCommunication
+    });
+};

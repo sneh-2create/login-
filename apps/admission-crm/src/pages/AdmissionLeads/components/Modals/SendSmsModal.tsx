@@ -10,6 +10,7 @@ interface SendSmsModalProps {
     isOpen: boolean;
     onClose: () => void;
     selectedLeads: AdmissionLead[];
+    onSuccess?: () => void;
 }
 
 const SEND_TO_OPTIONS = [
@@ -19,7 +20,7 @@ const SEND_TO_OPTIONS = [
     { value: 'guardian', label: 'GUARDIAN' }
 ];
 
-const SendSmsModal = ({ isOpen, onClose, selectedLeads }: SendSmsModalProps) => {
+const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const { showToast } = useToast();
@@ -105,7 +106,8 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads }: SendSmsModalProps) => 
 
         sendSms(payload, {
             onSuccess: () => {
-                showToast('success', 'Messages initiated successfully');
+                showToast('success', 'SMS messages will be initiated');
+                onSuccess?.(); // Clear selection
                 onClose();
                 // Reset form
                 setSelectedTemplateId('');

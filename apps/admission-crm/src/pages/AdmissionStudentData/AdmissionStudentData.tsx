@@ -24,7 +24,11 @@ import {
     User,
     Trash2,
     ArrowRight,
-    Phone
+    Phone,
+    Mail,
+    MessageCircle,
+    Users,
+    Send
 } from 'lucide-react';
 import AddApplicationDataPanel from './components/AddApplicationDataPanel';
 import FilterModal from './components/FilterModal';
@@ -33,6 +37,11 @@ import TimelineModal from '../../components/Modals/TimelineModal';
 import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
+import SendEmailModal from './components/SendEmailModal';
+import SendWhatsappWebModal from './components/SendWhatsappWebModal';
+import SendSmsModal from '../AdmissionLeads/components/Modals/SendSmsModal';
+import SendWhatsappModal from '../AdmissionLeads/components/Modals/SendWhatsappModal';
+import BulkUpdateCounselorModal from '../AdmissionLeads/components/Modals/BulkUpdateCounselorModal';
 
 import MoveApplicationModal from './components/MoveApplicationModal';
 import MoveStudentModal from './components/MoveStudentModal';
@@ -89,6 +98,13 @@ const AdmissionStudentData = () => {
     // Move Student Modal State
     const [moveStudentStudent, setMoveStudentStudent] = useState<AdmissionLead | null>(null);
     const [isMoveStudentOpen, setIsMoveStudentOpen] = useState(false);
+
+    // Bulk Action Modal States
+    const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
+    const [isSendWhatsappWebOpen, setIsSendWhatsappWebOpen] = useState(false);
+    const [isSendWhatsappOpen, setIsSendWhatsappOpen] = useState(false);
+    const [isSendSmsOpen, setIsSendSmsOpen] = useState(false);
+    const [isBulkCounselorOpen, setIsBulkCounselorOpen] = useState(false);
 
 
     // Mutations
@@ -605,6 +621,88 @@ const AdmissionStudentData = () => {
         setIsViewAdmissionOpen(true);
     };
 
+    // Bulk Action Handlers
+    const handleBulkSendEmail = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendEmailOpen(true);
+    };
+
+    const handleBulkSendWhatsappWeb = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendWhatsappWebOpen(true);
+    };
+
+    const handleBulkSendWhatsapp = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendWhatsappOpen(true);
+    };
+
+    const handleBulkSendSms = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendSmsOpen(true);
+    };
+
+    const handlePrintSelectedForms = () => {
+        if (selectedRows.size === 0) {
+            alert('Please select at least one student to print the forms');
+            return;
+        }
+        const studentIdArray = Array.from(selectedRows);
+        localStorage.setItem('studentAdmissionData', JSON.stringify(studentIdArray));
+        window.open('/admission/print/open/admissionForm', '_blank');
+        // Note: Selection is NOT cleared for print operation
+    };
+
+    const handleBulkUpdateCounselor = () => {
+        if (selectedRows.size === 0) return;
+        setIsBulkCounselorOpen(true);
+    };
+
+    // Get selected students data for modals
+    const getSelectedStudents = (): AdmissionLead[] => {
+        return (data?.data || []).filter((student: AdmissionLead) => selectedRows.has(student._id));
+    };
+
+    // Handle bulk counselor update
+    const handleCounselorUpdate = (counselorId: string) => {
+        const studentDataIds = Array.from(selectedRows);
+        // Use the admission lead service for bulk counselor update
+        import('@od-erp/api-client').then(({ admissionLeadService }) => {
+            admissionLeadService.bulkCounselorUpdate({
+                studentDataIds,
+                entity: entityId,
+                counselor: counselorId
+            }).then(() => {
+                setSelectedRows(new Set());
+                refetch();
+            }).catch((err: any) => {
+                console.error('Failed to update counselor:', err);
+            });
+        });
+    };
+
+    // Handle modal close without clearing selection
+    const handleEmailModalClose = () => {
+        setIsSendEmailOpen(false);
+    };
+
+    const handleWhatsappWebModalClose = () => {
+        setIsSendWhatsappWebOpen(false);
+    };
+
+    const handleWhatsappModalClose = () => {
+        setIsSendWhatsappOpen(false);
+    };
+
+    const handleSmsModalClose = () => {
+        setIsSendSmsOpen(false);
+    };
+
+    // Clear selection after successful operations
+    const clearSelection = () => {
+        setSelectedRows(new Set());
+    };
+
     // Handle search from DataTable - debounced to avoid too many API calls
     const handleSearch = (query: string) => {
         setSearchTerm(query);
@@ -871,7 +969,7 @@ const AdmissionStudentData = () => {
         });
 
         return dynamicColumns;
-    }, [pageNumber, pageSize, tableHeads]);
+    }, [pageNumber, pageSize, tableHeads, selectedRows, data, handleSelectAll, handleSelectRow, handleViewAdmission, handleViewTransactions, handleViewTimeline, handleViewDocuments, handleDeleteAdmission, handleViewBankDetails, handleViewFollowUp, handleMoveApplication, handleMoveStudent, handleClickToCall, checkPermission]);
 
 
 
@@ -1050,6 +1148,96 @@ const AdmissionStudentData = () => {
                 ))}
             </div>
 
+            {/* Bulk Action Buttons - Show when rows are selected */}
+            {selectedRows.size > 0 && !hasError && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-700">
+                                {selectedRows.size} student{selectedRows.size > 1 ? 's' : ''} selected
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {/* Send Email */}
+                            {checkPermission('sendBulkAdmissionReminderEmail') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendEmail}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Send Email"
+                                >
+                                    <Mail size={16} className="mr-1" />
+                                    Send Email
+                                </Button>
+                            )}
+
+                            {/* Send WhatsApp Web */}
+                            {checkPermission('sendMultipleAdmissionReminderWhatsAppWebCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendWhatsappWeb}
+                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
+                                    title="Send WhatsApp Web"
+                                >
+                                    <MessageCircle size={16} className="mr-1" />
+                                    WhatsApp Web
+                                </Button>
+                            )}
+
+                            {/* Send WhatsApp */}
+                            {checkPermission('sendMultipleAdmissionReminderWhatsAppCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendWhatsapp}
+                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
+                                    title="Send WhatsApp"
+                                >
+                                    <MessageCircle size={16} className="mr-1" />
+                                    WhatsApp
+                                </Button>
+                            )}
+
+                            {/* Send SMS */}
+                            {checkPermission('sendMultipleAdmissionReminderSMSCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendSms}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Send SMS"
+                                >
+                                    <Send size={16} className="mr-1" />
+                                    Send SMS
+                                </Button>
+                            )}
+
+                            {/* Print Forms - No permission required */}
+                            <Button
+                                variant="outline"
+                                onClick={handlePrintSelectedForms}
+                                className="!py-1.5 !px-3 text-sm border-gray-300 text-gray-700 hover:bg-gray-100"
+                                title="Print Forms"
+                            >
+                                <Printer size={16} className="mr-1" />
+                                Print Forms
+                            </Button>
+
+                            {/* Bulk Update Counselor */}
+                            {checkPermission('counselorUpdateBulkRequest') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkUpdateCounselor}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Bulk Update Counselor"
+                                >
+                                    <Users size={16} className="mr-1" />
+                                    Update Counselor
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* View Admission (Edit Mode) */}
             <AddApplicationDataPanel
                 isOpen={isViewAdmissionOpen}
@@ -1188,6 +1376,43 @@ const AdmissionStudentData = () => {
                     // Refresh data after successful move
                     refetch();
                 }}
+            />
+
+            {/* Bulk Action Modals */}
+            <SendEmailModal
+                isOpen={isSendEmailOpen}
+                onClose={handleEmailModalClose}
+                selectedStudents={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendWhatsappWebModal
+                isOpen={isSendWhatsappWebOpen}
+                onClose={handleWhatsappWebModalClose}
+                selectedStudents={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendWhatsappModal
+                isOpen={isSendWhatsappOpen}
+                onClose={handleWhatsappModalClose}
+                selectedLeads={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendSmsModal
+                isOpen={isSendSmsOpen}
+                onClose={handleSmsModalClose}
+                selectedLeads={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <BulkUpdateCounselorModal
+                isOpen={isBulkCounselorOpen}
+                onClose={() => setIsBulkCounselorOpen(false)}
+                selectedCount={selectedRows.size}
+                entityId={entityId}
+                onUpdate={handleCounselorUpdate}
             />
 
             {/* Need Help Panel */}

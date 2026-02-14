@@ -10,6 +10,7 @@ interface SendWhatsappModalProps {
     isOpen: boolean;
     onClose: () => void;
     selectedLeads: AdmissionLead[];
+    onSuccess?: () => void;
 }
 
 const SEND_TO_OPTIONS = [
@@ -19,7 +20,7 @@ const SEND_TO_OPTIONS = [
     { value: 'guardian', label: 'GUARDIAN' }
 ];
 
-const SendWhatsappModal = ({ isOpen, onClose, selectedLeads }: SendWhatsappModalProps) => {
+const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWhatsappModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const { showToast } = useToast();
@@ -118,7 +119,8 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads }: SendWhatsappModal
 
         sendWhatsapp(payload, {
             onSuccess: () => {
-                showToast('success', 'Messages will be initiated'); // Exact Angular message
+                showToast('success', 'WhatsApp messages will be initiated');
+                onSuccess?.(); // Call the provided onSuccess callback
                 onClose();
                 // Reset form
                 setSelectedTemplateId('');

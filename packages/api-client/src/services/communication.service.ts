@@ -30,5 +30,15 @@ export const communicationService = {
     sendMultipleAdmissionReminderWhatsAppCommunication: async (payload: any) => {
         const response = await apiClient.post(`/sendMultipleAdmissionReminderWhatsApp/communication`, payload);
         return response.data;
+    },
+
+    sendMultipleAdmissionReminderEmailCommunication: async (payload: any) => {
+        const response = await apiClient.post(`/sendMultipleAdmissionReminderEmail/communication`, payload);
+        return response.data;
+    },
+
+    sendMultipleAdmissionReminderWhatsAppWebCommunication: async (payload: any) => {
+        const response = await apiClient.post(`/sendMultipleAdmissionReminderWhatsAppWeb/communication`, payload);
+        return response.data;
     }
 };
