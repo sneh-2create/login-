@@ -143,4 +143,50 @@ export const admissionStudentDataService = {
         const response = await apiClient.get<any>(`/view/studentMaster?entity=${entity}&session=${session}`);
         return response.data;
     },
+
+    checkDuplicate: async (payload: {
+        entity: string;
+        session: string;
+        field: string;
+        value: string;
+        excludeId?: string;
+    }) => {
+        const response = await apiClient.post<{ duplicates: any[] }>('/checkDuplicate/admissionStudentData', payload);
+        return response.data;
+    },
+
+    listSubjectCombinationWithBatch: async (
+        entityId: string,
+        session: string,
+        course: string,
+        stream: string,
+        batch?: string
+    ) => {
+        let queryParams = `entity=${entityId}&session=${session}&course=${encodeURIComponent(course)}&stream=${stream}`;
+        if (batch) {
+            queryParams += `&batch=${batch}`;
+        }
+        const response = await apiClient.get<any[]>(`/list/subjectCombination?${queryParams}`);
+        return response.data;
+    },
+
+    listNepSubject: async (
+        entityId: string,
+        session: string,
+        course: string,
+        stream: string,
+        batch?: string
+    ) => {
+        let queryParams = `entity=${entityId}&session=${session}&course=${encodeURIComponent(course)}&stream=${stream}`;
+        if (batch) {
+            queryParams += `&batch=${batch}`;
+        }
+        const response = await apiClient.get<any[]>(`/list/nepSubject?${queryParams}`);
+        return response.data;
+    },
+
+    listPartnerInstitute: async (entityId: string) => {
+        const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
+        return response.data;
+    },
 };

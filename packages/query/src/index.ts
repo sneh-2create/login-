@@ -23,6 +23,7 @@ export * from './useCommunication';
 export * from './faq';
 export * from './common';
 export * from './hooks/admission/useAdmissionTemplates';
+export * from './hooks/admission/useAdmissionStudentData';
 
 
 

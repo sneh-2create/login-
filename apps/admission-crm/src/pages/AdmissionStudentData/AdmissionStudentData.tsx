@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
 import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
@@ -26,7 +26,7 @@ import {
     ArrowRight,
     Phone
 } from 'lucide-react';
-import AddStudentModal from './components/AddStudentModal';
+import AddApplicationDataPanel from './components/AddApplicationDataPanel';
 import FilterModal from './components/FilterModal';
 import UploadExcelModal from './components/UploadExcelModal';
 import TimelineModal from '../../components/Modals/TimelineModal';
@@ -92,7 +92,6 @@ const AdmissionStudentData = () => {
 
 
     // Mutations
-    const addStudentMutation = useAddAdmissionStudentData();
     const addReportFileMutation = useAddReportFile();
     const clickToCallMutation = useClickToCall();
 
@@ -250,23 +249,6 @@ const AdmissionStudentData = () => {
         return permissions.includes(permission);
     };
 
-    // Handlers
-    const handleAddStudent = async (formData: any) => {
-        try {
-            await addStudentMutation.mutateAsync({
-                ...formData,
-                entity: entityId,
-                session: session,
-                currentStage: 'Registered', // Default stage
-                date: new Date().getTime(),
-            });
-            setIsAddModalOpen(false);
-            refetch();
-            refetchStages();
-        } catch (error) {
-            console.error('Failed to add student:', error);
-        }
-    };
 
     // Handle Excel Export (matching Angular - no display names, no filters)
     const handleExportExcel = () => {
@@ -1062,13 +1044,18 @@ const AdmissionStudentData = () => {
                 />
             )}
 
-            <AddStudentModal
+
+            {/* Add Application Data Panel */}
+            <AddApplicationDataPanel
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
-                onSubmit={handleAddStudent}
-                isLoading={addStudentMutation.isPending}
-                entityId={entityId}
+                mode="add"
+                onSuccess={() => {
+                    refetch();
+                    refetchStages();
+                }}
             />
+
 
             <FilterModal
                 isOpen={isFilterModalOpen}

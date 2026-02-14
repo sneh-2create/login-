@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import NegativeTagModal from './NegativeTagModal';
 import ViewFollowUpModal from '../../../components/Modals/ViewFollowUpModal';
 import { useAdmissionStageSetup } from '@od-erp/query';
-import { ALL_STUDENT_FIELDS } from '../config/studentFields';
+import { ALL_STUDENT_FIELDS } from '@od-erp/constants';
 import { useMemo } from 'react';
 
 interface ViewAdmissionDetailsProps {
