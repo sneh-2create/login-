@@ -93,5 +93,48 @@
 
         /* UI Input Placeholder Color */
         --ui-placeholder-color: #adaebc;
+
+        /* Login Screen Colors */
+        --login-primary: #e95028;
+        --login-primary-hover: #d04320;
+        --login-primary-shadow: rgba(249, 115, 22, 0.2);
+        --login-bg-gradient-start: #e8f4f8;
+        --login-bg-gradient-end: #d4e8f0;
+        --login-text-primary: #333333;
+        --login-text-secondary: #666666;
+        --login-text-muted: #6b7280;
+        --login-border: #e5e7eb;
+        --login-bg-gray: #f3f4f6;
+        --login-card-shadow: rgba(0, 0, 0, 0.15);
+        --login-feature-purple-bg: #f3f0ff;
+        --login-feature-purple-hover: #e6ddff;
+        --login-feature-purple-icon-bg: #e5ddff;
+        --login-feature-purple-icon: #7c3aed;
+        --login-feature-green-bg: #effcf6;
+        --login-feature-green-hover: #d9f8ea;
+        --login-feature-green-icon-bg: #dcfce7;
+        --login-feature-green-icon: #16a34a;
+        --login-feature-red-bg: #fff5f5;
+        --login-feature-red-hover: #ffe1e1;
+        --login-feature-red-icon-bg: #fee2e2;
+        --login-feature-red-icon: #e11d48;
+        --login-feature-yellow-bg: #fff8ed;
+        --login-feature-yellow-hover: #ffeed3;
+        --login-feature-yellow-icon-bg: #fef3c7;
+        --login-feature-yellow-icon: #f59e0b;
     }
+}
+
+/* Login Screen Animations */
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fade-in {
+    animation: fade-in 0.4s ease-out;
 }

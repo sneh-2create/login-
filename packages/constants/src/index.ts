@@ -19,3 +19,4 @@ export * from './report.defaults';
 export * from './table.config';
 export * from './ui.config';
 export * from './studentFields';
+export * from './login.config';

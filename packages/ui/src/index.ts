@@ -11,6 +11,10 @@ export * from './components/Atoms/Dropdown';
 export * from './components/Atoms/DatePicker';
 export * from './components/Atoms/HorizontalTabs';
 export * from './components/Atoms/ActionMenu';
+export * from './components/Atoms/FeatureCard';
+export * from './components/Atoms/AuthToggle';
+export * from './components/Atoms/LoginInput';
+export * from './components/Atoms/LoginButton';
 // Dashboard
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
@@ -29,3 +33,4 @@ export * from './components/EmptyState/EmptyState';
 export * from './components/NeedHelpPanel';
 export { default as ViewDocumentsModal } from './components/ViewDocumentsModal/ViewDocumentsModal';
 export { cn } from './utils';
+export { useTypingText } from './hooks/useTypingText';
