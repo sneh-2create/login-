@@ -17,8 +17,14 @@ interface VerifiedDocument {
     date: Date;
 }
 
-const VerifyDocuments = () => {
-    const { id } = useParams<{ id: string }>();
+interface VerifyDocumentsProps {
+    inline?: boolean;
+    studentId?: string;
+}
+
+const VerifyDocuments = ({ inline = false, studentId }: VerifyDocumentsProps = {}) => {
+    const { id: paramId } = useParams<{ id: string }>();
+    const id = studentId || paramId;
     const navigate = useNavigate();
     const { data: student, isLoading, refetch } = useViewAdmissionStudentData(id || '');
     const [selectedDocument, setSelectedDocument] = useState('');
@@ -55,7 +61,7 @@ const VerifyDocuments = () => {
         if (stageSetup && stageSetup.length > 0) {
             docList = docList.map(doc => {
                 let customName = doc.label;
-                
+
                 // Search through all stages for custom field names
                 for (const stage of stageSetup) {
                     if (stage.fields) {
@@ -67,7 +73,7 @@ const VerifyDocuments = () => {
                         }
                     }
                 }
-                
+
                 return { ...doc, label: customName };
             });
         }
@@ -100,13 +106,13 @@ const VerifyDocuments = () => {
     // Transform Google Drive URLs to preview mode
     const getDocumentUrl = (url: string) => {
         if (!url) return '';
-        
+
         // Transform Google Drive URLs
         if (url.includes('drive.google.com')) {
             // Replace 'view' with 'preview' for iframe display
             return url.replace('/view', '/preview');
         }
-        
+
         return url;
     };
 
@@ -128,10 +134,10 @@ const VerifyDocuments = () => {
         setLoading(true);
         try {
             // Get current verified documents or initialize empty array
-            const verifiedDocuments = Array.isArray(student.verifiedDocuments) 
-                ? [...student.verifiedDocuments] 
+            const verifiedDocuments = Array.isArray(student.verifiedDocuments)
+                ? [...student.verifiedDocuments]
                 : [];
-            
+
             // Add new verification
             const newVerification = {
                 documentName: selectedDocument,
@@ -141,7 +147,7 @@ const VerifyDocuments = () => {
                 userMobile: userMobile,
                 date: new Date()
             };
-            
+
             verifiedDocuments.push(newVerification);
 
             // Prepare payload - send entire student object with updated verifiedDocuments
@@ -149,13 +155,13 @@ const VerifyDocuments = () => {
                 ...student,
                 verifiedDocuments
             };
-            
+
             // Update student data
             await editStudentMutation.mutateAsync(payload);
-            
+
             // Refetch to get updated data
             await refetch();
-            
+
             alert('Document verified successfully!');
         } catch (error) {
             console.error('=== Verification failed ===');
@@ -168,7 +174,7 @@ const VerifyDocuments = () => {
 
     // Unverify document
     const handleUnverifyDocument = async () => {
-        
+
         if (!student || !selectedDocument) {
             console.error('Missing required data:', { student: !!student, selectedDocument });
             alert('Missing required information.');
@@ -183,19 +189,19 @@ const VerifyDocuments = () => {
                     (doc: VerifiedDocument) => doc.documentName !== selectedDocument
                 )
                 : [];
-            
+
             // Prepare payload - send entire student object with updated verifiedDocuments
             const payload = {
                 ...student,
                 verifiedDocuments
             };
-            
+
             // Update student data
             await editStudentMutation.mutateAsync(payload);
-            
+
             // Refetch to get updated data
             await refetch();
-            
+
             alert('Document unverified successfully!');
         } catch (error) {
             console.error('=== Unverification failed ===');
@@ -210,22 +216,23 @@ const VerifyDocuments = () => {
     if (!student) return <div className="p-8 text-center text-red-500">Student not found</div>;
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-            {/* Header */}
+        <div className={inline ? "flex flex-col h-full" : "min-h-screen bg-gray-50 flex flex-col"}>
+            {/* Header - Only show when not inline */}
+
             <div className="bg-white px-6 py-4 border-b border-gray-200">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900 mb-2">Verify Documents</h1>
-                        <Breadcrumb items={breadcrumbItems} />
+                        {!inline && <Breadcrumb items={breadcrumbItems} />}
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button
+                        {!inline && (<Button
                             variant="outline"
                             onClick={() => navigate('/admission/studentData')}
                         >
                             Back to List
-                        </Button>
+                        </Button>)}
                         <Button
                             variant="primary"
                             className="flex items-center gap-2"

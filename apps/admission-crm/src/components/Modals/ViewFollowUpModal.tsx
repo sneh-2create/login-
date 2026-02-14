@@ -13,9 +13,10 @@ interface ViewFollowUpModalProps {
     onClose: () => void;
     student: AdmissionLead | null;
     onSaveSuccess?: () => void;
+    inline?: boolean;
 }
 
-const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFollowUpModalProps) => {
+const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = false }: ViewFollowUpModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     const { data: followUps, isLoading: isFollowUpsLoading } = useAdmissionFollowUps(entityId, student?._id || '');
@@ -236,24 +237,9 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
 
     if (!isOpen || !student) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden m-4">
-                <div className="flex justify-between items-center px-6 py-4 border-b">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                            <MessageSquare className="mr-2 h-5 w-5 text-blue-600" />
-                            Follow Ups
-                        </h2>
-                    </div>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
-                        <X size={20} />
-                    </button>
-                </div>
-
-                <StudentInfoBar student={student} />
-
-                <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+    // Content component
+    const content = (
+        <div className={inline ? "space-y-6" : "p-6 overflow-y-auto flex-1 flex flex-col gap-6"}>
                     {/* Schedule Follow-Up Form */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div className="flex justify-between items-center mb-4">
@@ -353,6 +339,32 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                         )}
                     </div>
                 </div>
+    );
+
+    // Inline mode - render content directly
+    if (inline) {
+        return content;
+    }
+
+    // Modal mode - render with modal wrapper
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden m-4">
+                <div className="flex justify-between items-center px-6 py-4 border-b">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                            <MessageSquare className="mr-2 h-5 w-5 text-primary" />
+                            Follow Ups
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <StudentInfoBar student={student} />
+
+                {content}
             </div>
         </div>
     );

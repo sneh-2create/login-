@@ -10,9 +10,10 @@ interface MoveApplicationModalProps {
     onClose: () => void;
     student: AdmissionLead | null;
     onSuccess?: () => void;
+    inline?: boolean;
 }
 
-const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess }: MoveApplicationModalProps) => {
+const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess, inline = false }: MoveApplicationModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const user = useAppSelector((state) => state.auth.user) as any;
     const entityGroup = user?.entityGroup || [];
@@ -112,6 +113,70 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess }: MoveAppli
 
     if (!isOpen || !student) return null;
 
+    // Content component
+    const content = (
+        <div className={inline ? "space-y-4" : "px-3 py-2"}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {/* Entity Selection */}
+                <div>
+                    <Dropdown
+                        label="Select Entity"
+                        options={entityGroup.map((e: any) => ({ 
+                            label: e.name, 
+                            value: e.entityId,
+                            disabled: checkDisability(e)
+                        }))}
+                        value={selectedEntity}
+                        onChange={handleEntityChange}
+                    />
+                </div>
+
+                {/* Stage Selection */}
+                <div>
+                    <Dropdown
+                        label="Select Stage"
+                        options={stageOptions}
+                        value={selectedStage}
+                        onChange={handleStageChange}
+                    />
+                </div>
+            </div>
+
+            {/* Session Display */}
+            {admissionSession && (
+                <p className="text-sm text-gray-500 mb-2">
+                    Admission Session: {admissionSession}
+                </p>
+            )}
+
+            {/* Note */}
+            <p className="text-sm text-gray-500 mb-4">
+                Note: Please make sure if course combination exists in new entity
+            </p>
+
+            {/* Submit Button for inline mode */}
+            {inline && (
+                <div className="flex justify-end pt-4 border-t">
+                    <Button
+                        variant="primary"
+                        onClick={handleSubmit}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+                    >
+                        {isLoading ? 'Moving...' : 'Move Application'}
+                        <ArrowRight size={16} />
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+
+    // Inline mode - render content directly
+    if (inline) {
+        return content;
+    }
+
+    // Modal mode - render with modal wrapper
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
@@ -137,46 +202,7 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess }: MoveAppli
                     </div>
                 </div>
 
-                {/* Form */}
-                <div className="px-3 py-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        {/* Entity Selection */}
-                        <div>
-                            <Dropdown
-                                label="Select Entity"
-                                options={entityGroup.map((e: any) => ({ 
-                                    label: e.name, 
-                                    value: e.entityId,
-                                    disabled: checkDisability(e)
-                                }))}
-                                value={selectedEntity}
-                                onChange={handleEntityChange}
-                            />
-                        </div>
-
-                        {/* Stage Selection */}
-                        <div>
-                            <Dropdown
-                                label="Select Stage"
-                                options={stageOptions}
-                                value={selectedStage}
-                                onChange={handleStageChange}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Session Display */}
-                    {admissionSession && (
-                        <p className="text-sm text-gray-500 mb-2">
-                            Admission Session: {admissionSession}
-                        </p>
-                    )}
-
-                    {/* Note */}
-                    <p className="text-sm text-gray-500 mb-4">
-                        Note: Please make sure if course combination exists in new entity
-                    </p>
-                </div>
+                {content}
 
                 {/* Footer */}
                 <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">

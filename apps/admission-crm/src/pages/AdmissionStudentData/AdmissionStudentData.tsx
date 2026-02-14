@@ -144,7 +144,55 @@ const AdmissionStudentData = () => {
 
     // Navigate to admission details
     const navigateToAdmissionDetails = (id: string) => {
-        navigate(`/admission/student-data/${id}`);
+        // Store current filters in localStorage for restoration
+        const filterObjectData: any = {};
+        
+        if (selectedStage && selectedStage !== 'Total') {
+            filterObjectData.stage = selectedStage;
+        }
+        if (currentFilters.course) {
+            filterObjectData.course = currentFilters.course;
+        }
+        if (currentFilters.stream) {
+            filterObjectData.stream = currentFilters.stream;
+        }
+        if (currentFilters.batch) {
+            filterObjectData.batch = currentFilters.batch;
+        }
+        if (currentFilters.startDate) {
+            filterObjectData.startDate = currentFilters.startDate;
+        }
+        if (currentFilters.endDate) {
+            filterObjectData.endDate = currentFilters.endDate;
+        }
+        if (currentFilters.updatedAtStartDate) {
+            filterObjectData.updatedAtStartDate = currentFilters.updatedAtStartDate;
+        }
+        if (currentFilters.updatedAtEndDate) {
+            filterObjectData.updatedAtEndDate = currentFilters.updatedAtEndDate;
+        }
+        if (currentFilters.counselorId) {
+            filterObjectData.counselorId = currentFilters.counselorId;
+        }
+        if (currentFilters.tag) {
+            filterObjectData.tag = currentFilters.tag;
+        }
+        if (currentFilters.source) {
+            filterObjectData.source = currentFilters.source;
+        }
+        if (currentFilters.engagementStatus) {
+            filterObjectData.engagementStatus = currentFilters.engagementStatus;
+        }
+        if (currentFilters.noCounselor !== undefined) {
+            filterObjectData.noCounselor = currentFilters.noCounselor;
+        }
+        
+        localStorage.setItem('filterInDetailsPage', JSON.stringify(filterObjectData));
+        
+        // Navigate with state
+        navigate(`/admission/student-data/${id}`, {
+            state: { from: 'studentData' }
+        });
     };
 
     // Mutations

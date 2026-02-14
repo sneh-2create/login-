@@ -10,6 +10,7 @@ interface ViewDocumentsModalProps {
     documentList?: DocumentConfig[]; // Optional custom document list
     permissions?: string[]; // User permissions array
     onUploadSuccess?: () => void; // Callback to refresh data
+    inline?: boolean; // New prop for inline rendering
     apiConfig: {
         getPresignedUrl: (_qac: string, _payload: any) => Promise<any>;
         uploadFileToUrl: (_url: string, _file: File, _contentType: string) => Promise<any>;
@@ -29,6 +30,7 @@ const ViewDocumentsModal = ({
     documentList = STUDENT_ADMISSION_UPLOAD_DOCUMENT_LIST,
     permissions = [],
     onUploadSuccess,
+    inline = false,
     apiConfig 
 }: ViewDocumentsModalProps) => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -211,6 +213,97 @@ const ViewDocumentsModal = ({
         )
     }
 
+    // Content component
+    const content = (
+        <div className={inline ? "space-y-3" : "p-6 overflow-y-auto flex-1 bg-gray-50"}>
+            <div className="space-y-3">
+                {documents.map((doc, index) => (
+                    <div 
+                        key={doc.key} 
+                        className={inline ? "bg-white rounded-lg py-2 flex items-center justify-between hover:shadow-md transition-shadow" : "bg-white rounded-lg px-6 py-4 flex items-center justify-between hover:shadow-md transition-shadow"}
+                    >
+                        {/* Left: Serial Number + Document Name */}
+                        <div className="flex items-center gap-4 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
+                                {index + 1}
+                            </div>
+                            <span className="text-gray-900 font-medium text-base">
+                                {doc.label}
+                            </span>
+                        </div>
+
+                        {/* Right: Status + Upload Icon */}
+                        <div className="flex items-center gap-4">
+                            {/* Status Badge */}
+                            {doc.isUploaded ? (
+                                <div className="flex items-center gap-2 text-green-600">
+                                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <CircleCheck size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium">Uploaded</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-red-600">
+                                    <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
+                                        <CircleX size={14} />
+                                    </div>
+                                    <span className="text-sm font-medium">Not Uploaded</span>
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2">
+                                {doc.isUploaded ? (
+                                    <>
+                                        <button
+                                            onClick={() => handleView(doc.url)}
+                                            className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
+                                            title="View Document"
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                        {hasEditPermission && (
+                                            <button
+                                                onClick={() => handleUploadClick(doc)}
+                                                className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
+                                                title="Upload Again"
+                                            >
+                                                <CloudUpload size={18} />
+                                            </button>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        {hasEditPermission && (
+                                            <button
+                                                onClick={() => handleUploadClick(doc)}
+                                                className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
+                                                title="Upload Document"
+                                            >
+                                                <CloudUpload size={18} />
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
+    // Inline mode - render content directly
+    if (inline) {
+        return (
+            <>
+                {content}
+                <UploadModal />
+            </>
+        );
+    }
+
+    // Modal mode - render with modal wrapper
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col">
@@ -227,83 +320,7 @@ const ViewDocumentsModal = ({
                     </button>
                 </div>
 
-                {/* Document List */}
-                <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-                    <div className="space-y-3">
-                        {documents.map((doc, index) => (
-                            <div 
-                                key={doc.key} 
-                                className="bg-white rounded-lg px-6 py-4 flex items-center justify-between hover:shadow-md transition-shadow"
-                            >
-                                {/* Left: Serial Number + Document Name */}
-                                <div className="flex items-center gap-4 flex-1">
-                                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
-                                        {index + 1}
-                                    </div>
-                                    <span className="text-gray-900 font-medium text-base">
-                                        {doc.label}
-                                    </span>
-                                </div>
-
-                                {/* Right: Status + Upload Icon */}
-                                <div className="flex items-center gap-4">
-                                    {/* Status Badge */}
-                                    {doc.isUploaded ? (
-                                        <div className="flex items-center gap-2 text-green-600">
-                                            <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
-                                                <CircleCheck size={14} />
-                                            </div>
-                                            <span className="text-sm font-medium">Uploaded</span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center gap-2 text-red-600">
-                                            <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                                                <CircleX size={14} />
-                                            </div>
-                                            <span className="text-sm font-medium">Not Uploaded</span>
-                                        </div>
-                                    )}
-
-                                    {/* Action Buttons */}
-                                    <div className="flex items-center gap-2">
-                                        {doc.isUploaded ? (
-                                            <>
-                                                <button
-                                                    onClick={() => handleView(doc.url)}
-                                                    className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
-                                                    title="View Document"
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
-                                                {hasEditPermission && (
-                                                    <button
-                                                        onClick={() => handleUploadClick(doc)}
-                                                        className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
-                                                        title="Upload Again"
-                                                    >
-                                                        <CloudUpload size={18} />
-                                                    </button>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <>
-                                                {hasEditPermission && (
-                                                    <button
-                                                        onClick={() => handleUploadClick(doc)}
-                                                        className="w-10 h-10 rounded-lg bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors"
-                                                        title="Upload Document"
-                                                    >
-                                                        <CloudUpload size={18} />
-                                                    </button>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {content}
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t bg-white rounded-b-lg flex justify-end">
