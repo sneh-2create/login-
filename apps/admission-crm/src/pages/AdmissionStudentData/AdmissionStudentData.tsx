@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
-import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu } from '@od-erp/ui';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
 
@@ -30,7 +30,6 @@ import AddStudentModal from './components/AddStudentModal';
 import FilterModal from './components/FilterModal';
 import UploadExcelModal from './components/UploadExcelModal';
 import TimelineModal from '../../components/Modals/TimelineModal';
-import ViewDocumentsModal from './components/ViewDocumentsModal';
 import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
@@ -39,6 +38,7 @@ import MoveApplicationModal from './components/MoveApplicationModal';
 import MoveStudentModal from './components/MoveStudentModal';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
+import { admissionStudentDataService } from '@od-erp/api-client';
 
 const AdmissionStudentData = () => {
     // Metadata
@@ -1094,9 +1094,21 @@ const AdmissionStudentData = () => {
 
             <ViewDocumentsModal
                 isOpen={isViewDocumentsOpen}
-                onClose={() => setIsViewDocumentsOpen(false)}
+                onClose={() => {
+                    setIsViewDocumentsOpen(false);
+                    setDocumentStudent(null);
+                }}
                 student={documentStudent}
+                entityName={documentStudent?.name}
+                permissions={permissions}
+                onUploadSuccess={() => refetch()}
+                apiConfig={{
+                    getPresignedUrl: admissionStudentDataService.getPresignedUrl,
+                    uploadFileToUrl: admissionStudentDataService.uploadFileToUrl,
+                    uploadDocuments: admissionStudentDataService.uploadAdmissionDocuments,
+                }}
             />
+
 
             <BankDetailsModal
                 isOpen={isBankDetailsOpen}

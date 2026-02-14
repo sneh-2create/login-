@@ -17,3 +17,4 @@ export * from './badge.config';
 export * from './table.config';
 export * from './report.defaults';
 export * from './admission';
+export * from './documents';

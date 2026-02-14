@@ -1,11 +1,8 @@
 
 import { useEffect, useState } from 'react';
-
 import { format } from 'date-fns';
-import PrintLayout from '../../components/PrintLayout';
 
 const PrintStudentTimeline = () => {
-
     const [student, setStudent] = useState<any>(null);
     const [timeline, setTimeline] = useState<any[]>([]);
 
@@ -19,118 +16,153 @@ const PrintStudentTimeline = () => {
         if (storedTimeline) {
             setTimeline(JSON.parse(storedTimeline));
         }
+
+        // Auto-print after 1 second (matching Angular)
+        setTimeout(() => {
+            window.print();
+        }, 1000);
+
+        // Clean up localStorage (matching Angular)
+        localStorage.removeItem('print_student_data');
+        localStorage.removeItem('print_timeline_data');
     }, []);
 
-    // If basic data is present, show it.
-    if (!student && !timeline.length) return <div className="p-8 text-center">Loading or No Data...</div>;
-
-    const reportName = `Timeline - ${student?.name || ''} (${student?.applicationNumber || ''})`;
+    if (!student && !timeline.length) {
+        return <div className="p-8 text-center">Loading or No Data...</div>;
+    }
 
     return (
-        <PrintLayout reportName={reportName} noHeader={true}>
-            <div className="font-sans text-sm">
-                {/* Student Details Summary Table */}
-                {/* Student Details Summary Table */}
-                <div className="mb-6 border border-gray-200 rounded p-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2 gap-x-8">
-                        <div><span className="font-bold text-gray-700">Name:</span> {student?.name}</div>
-                        <div><span className="font-bold text-gray-700">Application No:</span> {student?.applicationNumber}</div>
-                        <div><span className="font-bold text-gray-700">Father Name:</span> {student?.fatherName}</div>
-                        <div><span className="font-bold text-gray-700">Counsellor Name:</span> {student?.counselorName}</div>
-                        <div><span className="font-bold text-gray-700">Phone No:</span> {student?.phone}</div>
-                        <div><span className="font-bold text-gray-700">Current Stage:</span> {student?.currentStage || 'Data Requested'}</div>
-                        <div><span className="font-bold text-gray-700">Date:</span> {format(new Date(), 'dd/MMM/yyyy')}</div>
-                    </div>
+        <>
+            <div className="p-8 font-sans text-sm">
+                {/* Student Details */}
+                <div className="mb-4">
+                    <label className="block mb-1"><b>Name:</b> {student?.name}</label>
+                    <label className="block mb-1"><b>Application No.:</b> {student?.applicationNumber}</label>
+                    <label className="block mb-1"><b>Father Name:</b> {student?.fatherName}</label>
+                    <label className="block mb-1"><b>Counsellor Name:</b> {student?.counselorName}</label>
+                    <label className="block mb-1"><b>Phone No.:</b> {student?.phone}</label>
+                    <label className="block mb-1"><b>Current Stage:</b> {student?.currentStage || 'Data Requested'}</label>
+                    <label className="block mb-1"><b>Date:</b> {format(new Date(), 'dd/MMM/yyyy')}</label>
                 </div>
 
-                {/* Timeline Content */}
-                {/* Timeline Content */}
-                <div className="border-t border-gray-200 pt-6">
-                    <h4 className="font-bold text-lg mb-6 text-[#1e429f] flex items-center gap-2">
-                        <span className="p-1 bg-[#1e429f] rounded-full text-white"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span>
-                        Timeline
-                    </h4>
+                {/* Timeline Section */}
+                <div className="timeline mt-8 relative">
+                    <div className="timeline__items pt-6 pb-8">
+                        {/* Timeline Header */}
+                        <div className="timeline-month mb-6 inline-flex items-center gap-2 text-base font-bold text-white bg-primary px-4 py-2 rounded-full relative">
+                            <div className="monthIcon absolute left-3">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                            </div>
+                            <span className="ml-4">Timeline</span>
+                        </div>
 
-                    <div className="relative border-l-2 border-gray-200 ml-5 space-y-8 pl-8 pb-4">
-                        {timeline?.map((item: any, index: number) => {
-                            // Robust Data Extraction
-                            const dateStr = item.createdAt || item.date;
-                            const dateObj = dateStr ? new Date(dateStr) : new Date();
+                        {/* Timeline Items Container with vertical line */}
+                        <div className="relative">
+                            {/* Vertical line */}
+                            <div className="absolute left-[14px] top-0 bottom-0 w-1 bg-gray-300 rounded"></div>
 
-                            // User extraction: handle object or string
-                            let user = 'System';
-                            if (item.userName) user = item.userName;
-                            else if (item.createdBy && typeof item.createdBy === 'object' && item.createdBy.name) user = item.createdBy.name;
-                            else if (item.createdBy) user = String(item.createdBy);
-                            else if (item.user) user = item.user;
+                            {timeline?.map((item: any, index: number) => {
+                                const dateObj = item.date ? new Date(item.date) : new Date();
+                                
+                                return (
+                                    <div key={index} className="timeline-section mb-6 relative pl-9">
+                                        {/* Red dot on timeline */}
+                                        <div className="absolute left-[10px] top-2 w-[10px] h-[10px] bg-white border-[3px] border-red-500 rounded-full z-10"></div>
 
-                            const type = item.type || 'Remark';
-                            const subType = item.subType || '';
-                            const content = item.content || item.remark || item.message || item.description || '-';
-
-                            return (
-                                <div key={index} className="relative group">
-                                    {/* Dot on Line */}
-                                    <div className="absolute -left-[41px] top-3 w-4 h-4 rounded-full bg-white border-4 border-[#ef4444] z-10"></div>
-
-                                    {/* Date Badge Row */}
-                                    <div className="mb-3 flex items-center gap-2">
-                                        <div className="bg-[#1e429f] text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                                            {format(dateObj, 'dd/MM/yyyy')}
-                                        </div>
-                                        <div className="bg-[#eff6ff] text-[#1e429f] text-xs font-bold px-2 py-1 rounded border border-blue-100">
-                                            {format(dateObj, 'hh:mm a')}
-                                        </div>
-                                    </div>
-
-                                    {/* Card */}
-                                    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm print:shadow-none print:border-gray-300">
-                                        {/* Header: User / Type */}
-                                        <div className="flex items-center gap-2 mb-2">
-                                            {/* Icon based on Type */}
-                                            <span className="text-[#1e429f]">
-                                                {type.toLowerCase().includes('communication') ? (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                                ) : type.toLowerCase().includes('institute') ? (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                                ) : (
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                                )}
-                                            </span>
-                                            <span className="font-bold text-gray-800 text-sm">
-                                                {type} {subType ? ` - ${subType}` : ''}
-                                            </span>
-                                        </div>
-
-                                        {/* Content Section */}
-                                        <div>
-                                            <div className="text-xs font-bold text-gray-500 mb-1">Remark</div>
-                                            <div className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                                                {content}
+                                        {/* Date and Time Badges */}
+                                        <div className="flex gap-2 mb-3">
+                                            <div className="timeline-date bg-primary text-white text-xs font-semibold px-3 py-1 rounded-full">
+                                                {format(dateObj, 'dd/MM/yyyy')}
                                             </div>
-                                            {/* Show user if distinct from type logic, usually "User" implies the actor */}
-                                            <div className="mt-2 text-xs text-gray-400 italic text-right">
-                                                - by {user}
+                                            <div className="timeline-time bg-teal-100 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full">
+                                                {format(dateObj, 'hh:mm a')}
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
 
-                        {!timeline?.length && (
-                            <div className="text-gray-500 italic ml-2">No timeline activities found.</div>
-                        )}
+                                        {/* Timeline Box */}
+                                        <div className="timeline-box border border-gray-200 rounded-lg bg-white shadow-sm p-4 ml-2">
+                                            {/* Box Title with Icon and Action Type */}
+                                            <div className="box-title flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                                                {/* Icon based on action type */}
+                                                <span className="text-primary">
+                                                    {item.actionType === 'instituteAction' && (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M3 21h18M5 21V7l8-4 8 4v14M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                        </svg>
+                                                    )}
+                                                    {item.actionType === 'userAction' && (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                                            <circle cx="12" cy="7" r="4"></circle>
+                                                        </svg>
+                                                    )}
+                                                    {item.actionType === 'communication' && (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                                        </svg>
+                                                    )}
+                                                    {item.actionType === 'notes' && (
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                            <polyline points="10 9 9 9 8 9"></polyline>
+                                                        </svg>
+                                                    )}
+                                                </span>
+                                                
+                                                {/* Action Type Label */}
+                                                <span className="font-semibold text-gray-800">
+                                                    {item.actionType === 'instituteAction' && 'Institute'}
+                                                    {item.actionType === 'userAction' && 'User'}
+                                                    {item.actionType === 'communication' && 'Communication'}
+                                                    {item.actionType === 'notes' && 'Notes'}
+                                                    {!item.actionType && 'Event'}
+                                                </span>
+                                            </div>
+
+                                            {/* Box Content */}
+                                            <div className="box-content">
+                                                <div className="box-item mb-2">
+                                                    <strong className="text-gray-700">Remark</strong>
+                                                </div>
+                                                <div className="box-item text-gray-800 whitespace-pre-wrap">
+                                                    {item.remark || '-'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+
+                            {!timeline?.length && (
+                                <div className="text-gray-500 italic pl-9">No timeline activities found.</div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
-            {/* Custom styles not needed as PrintLayout handles main print styles, but keeping component specific tweaks */}
+
+            {/* Print Styles */}
             <style>{`
                 @media print {
-                     .print\\:shadow-none { box-shadow: none !important; }
+                    body { margin: 0; padding: 0; }
+                    .no-print { display: none !important; }
+                }
+                
+                .timeline-section {
+                    page-break-inside: avoid;
+                }
+                
+                .timeline-box {
+                    page-break-inside: avoid;
                 }
             `}</style>
-        </PrintLayout>
+        </>
     );
 };
 
