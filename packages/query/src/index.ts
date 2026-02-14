@@ -18,6 +18,7 @@ export * from './dailyCollectionReport';
 export * from './dailyCollectionReport';
 export * from './useStudentTimeline';
 export * from './useAttendanceDashboard';
+export * from './useEmployeeDashboard';
 export * from './useAdmissionDashboard';
 export * from './useHodDashboard';
 export * from './useCommunicationDashboard';
@@ -28,5 +29,6 @@ export * from './useProfile';
 export * from './useExaminationDashboard';
 export * from './useAppliedLeaves';
 export * from './useLibraryDashboard';
+
 
 

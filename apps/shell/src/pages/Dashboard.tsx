@@ -5,7 +5,7 @@ import { cn } from '@od-erp/ui';
 
 // Section Placeholders - To be replaced with actual implementations or Module MFEs
 import {
-    EmployeeSection,
+    // EmployeeSection,
     HODSection,
     CommunicationSection,
     AnalyticsSection,
@@ -14,6 +14,7 @@ import {
     CalendarSection
 } from '../components/dashboard/sections/Placeholders';
 import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
+import { EmployeeSection } from '../components/dashboard/sections/EmployeeSection';
 import { ExaminationSection } from '../components/dashboard/sections/ExaminationSection';
 import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
 import { StudentOverviewSection } from '../components/dashboard/sections/StudentOverviewSection';
@@ -28,7 +29,7 @@ const TAB_COMPONENTS: Record<string, React.FC> = {
     fee: AdmissionSection, // Placeholder
     attendance: AttendanceSection,
     examination: ExaminationSection,
-    employee: EmployeeSection, // Fixed: hr -> employee
+    employee: EmployeeSection,
     hod: HODSection, // Fixed: hodDashboard -> hod
     communication: CommunicationSection, // Fixed: communicationDashboard -> communication
     analytics: AnalyticsSection,
