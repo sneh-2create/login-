@@ -18,8 +18,8 @@ export interface AttendanceInstituteSummary {
     sequenceNo?: number;
 }
 
-import { AppliedLeave, LibraryDashboardResponse } from '@od-erp/types';
-export type { AppliedLeave, LibraryDashboardResponse };
+import { AppliedLeave, LibraryDashboardResponse, SISDashboardResponse } from '@od-erp/types';
+export type { AppliedLeave, LibraryDashboardResponse, SISDashboardResponse };
 
 export const dashboardService = {
 
@@ -95,6 +95,13 @@ export const dashboardService = {
 
     getLibraryDashboard: async (entity: string, session: string) => {
         const response = await apiClient.get<LibraryDashboardResponse>('/getLibraryDashboard/dashboard', {
+            params: { entity, session }
+        });
+        return response.data;
+    },
+
+    getSISDashboard: async (entity: string, session: string) => {
+        const response = await apiClient.get<SISDashboardResponse>('/getSISDashboard/dashboard', {
             params: { entity, session }
         });
         return response.data;

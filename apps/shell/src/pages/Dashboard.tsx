@@ -16,26 +16,26 @@ import {
 } from '../components/dashboard/sections/Placeholders';
 import { ExaminationSection } from '../components/dashboard/sections/ExaminationSection';
 import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
+import { StudentOverviewSection } from '../components/dashboard/sections/StudentOverviewSection';
 import { LibrarySection } from '../components/dashboard/sections/LibrarySection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';
 
 const TAB_COMPONENTS: Record<string, React.FC> = {
-    overview: AdmissionSection, // Using AdmissionSection as placeholder for Overview for now
+    overview: StudentOverviewSection,
     admission: AdmissionSection,
-    studentOverview: AdmissionSection, // Placeholder
     fee: AdmissionSection, // Placeholder
     attendance: AttendanceSection,
     examination: ExaminationSection,
-    hr: EmployeeSection,
-    hodDashboard: HODSection,
-    communicationDashboard: CommunicationSection,
+    employee: EmployeeSection, // Fixed: hr -> employee
+    hod: HODSection, // Fixed: hodDashboard -> hod
+    communication: CommunicationSection, // Fixed: communicationDashboard -> communication
     analytics: AnalyticsSection,
     library: LibrarySection,
     profile: ProfileSection,
     calendar: CalendarSection,
-    messManagement: MessSection
+    mess: MessSection // Fixed: messManagement -> mess
 };
 
 const allTabs: TabConfig[] = DASHBOARD_TABS_METADATA.map(meta => ({
