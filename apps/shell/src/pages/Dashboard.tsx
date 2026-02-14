@@ -5,7 +5,6 @@ import { cn } from '@od-erp/ui';
 
 // Section Placeholders - To be replaced with actual implementations or Module MFEs
 import {
-    AdmissionSection,
     EmployeeSection,
     HODSection,
     CommunicationSection,
@@ -14,6 +13,7 @@ import {
     MessSection,
     CalendarSection
 } from '../components/dashboard/sections/Placeholders';
+import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
 import { ExaminationSection } from '../components/dashboard/sections/ExaminationSection';
 import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
 import { StudentOverviewSection } from '../components/dashboard/sections/StudentOverviewSection';

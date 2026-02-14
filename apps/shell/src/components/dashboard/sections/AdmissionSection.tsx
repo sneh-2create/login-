@@ -21,6 +21,9 @@ import {
     UserCheck,
     Clock,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { admissionService } from '@od-erp/api-client';
+import { Select, SelectOption } from '@od-erp/ui';
 import { AdmissionSourceCount } from '@od-erp/types';
 
 // Exact Angular Colors from SCSS
@@ -116,6 +119,20 @@ export const AdmissionSection: React.FC = () => {
         }
     }, [preferences, entityDetails]);
 
+    // Fetch Session List
+    const { data: sessionList } = useQuery({
+        queryKey: ['sessionList', entityId],
+        queryFn: () => admissionService.getSessionList(entityId),
+        enabled: !!entityId,
+    });
+
+    const sessionOptions: SelectOption[] = useMemo(() => {
+        return sessionList?.map((s: any) => ({
+            label: s.name,
+            value: s.name
+        })) || [];
+    }, [sessionList]);
+
     const hasPermission = (perm: string) => permissions?.includes(perm);
 
     const { data: dashboardData, isLoading: isDashboardLoading } = useAdmissionDashboardData(
@@ -165,9 +182,14 @@ export const AdmissionSection: React.FC = () => {
                         <h2 className="text-[26px] font-bold text-gray-800 leading-none">Admission</h2>
                     </div>
                 </div>
-                <div className="mt-4 sm:mt-0 px-4 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
-                    <span className="text-xs text-gray-500 block text-center uppercase tracking-wider">Admission Session</span>
-                    <span className="text-md font-bold text-gray-800 block text-center">{admissionSession}</span>
+                <div className="mt-4 sm:mt-0 w-full sm:w-auto">
+                    <Select
+                        options={sessionOptions}
+                        value={admissionSession}
+                        onChange={(e) => setAdmissionSession(e.target.value)}
+                        containerClassName="w-full sm:w-[200px]"
+                        placeholder="Select Session"
+                    />
                 </div>
             </div>
 
