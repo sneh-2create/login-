@@ -273,6 +273,8 @@ export interface AdmissionStageSetup {
     txnRequired: boolean;
     fields: any[];
     currentStage?: string; // Mapped property
+    stageCounselor?: string[]; // Array of counselor IDs for stage
+    transactionRequired?: boolean; // Alternative name used in some places
 }
 
 export interface AdmissionStageCount {

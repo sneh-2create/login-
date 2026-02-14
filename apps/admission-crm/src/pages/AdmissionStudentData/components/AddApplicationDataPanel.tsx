@@ -126,16 +126,11 @@ const AddApplicationDataPanel = ({
     const [selectedSchoolData, setSelectedSchoolData] = useState<any>(null);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [calculatedAge, setCalculatedAge] = useState<number>(0);
+    const [duplicateStudents, setDuplicateStudents] = useState<any[]>([]);
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
     const [showPrintMenu, setShowPrintMenu] = useState(false);
     const [showVisitRemarkModal, setShowVisitRemarkModal] = useState(false);
     const [visitRemark, setVisitRemark] = useState('');
-    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-    const [duplicateWarning, setDuplicateWarning] = useState<{
-        field: string;
-        value: string;
-        duplicates: any[];
-    } | null>(null);
     const [showFollowUpModal, setShowFollowUpModal] = useState(false);
     const [followUpDate, setFollowUpDate] = useState('');
     const [followUpRemark, setFollowUpRemark] = useState('');
@@ -218,29 +213,39 @@ const AddApplicationDataPanel = ({
     const showListPartnerInstitute = partnerInstitutes && partnerInstitutes.length > 0;
 
     // Age calculation function
-    const calculateAge = (dob: string): number => {
-        if (!dob) return 0;
+    // Calculate age in detailed format (Angular parity)
+    const calculateAge = (dob: string, referenceDate?: string): string => {
+        if (!dob) return '';
         
         const birthDate = new Date(dob);
-        const today = new Date();
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const refDate = referenceDate ? new Date(referenceDate) : new Date();
         
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
+        let years = refDate.getFullYear() - birthDate.getFullYear();
+        let months = refDate.getMonth() - birthDate.getMonth();
+        let days = refDate.getDate() - birthDate.getDate();
+        
+        if (days < 0) {
+            months--;
+            const lastMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 0);
+            days += lastMonth.getDate();
         }
         
-        return age;
+        if (months < 0) {
+            years--;
+            months += 12;
+        }
+        
+        return `${years} years, ${months} months, and ${days} days old.`;
     };
 
-    // Calculate age when DOB changes
+    // Calculate age when DOB or date changes
     useEffect(() => {
         if (formData.dob) {
-            const age = calculateAge(formData.dob);
-            setCalculatedAge(age);
-            setFormData(prev => ({ ...prev, ageAtAdmission: age }));
+            // Use admission date as reference for age calculation
+            const ageString = calculateAge(formData.dob, formData.date);
+            setFormData(prev => ({ ...prev, ageAtAdmission: ageString }));
         }
-    }, [formData.dob]);
+    }, [formData.dob, formData.date]);
 
     // Load student data in edit mode
     useEffect(() => {
@@ -248,8 +253,9 @@ const AddApplicationDataPanel = ({
             setFormData({
                 ...formData, // Start with default values
                 ...studentData, // Override with student data
+                // Fix date timezone - use local date string
                 date: studentData.date
-                    ? new Date(studentData.date).toISOString().split('T')[0]
+                    ? new Date(new Date(studentData.date).getTime() + new Date(studentData.date).getTimezoneOffset() * 60000).toISOString().split('T')[0]
                     : new Date().toISOString().split('T')[0],
                 followUpDate: studentData.followUpDate
                     ? new Date(studentData.followUpDate).toISOString().split('T')[0]
@@ -262,15 +268,46 @@ const AddApplicationDataPanel = ({
                 category: studentData.category || '',
                 oldNew: studentData.oldNew || '',
                 partnerInstitute: studentData.partnerInstitute || '',
-                subjectCombination: studentData.subjectCombination || '',
-                mdcSubject: studentData.mdcSubject || '',
-                aecSubject: studentData.aecSubject || '',
-                secSubject: studentData.secSubject || '',
-                vacSubject: studentData.vacSubject || '',
+                subjectCombination: studentData.subjectCombinationName || studentData.subjectCombination || '',
+                // Map NEP subjects from API response (mdcName -> mdcSubject)
+                mdcSubject: studentData.mdcName || studentData.mdcSubject || '',
+                aecSubject: studentData.aecName || studentData.aecSubject || '',
+                secSubject: studentData.secName || studentData.secSubject || '',
+                vacSubject: studentData.vacName || studentData.vacSubject || '',
                 applicationNumber: studentData.applicationNumber || '',
             });
         }
     }, [mode, studentData]);
+
+    // Fetch stage counselor when stage changes (Angular parity)
+    useEffect(() => {
+        const fetchStageCounselor = async () => {
+            const currentStageConfig = stageSetup?.find((s: any) => s.stage === formData.currentStage);
+            
+            if (currentStageConfig?.stageCounselor && currentStageConfig.stageCounselor.length > 0) {
+                try {
+                    const counselorData = await admissionStudentDataService.getStageCounselor({
+                        entity: entityId,
+                        stageCounselor: currentStageConfig.stageCounselor
+                    });
+                    
+                    setFormData(prev => ({
+                        ...prev,
+                        stageCounselorId: counselorData.id,
+                        stageCounselorName: counselorData.name,
+                        stageCounselorMobile: counselorData.mobile,
+                        stageCounselorEmail: counselorData.email
+                    }));
+                } catch (error) {
+                    console.error('Failed to fetch stage counselor:', error);
+                }
+            }
+        };
+        
+        if (mode === 'edit' && formData.currentStage && stageSetup) {
+            fetchStageCounselor();
+        }
+    }, [formData.currentStage, stageSetup, entityId, mode]);
 
     // Update selected school when course changes
     useEffect(() => {
@@ -294,6 +331,29 @@ const AddApplicationDataPanel = ({
             }));
         }
     }, [copyCorrespondenceAddress, formData.address, formData.city, formData.state]);
+
+    // Duplicate detection function (Angular parity)
+    const checkForDuplicates = async (phone: string) => {
+        if (phone.length === 10 && mode === 'add') {
+            try {
+                const response = await admissionStudentDataService.listAdmissionStudentData({
+                    entity: entityId,
+                    session,
+                    searchBy: 'phone',
+                    search: phone,
+                    pageNumber: 1,
+                    pageSize: 10
+                });
+                
+                if (response.data && response.data.length > 0) {
+                    setDuplicateStudents(response.data);
+                    setShowDuplicateModal(true);
+                }
+            } catch (error) {
+                console.error('Duplicate check failed:', error);
+            }
+        }
+    };
 
     // Handlers
     const handleChange = (field: string, value: any) => {
@@ -320,7 +380,12 @@ const AddApplicationDataPanel = ({
                 return newErrors;
             });
         }
-        
+
+        // Check for duplicates on phone input (Angular parity)
+        if (field === 'phone' && typeof value === 'string') {
+            checkForDuplicates(value);
+        }
+
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
@@ -476,64 +541,90 @@ const AddApplicationDataPanel = ({
         }
     };
 
+    // Handle Next Stage (Angular parity)
     const handleNextStage = async () => {
-        if (isFinalStage || !stageSetup) return;
+        if (!formData._id || !stageSetup || currentStageIndex < 0) return;
 
-        const nextStage = stageSetup[currentStageIndex + 1];
-
-        // Check transaction required
-        if ((nextStage as any).transactionRequired && formData.totalPaid === 0) {
-            alert('Payment is required to move to the next stage');
+        // Check if we're already at the final stage
+        if (isFinalStage) {
+            alert('Already at final stage');
             return;
         }
 
-        // Check seats if needed
-        const hasSeats = await checkSeatAvailability();
-        if (!hasSeats) {
-            alert('No more seats available in selected course');
+        const nextStageConfig = stageSetup[currentStageIndex + 1];
+        if (!nextStageConfig) {
+            alert('No next stage found');
             return;
         }
 
+        // Check if next stage requires seat validation
+        const checkSeatsFlag = (nextStageConfig as any).checkSeats;
+        
+        if (checkSeatsFlag) {
+            // Validate required fields for seat check
+            if (!formData.course || !formData.stream || !formData.category || !formData.oldNew) {
+                alert('Please add Course, Stream, Category and Old/New to check seats');
+                return;
+            }
+
+            // Check seat availability
+            const hasSeats = await checkSeatAvailability();
+            if (!hasSeats) {
+                alert('No more seats are available in selected course');
+                return;
+            }
+        }
+
+        // Move to next stage
         setIsProcessing(true);
         try {
-            await editMutation.mutateAsync({
+            const updatedData = {
                 ...formData,
-                currentStage: nextStage.stage,
+                currentStage: nextStageConfig.stage,
+                // Clear stage counselor (will be refetched if configured)
+                stageCounselorId: null,
+                stageCounselorName: null,
+                stageCounselorMobile: null,
+                stageCounselorEmail: null,
                 _id: studentId,
-            });
-            setFormData(prev => ({ ...prev, currentStage: nextStage.stage }));
+            };
+
+            await editMutation.mutateAsync(updatedData);
+            
+            // Update local state
+            setFormData(prev => ({
+                ...prev,
+                currentStage: nextStageConfig.stage,
+                stageCounselorId: null,
+                stageCounselorName: null,
+                stageCounselorMobile: null,
+                stageCounselorEmail: null,
+            }));
+
+            // Fetch new stage counselor if configured
+            if (nextStageConfig.stageCounselor && nextStageConfig.stageCounselor.length > 0) {
+                try {
+                    const counselorData = await admissionStudentDataService.getStageCounselor({
+                        entity: entityId,
+                        stageCounselor: nextStageConfig.stageCounselor
+                    });
+                    
+                    setFormData(prev => ({
+                        ...prev,
+                        stageCounselorId: counselorData.id,
+                        stageCounselorName: counselorData.name,
+                        stageCounselorMobile: counselorData.mobile,
+                        stageCounselorEmail: counselorData.email
+                    }));
+                } catch (error) {
+                    console.error('Failed to fetch stage counselor:', error);
+                }
+            }
+
             onSuccess();
         } catch (error) {
             console.error('Failed to move to next stage:', error);
             alert('Failed to move to next stage');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    // Final Stage Actions
-    const handleApprove = async () => {
-        if (!formData._id) return;
-
-        // Check seats before approval
-        const hasSeats = await checkSeatAvailability();
-        if (!hasSeats) {
-            alert('No more seats available. Cannot approve admission.');
-            return;
-        }
-
-        setIsProcessing(true);
-        try {
-            await editMutation.mutateAsync({
-                ...formData,
-                currentStage: 'Approved',
-                _id: studentId,
-            });
-            setFormData(prev => ({ ...prev, currentStage: 'Approved' }));
-            onSuccess();
-        } catch (error) {
-            console.error('Failed to approve:', error);
-            alert('Failed to approve admission');
         } finally {
             setIsProcessing(false);
         }
@@ -887,6 +978,13 @@ const AddApplicationDataPanel = ({
                                     {formData.totalPaid > 0 && (
                                         <span>
                                             Total Paid: <span className="font-medium text-green-600">₹{formData.totalPaid}</span>
+                                        </span>
+                                    )}
+                                    {formData.nextFollowUpDate && (
+                                        <span>
+                                            Next Follow-Up: <span className="font-medium text-blue-600">
+                                                {new Date(formData.nextFollowUpDate).toLocaleDateString('en-GB')}
+                                            </span>
                                         </span>
                                     )}
                                 </div>
@@ -1309,9 +1407,9 @@ const AddApplicationDataPanel = ({
                                     )}
                                     
                                     {/* Age Display for Schools/Colleges */}
-                                    {calculatedAge > 0 && (
-                                        <div className="flex items-center text-sm text-gray-600">
-                                            <span className="font-medium">Age: {calculatedAge} years</span>
+                                    {formData.ageAtAdmission && (
+                                        <div className="text-sm text-gray-600">
+                                            <span className="font-medium">Age:</span> {formData.ageAtAdmission}
                                         </div>
                                     )}
                                 </div>
@@ -1384,12 +1482,12 @@ const AddApplicationDataPanel = ({
                                     </Button>
                                 )}
 
-                                {/* Approve Button (Final stage, not approved/rejected) */}
-                                {mode === 'edit' && formData._id && isFinalStage && 
+                                {/* Next Stage Button (Angular parity - not final stage, not approved/rejected) */}
+                                {mode === 'edit' && formData._id && !isFinalStage && 
                                  formData.currentStage !== 'Approved' && formData.currentStage !== 'Rejected' && 
                                  checkPermission('editAdmissionStudentData') && (
-                                    <Button variant="primary" onClick={handleApprove} disabled={isProcessing}>
-                                        Approve
+                                    <Button variant="primary" onClick={handleNextStage} disabled={isProcessing}>
+                                        Next Stage
                                     </Button>
                                 )}
 
@@ -1455,63 +1553,6 @@ const AddApplicationDataPanel = ({
                                 isLoading={isProcessing}
                             >
                                 Submit
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            
-            {/* Duplicate Warning Modal */}
-            {showDuplicateModal && duplicateWarning && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                            Duplicate {duplicateWarning.field === 'phone' ? 'Phone Number' : 'Email'} Found
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                            The following student(s) already have the same {duplicateWarning.field}:
-                        </p>
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4 max-h-60 overflow-y-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-gray-200">
-                                        <th className="text-left py-2 px-2">App Number</th>
-                                        <th className="text-left py-2 px-2">Name</th>
-                                        <th className="text-left py-2 px-2">Stage</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {duplicateWarning.duplicates.map((student: any, index: number) => (
-                                        <tr key={index} className="border-b border-gray-100">
-                                            <td className="py-2 px-2">{student.applicationNumber || 'N/A'}</td>
-                                            <td className="py-2 px-2">{student.name || 'N/A'}</td>
-                                            <td className="py-2 px-2">{student.currentStage || 'N/A'}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <p className="text-sm text-amber-600 mb-4">
-                            ⚠️ Do you want to proceed anyway?
-                        </p>
-                        <div className="flex justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                onClick={() => {
-                                    setShowDuplicateModal(false);
-                                    setDuplicateWarning(null);
-                                }}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="primary"
-                                onClick={() => {
-                                    setShowDuplicateModal(false);
-                                    setDuplicateWarning(null);
-                                }}
-                            >
-                                Proceed Anyway
                             </Button>
                         </div>
                     </div>
@@ -1588,6 +1629,57 @@ const AddApplicationDataPanel = ({
                                 disabled={!negativeTagRemark.trim()}
                             >
                                 Submit
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate Students Modal */}
+            {showDuplicateModal && duplicateStudents.length > 0 && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-900">Duplicate Students Found</h3>
+                        </div>
+                        <div className="px-6 py-4 overflow-y-auto max-h-[60vh]">
+                            <p className="text-sm text-gray-600 mb-4">
+                                {duplicateStudents.length} student(s) found with this phone number:
+                            </p>
+                            <div className="space-y-3">
+                                {duplicateStudents.map((student, index) => (
+                                    <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                                <span className="font-medium text-gray-700">Name:</span>{' '}
+                                                <span className="text-gray-900">{student.name}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Phone:</span>{' '}
+                                                <span className="text-gray-900">{student.phone}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Course:</span>{' '}
+                                                <span className="text-gray-900">{student.course}</span>
+                                            </div>
+                                            <div>
+                                                <span className="font-medium text-gray-700">Stage:</span>{' '}
+                                                <span className="text-gray-900">{student.currentStage}</span>
+                                            </div>
+                                            {student.applicationNumber && (
+                                                <div>
+                                                    <span className="font-medium text-gray-700">App No:</span>{' '}
+                                                    <span className="text-gray-900">{student.applicationNumber}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                            <Button variant="outline" onClick={() => setShowDuplicateModal(false)}>
+                                Close
                             </Button>
                         </div>
                     </div>

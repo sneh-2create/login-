@@ -189,4 +189,9 @@ export const admissionStudentDataService = {
         const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
         return response.data;
     },
+
+    getStageCounselor: async (payload: { entity: string; stageCounselor: string[] }) => {
+        const response = await apiClient.post<{ id: string; name: string; mobile: string; email: string }>('/getStageCounselor/admissionStudentData', payload);
+        return response.data;
+    },
 };

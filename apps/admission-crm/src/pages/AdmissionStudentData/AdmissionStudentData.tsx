@@ -33,7 +33,7 @@ import TimelineModal from '../../components/Modals/TimelineModal';
 import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
-import ViewAdmissionDetails from './components/ViewAdmissionDetails';
+
 import MoveApplicationModal from './components/MoveApplicationModal';
 import MoveStudentModal from './components/MoveStudentModal';
 import * as XLSX from 'xlsx';
@@ -1050,13 +1050,20 @@ const AdmissionStudentData = () => {
                 ))}
             </div>
 
-            {/* View Admission Details (Inline) */}
-            {isViewAdmissionOpen && (
-                <ViewAdmissionDetails
-                    studentId={viewAdmissionStudentId}
-                    onClose={() => setIsViewAdmissionOpen(false)}
-                />
-            )}
+            {/* View Admission (Edit Mode) */}
+            <AddApplicationDataPanel
+                isOpen={isViewAdmissionOpen}
+                onClose={() => {
+                    setIsViewAdmissionOpen(false);
+                    setViewAdmissionStudentId(null);
+                }}
+                mode="edit"
+                studentId={viewAdmissionStudentId || undefined}
+                onSuccess={() => {
+                    refetch();
+                    refetchStages();
+                }}
+            />
 
             {/* Template Selection Tabs - Show if templates exist */}
             {templates && templates.length > 0 && (
