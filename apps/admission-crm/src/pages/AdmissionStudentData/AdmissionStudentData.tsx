@@ -1,28 +1,71 @@
-import React, { useState, useMemo } from 'react';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useAddAdmissionStudentData, useCounselors } from '@od-erp/query';
-import { Card, DataTable, Button, Select, Badge } from '@od-erp/ui';
-import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta } from '@od-erp/types';
-import { admissionStudentDataService } from '@od-erp/api-client';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal } from '@od-erp/ui';
+import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
+import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
+
+import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { FileSpreadsheet, Printer, Filter, RefreshCw } from 'lucide-react';
-import AddStudentModal from './components/AddStudentModal';
+import { 
+    FileSpreadsheet, 
+    Printer, 
+    SlidersHorizontal, 
+    RefreshCw, 
+    Plus, 
+    Upload,
+    HelpCircle,
+    Clock, 
+    FileText, 
+    Landmark, 
+    Receipt, 
+    MessageSquare, 
+    User,
+    Trash2,
+    ArrowRight,
+    Phone,
+    Mail,
+    MessageCircle,
+    Users,
+    Send
+} from 'lucide-react';
+import AddApplicationDataPanel from './components/AddApplicationDataPanel';
 import FilterModal from './components/FilterModal';
 import UploadExcelModal from './components/UploadExcelModal';
 import TimelineModal from '../../components/Modals/TimelineModal';
-import ViewDocumentsModal from './components/ViewDocumentsModal';
 import BankDetailsModal from './components/BankDetailsModal';
 import ViewTransactionsModal from './components/ViewTransactionsModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
-import ViewAdmissionDetails from './components/ViewAdmissionDetails';
-import { MoreVertical, Clock, FileText, Landmark, Receipt, MessageSquare, User } from 'lucide-react';
+import SendEmailModal from './components/SendEmailModal';
+import SendWhatsappWebModal from './components/SendWhatsappWebModal';
+import SendSmsModal from '../AdmissionLeads/components/Modals/SendSmsModal';
+import SendWhatsappModal from '../AdmissionLeads/components/Modals/SendWhatsappModal';
+import BulkUpdateCounselorModal from '../AdmissionLeads/components/Modals/BulkUpdateCounselorModal';
+
+import MoveApplicationModal from './components/MoveApplicationModal';
+import MoveStudentModal from './components/MoveStudentModal';
 import * as XLSX from 'xlsx';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
+import { admissionStudentDataService } from '@od-erp/api-client';
 
 const AdmissionStudentData = () => {
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const dispatch = useAppDispatch();
+    // const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
+    const myOperatorId = useAppSelector((state) => state.auth.user?.myOperatorId) || localStorage.getItem('myOperatorId') || '';
+    const navigate = useNavigate();
+    const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+
+    // Display Names
+    // const displayNames = useMemo(() => ({
+    //     course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
+    //     stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
+    //     batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+    // }), [entityPreferences]);
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
@@ -30,12 +73,12 @@ const AdmissionStudentData = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [pageNumber, setPageNumber] = useState(1);
     const [pageSize, setPageSize] = useState(10);
-    const [searchBy, setSearchBy] = useState('name');
+    const [searchBy, setSearchBy] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isHelpPanelOpen, setIsHelpPanelOpen] = useState(false);
     const [currentFilters, setCurrentFilters] = useState<Partial<AdmissionStudentDataPayload>>({});
-    const [isExporting, setIsExporting] = useState(false);
     const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
     const [documentStudent, setDocumentStudent] = useState<AdmissionLead | null>(null);
@@ -48,15 +91,128 @@ const AdmissionStudentData = () => {
     const [isFollowUpOpen, setIsFollowUpOpen] = useState(false);
     const [viewAdmissionStudentId, setViewAdmissionStudentId] = useState<string | null>(null);
     const [isViewAdmissionOpen, setIsViewAdmissionOpen] = useState(false);
-    const [openActionId, setOpenActionId] = useState<string | null>(null);
-    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
+    // Move Application Modal State
+    const [moveApplicationStudent, setMoveApplicationStudent] = useState<AdmissionLead | null>(null);
+    const [isMoveApplicationOpen, setIsMoveApplicationOpen] = useState(false);
+
+    // Move Student Modal State
+    const [moveStudentStudent, setMoveStudentStudent] = useState<AdmissionLead | null>(null);
+    const [isMoveStudentOpen, setIsMoveStudentOpen] = useState(false);
+
+    // Bulk Action Modal States
+    const [isSendEmailOpen, setIsSendEmailOpen] = useState(false);
+    const [isSendWhatsappWebOpen, setIsSendWhatsappWebOpen] = useState(false);
+    const [isSendWhatsappOpen, setIsSendWhatsappOpen] = useState(false);
+    const [isSendSmsOpen, setIsSendSmsOpen] = useState(false);
+    const [isBulkCounselorOpen, setIsBulkCounselorOpen] = useState(false);
+
 
     // Mutations
-    const addStudentMutation = useAddAdmissionStudentData();
+    const addReportFileMutation = useAddReportFile();
+    const clickToCallMutation = useClickToCall();
 
     // Queries
     const { data: sessions } = useSessions(entityId);
     const { data: counselors } = useCounselors(entityId || '', 'counselor');
+
+    // Get entityType and QAC from Redux (consistent with other pages)
+    const entityType = useAppSelector((state) => state.session.entityType) || '';
+    const qac = useAppSelector((state) => state.auth.entityDetails?.qac) || '';
+
+    // Template Queries - 3-tier fallback: Custom Templates → API Defaults → Hardcoded Defaults
+    const { data: templates } = useAdmissionTemplates(entityId);
+    const { data: defaultTemplateData } = useDefaultAdmissionTemplate(entityId, entityType);
+    const [selectedTemplate, setSelectedTemplate] = useState<string>(''); // viewName of selected template
+    
+    // Find the template object by viewName
+    const selectedTemplateObj = useMemo(() => {
+        return templates?.find(t => t.viewName === selectedTemplate);
+    }, [templates, selectedTemplate]);
+    
+    const { data: selectedTemplateData } = useAdmissionTemplate(selectedTemplateObj?._id || null, !!selectedTemplateObj?._id);
+
+    // Auto-select first template when templates load
+    useMemo(() => {
+        if (templates && templates.length > 0 && !selectedTemplate) {
+            setSelectedTemplate(templates[0].viewName);
+        }
+    }, [templates, selectedTemplate]);
+
+    // Row selection handlers
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = new Set(data?.data.map((item: AdmissionLead) => item._id) || []);
+            setSelectedRows(allIds);
+        } else {
+            setSelectedRows(new Set());
+        }
+    };
+
+    const handleSelectRow = (id: string, checked: boolean) => {
+        const newSelected = new Set(selectedRows);
+        if (checked) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedRows(newSelected);
+    };
+
+    // Navigate to admission details
+    const navigateToAdmissionDetails = (id: string) => {
+        // Store current filters in localStorage for restoration
+        const filterObjectData: any = {};
+        
+        if (selectedStage && selectedStage !== 'Total') {
+            filterObjectData.stage = selectedStage;
+        }
+        if (currentFilters.course) {
+            filterObjectData.course = currentFilters.course;
+        }
+        if (currentFilters.stream) {
+            filterObjectData.stream = currentFilters.stream;
+        }
+        if (currentFilters.batch) {
+            filterObjectData.batch = currentFilters.batch;
+        }
+        if (currentFilters.startDate) {
+            filterObjectData.startDate = currentFilters.startDate;
+        }
+        if (currentFilters.endDate) {
+            filterObjectData.endDate = currentFilters.endDate;
+        }
+        if (currentFilters.updatedAtStartDate) {
+            filterObjectData.updatedAtStartDate = currentFilters.updatedAtStartDate;
+        }
+        if (currentFilters.updatedAtEndDate) {
+            filterObjectData.updatedAtEndDate = currentFilters.updatedAtEndDate;
+        }
+        if (currentFilters.counselorId) {
+            filterObjectData.counselorId = currentFilters.counselorId;
+        }
+        if (currentFilters.tag) {
+            filterObjectData.tag = currentFilters.tag;
+        }
+        if (currentFilters.source) {
+            filterObjectData.source = currentFilters.source;
+        }
+        if (currentFilters.engagementStatus) {
+            filterObjectData.engagementStatus = currentFilters.engagementStatus;
+        }
+        if (currentFilters.noCounselor !== undefined) {
+            filterObjectData.noCounselor = currentFilters.noCounselor;
+        }
+        
+        localStorage.setItem('filterInDetailsPage', JSON.stringify(filterObjectData));
+        
+        // Navigate with state
+        navigate(`/admission/student-data/${id}`, {
+            state: { from: 'studentData' }
+        });
+    };
+
+    // Mutations
+    const deleteStudentMutation = useDeleteAdmissionStudentData();
 
     const handlePrintForm = (student: AdmissionLead) => {
         if (!student) return;
@@ -70,8 +226,56 @@ const AdmissionStudentData = () => {
 
         localStorage.setItem('print_student_data', JSON.stringify(studentWithCounselor));
         window.open('/admission/print/open/admissionForm', '_blank');
-        setOpenActionId(null);
-        setActionMenuPosition(null);
+    };
+
+    const handleDeleteAdmission = async (id: string) => {
+        if (!id) return;
+        
+        const confirmed = window.confirm('Are you sure you want to delete this Student Admission Data? This action cannot be undone.');
+        if (!confirmed) return;
+        
+        try {
+            await deleteStudentMutation.mutateAsync(id);
+            alert('Student Admission deleted successfully');
+            refetch(); // Refresh the list
+        } catch (error: any) {
+            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete admission';
+            alert(`Error: ${errorMessage}`);
+            console.error('Delete error:', error);
+        }
+    };
+
+    const handleMoveApplication = (student: AdmissionLead) => {
+        if (!student) return;
+        setMoveApplicationStudent(student);
+        setIsMoveApplicationOpen(true);
+    };
+
+    const handleMoveStudent = (student: AdmissionLead) => {
+        if (!student) return;
+        setMoveStudentStudent(student);
+        setIsMoveStudentOpen(true);
+    };
+
+    const handleClickToCall = async (student: AdmissionLead) => {
+        if (!student) return;
+        
+        const formData = {
+            entity: entityId,
+            session: session,
+            phone: student.phone,
+            applicationNumber: student.applicationNumber,
+            myOperatorId: myOperatorId
+        };
+        
+        try {
+            const result = await clickToCallMutation.mutateAsync(formData);
+            alert(result.message || 'Call initiated successfully');
+        } catch (error: any) {
+            console.error('Click to call failed:', error);
+            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to initiate call';
+            alert(`Error: ${errorMessage}`);
+        }
     };
 
     // Set default session
@@ -101,67 +305,104 @@ const AdmissionStudentData = () => {
 
     const { data, isLoading, refetch, isFetching } = useAdmissionStudentData(payload);
 
-    // Handlers
-    const handleAddStudent = async (formData: any) => {
-        try {
-            await addStudentMutation.mutateAsync({
-                ...formData,
-                entity: entityId,
-                session: session,
-                currentStage: 'Registered', // Default stage
-                date: new Date().getTime(),
+    // hasError: true when no data, false when data is loaded
+    const hasError = !data || !data.data || data.data.length === 0;
+
+    // Permission check helper
+    const checkPermission = (permission: string): boolean => {
+        return permissions.includes(permission);
+    };
+
+
+    // Handle Excel Export (matching Angular - no display names, no filters)
+    const handleExportExcel = () => {
+        if (!data?.data || data.data.length === 0) return;
+
+        const wb = XLSX.utils.book_new();
+        const ws: XLSX.WorkSheet = {};
+
+        // No filter summary (matching Angular)
+        const filterSummary: any[] = [];
+
+        // Header
+        const tableStartRow = addExcelReportHeader(ws, entityName, selectedTemplate || 'Student Admission', filterSummary);
+        
+        // Table Headers (from tableHeads + Current Stage)
+        const tableHeader = [...tableHeads.map(h => h.name), 'Current Stage'];
+        XLSX.utils.sheet_add_aoa(ws, [tableHeader], { origin: { r: tableStartRow, c: 0 } });
+
+        // Data Rows
+        const dataRows = data.data.map((item: AdmissionLead) => {
+            const row: any[] = [];
+            
+            // Map each column from tableHeads
+            tableHeads.forEach((head: TableHead) => {
+                if (head.value === 'tag' || head.value === 'selectedTags') {
+                    row.push(item.tags?.map(t => typeof t === 'string' ? t : t.tag).join(', ') || '');
+                } else {
+                    let value = item[head.value];
+                    
+                    // Format dates (check if field name contains 'date' or 'Date' and value is a valid date string)
+                    if (value && (head.value.toLowerCase().includes('date') || head.name.toLowerCase().includes('date'))) {
+                        try {
+                            const date = new Date(value);
+                            if (!isNaN(date.getTime())) {
+                                value = format(date, 'dd-MMM-yyyy');
+                            }
+                        } catch (e) {
+                            // Keep original value if date parsing fails
+                        }
+                    }
+                    
+                    row.push(value || '');
+                }
             });
-            setIsAddModalOpen(false);
-            refetch();
-            refetchStages();
-        } catch (error) {
-            console.error('Failed to add student:', error);
-        }
+            
+            // Add Current Stage column (hardcoded, not from template)
+            row.push(item.currentStage || '');
+            
+            // Add Bank Details columns (matching Angular implementation)
+            if (item.bankDetails) {
+                // Handle legacy array format
+                const bankData = Array.isArray(item.bankDetails) ? item.bankDetails[0] : item.bankDetails;
+                row.push(bankData?.bankName || '');
+                row.push(bankData?.branchName || '');
+                row.push(bankData?.accountNumber || '');
+                row.push(bankData?.ifscCode || '');
+                row.push(bankData?.studentName || '');
+            } else {
+                // Empty columns if no bank details
+                row.push('', '', '', '', '');
+            }
+            
+            return row;
+        });
+
+        XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+        // Signatures
+        const signatureRow = tableStartRow + 1 + dataRows.length + 4;
+        addExcelReportFooter(ws, signatureRow);
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+        XLSX.writeFile(wb, 'AdmissionApplication_Reports.xlsx');
     };
 
-    const handleExportExcel = async () => {
-        setIsExporting(true);
-        try {
-            // Create payload to fetch all data
-            const exportPayload: AdmissionStudentDataPayload = {
-                ...payload,
-                pageNumber: 1,
-                pageSize: 100000, // Fetch all data
-            };
-
-            const response = await admissionStudentDataService.listAdmissionStudentData(exportPayload);
-
-            if (!response?.data) return;
-
-            const worksheet = XLSX.utils.json_to_sheet(response.data.map((item, index) => ({
-                'S.No': index + 1,
-                'Name': item.name,
-                'Application No': item.applicationNumber,
-                'Phone': item.phone,
-                'Course': item.course,
-                'Father Name': item.fatherName,
-                'Stage': item.currentStage,
-                'Date': item.date ? format(new Date(item.date), 'dd-MMM-yyyy') : '-'
-            })));
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
-            XLSX.writeFile(workbook, `StudentData_${session}.xlsx`);
-        } catch (error) {
-            console.error('Failed to export excel:', error);
-            alert('Failed to export excel. Please try again.');
-        } finally {
-            setIsExporting(false);
-        }
-    };
-
+    // Handle Print Report (matching Angular - no display names)
     const handlePrint = () => {
-        if (!data?.data) return;
-        localStorage.setItem('admissionStudentData', JSON.stringify({
+        if (!data?.data || data.data.length === 0) return;
+
+        // Store in localStorage (matching Angular)
+        localStorage.setItem('admissionStudentDataPrint', JSON.stringify({
             data: data.data,
-            pageNumber,
-            pageSize
+            tableHeads: tableHeads,
+            viewName: selectedTemplate,
+            entityName: entityName,
+            stage: selectedStage !== 'Total' ? selectedStage : undefined,
         }));
-        window.open('/admission/print/admissionStudentData', '_blank');
+
+        // Open print window
+        window.open('/admission/print/admission-student-data', '_blank');
     };
 
     const handleApplyFilters = (filters: Partial<AdmissionStudentDataPayload>) => {
@@ -182,8 +423,132 @@ const AdmissionStudentData = () => {
         }, 1000);
     };
 
-    const handleGenerateReport = () => {
-        alert('Report generation feature is coming soon!');
+    const handleGenerateReport = async () => {
+        try {
+            // Prepare filter values array
+            const filterValues: any[] = [];
+            
+            // Add stage filter
+            if (selectedStage && selectedStage !== 'Total') {
+                filterValues.push({
+                    filter: 'stage',
+                    value: selectedStage
+                });
+            }
+            
+            // Add filters from currentFilters
+            if (currentFilters.course && currentFilters.course.length > 0) {
+                filterValues.push({
+                    filter: 'course',
+                    value: currentFilters.course
+                });
+            }
+            
+            if (currentFilters.stream && currentFilters.stream.length > 0) {
+                filterValues.push({
+                    filter: 'stream',
+                    value: currentFilters.stream
+                });
+            }
+            
+            if (currentFilters.batch && currentFilters.batch.length > 0) {
+                filterValues.push({
+                    filter: 'batch',
+                    value: currentFilters.batch
+                });
+            }
+            
+            // Date range filter
+            if (currentFilters.startDate) {
+                const startDate = new Date(currentFilters.startDate).getTime();
+                const endDate = currentFilters.endDate 
+                    ? new Date(currentFilters.endDate).getTime() 
+                    : undefined;
+                
+                filterValues.push({
+                    filter: 'date',
+                    type: 'date',
+                    value: '',
+                    startDate,
+                    endDate
+                });
+            }
+            
+            // Updated At date range filter
+            if (currentFilters.updatedAtStartDate) {
+                const updatedAtStartDate = new Date(currentFilters.updatedAtStartDate).getTime();
+                const updatedAtEndDate = currentFilters.updatedAtEndDate 
+                    ? new Date(currentFilters.updatedAtEndDate).getTime() 
+                    : undefined;
+                
+                filterValues.push({
+                    filter: 'updatedAt',
+                    type: 'date',
+                    value: '',
+                    startDate: updatedAtStartDate,
+                    endDate: updatedAtEndDate
+                });
+            }
+            
+            // Counselor filter
+            if (currentFilters.counselorId) {
+                filterValues.push({
+                    filter: 'counselorId',
+                    value: currentFilters.counselorId
+                });
+            }
+            
+            // Tag filter
+            if (currentFilters.tag && currentFilters.tag.length > 0) {
+                filterValues.push({
+                    filter: 'tag',
+                    value: currentFilters.tag
+                });
+            }
+            
+            // Source filter
+            if (currentFilters.source && currentFilters.source.length > 0) {
+                filterValues.push({
+                    filter: 'source',
+                    value: currentFilters.source
+                });
+            }
+            
+            // Engagement status filter
+            if (currentFilters.engagementStatus && currentFilters.engagementStatus.length > 0) {
+                filterValues.push({
+                    filter: 'engagementStatus',
+                    value: currentFilters.engagementStatus
+                });
+            }
+            
+            // No counselor filter
+            if (currentFilters.noCounselor !== undefined) {
+                filterValues.push({
+                    filter: 'noCounselor',
+                    value: currentFilters.noCounselor
+                });
+            }
+            
+            // Prepare report data
+            const reportData = {
+                reportType: 'AdmissionStudentData',
+                tableHeads: tableHeads,
+                filterValues: filterValues,
+                sortBy: 'date', // Default sort
+                entity: entityId,
+                qac: qac
+            };
+            
+            // Call API
+            await addReportFileMutation.mutateAsync(reportData);
+            
+            // Show success message
+            alert('Report template saved successfully!');
+        } catch (error) {
+            console.error('Failed to generate report:', error);
+            alert('Failed to save report template. Please try again.');
+        }
     };
 
     const handleRefresh = () => {
@@ -192,94 +557,150 @@ const AdmissionStudentData = () => {
     };
 
     const handleNeedHelp = () => {
-        alert('For support, please contact admin@okiedokie.com');
-    }
-
-    const handleSessionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        dispatch(setAcademicSession(e.target.value));
+        setIsHelpPanelOpen(true);
     };
 
-    const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        if (openActionId === id) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        } else {
-            const rect = event.currentTarget.getBoundingClientRect();
-            setOpenActionId(id);
-            // Position: below the button, aligned to the right if possible, or left
-            // Using fixed positioning relative to viewport
-            setActionMenuPosition({
-                top: rect.bottom + 5,
-                left: rect.left
-            });
-        }
+    const handleSessionChange = (value: string | number | (string | number)[]) => {
+        // Handle single value (session dropdown is not multi-select)
+        const sessionValue = Array.isArray(value) ? value[0] : value;
+        
+        // Update Redux state
+        dispatch(setAcademicSession(sessionValue as string));
+        
+        // Reset all filters
+        setCurrentFilters({});
+        
+        // Reset pagination
+        setPageNumber(1);
+        setPageSize(10);
+        
+        // Reset stage selection
+        setSelectedStage('Total');
+        
+        // Clear row selections
+        setSelectedRows(new Set());
+        
+        // Refetch data (will happen automatically via useEffect dependencies)
+        refetch();
+        refetchStages();
     };
 
-    // Close dropdown when clicking outside
-    const handleDocumentClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        // Check if click is inside the menu
-        if (!target.closest('.action-menu-dropdown')) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        }
-    };
-
-    // Add event listener for clicking outside
-    useMemo(() => {
-        if (typeof document !== 'undefined') {
-            document.addEventListener('click', handleDocumentClick);
-        }
-        return () => {
-            if (typeof document !== 'undefined') {
-                document.removeEventListener('click', handleDocumentClick);
-            }
-        };
-    }, []);
 
     const handleViewTimeline = (student: AdmissionLead) => {
         setTimelineStudent(student);
         setIsTimelineOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewDocuments = (student: AdmissionLead) => {
         setDocumentStudent(student);
         setIsViewDocumentsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
-
 
 
     const handleViewBankDetails = (student: AdmissionLead) => {
         setBankDetailsStudent(student);
         setIsBankDetailsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewTransactions = (student: AdmissionLead) => {
         setTransactionsStudent(student);
         setIsTransactionsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewFollowUp = (student: AdmissionLead) => {
+        if (!student.counselorId) {
+            alert('Please assign counselor first');
+            return;
+        }
         setFollowUpStudent(student);
         setIsFollowUpOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewAdmission = (id: string) => {
         setViewAdmissionStudentId(id);
         setIsViewAdmissionOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
+    };
+
+    // Bulk Action Handlers
+    const handleBulkSendEmail = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendEmailOpen(true);
+    };
+
+    const handleBulkSendWhatsappWeb = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendWhatsappWebOpen(true);
+    };
+
+    const handleBulkSendWhatsapp = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendWhatsappOpen(true);
+    };
+
+    const handleBulkSendSms = () => {
+        if (selectedRows.size === 0) return;
+        setIsSendSmsOpen(true);
+    };
+
+    const handlePrintSelectedForms = () => {
+        if (selectedRows.size === 0) {
+            alert('Please select at least one student to print the forms');
+            return;
+        }
+        const studentIdArray = Array.from(selectedRows);
+        localStorage.setItem('studentAdmissionData', JSON.stringify(studentIdArray));
+        window.open('/admission/print/open/admissionForm', '_blank');
+        // Note: Selection is NOT cleared for print operation
+    };
+
+    const handleBulkUpdateCounselor = () => {
+        if (selectedRows.size === 0) return;
+        setIsBulkCounselorOpen(true);
+    };
+
+    // Get selected students data for modals
+    const getSelectedStudents = (): AdmissionLead[] => {
+        return (data?.data || []).filter((student: AdmissionLead) => selectedRows.has(student._id));
+    };
+
+    // Handle bulk counselor update
+    const handleCounselorUpdate = (counselorId: string) => {
+        const studentDataIds = Array.from(selectedRows);
+        // Use the admission lead service for bulk counselor update
+        import('@od-erp/api-client').then(({ admissionLeadService }) => {
+            admissionLeadService.bulkCounselorUpdate({
+                studentDataIds,
+                entity: entityId,
+                counselor: counselorId
+            }).then(() => {
+                setSelectedRows(new Set());
+                refetch();
+            }).catch((err: any) => {
+                console.error('Failed to update counselor:', err);
+            });
+        });
+    };
+
+    // Handle modal close without clearing selection
+    const handleEmailModalClose = () => {
+        setIsSendEmailOpen(false);
+    };
+
+    const handleWhatsappWebModalClose = () => {
+        setIsSendWhatsappWebOpen(false);
+    };
+
+    const handleWhatsappModalClose = () => {
+        setIsSendWhatsappOpen(false);
+    };
+
+    const handleSmsModalClose = () => {
+        setIsSendSmsOpen(false);
+    };
+
+    // Clear selection after successful operations
+    const clearSelection = () => {
+        setSelectedRows(new Set());
     };
 
     // Handle search from DataTable - debounced to avoid too many API calls
@@ -288,82 +709,101 @@ const AdmissionStudentData = () => {
         setPageNumber(1);
     };
 
-    // Columns with dynamic styling
-    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => [
-        {
-            header: 'S.No',
-            accessorKey: 'sno',
-            cell: info => (pageNumber - 1) * pageSize + info.row.index + 1,
-            meta: {
-                width: 78,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Action',
-            id: 'actions',
-            cell: info => {
-                const id = info.row.original._id;
-                return (
-                    <div className="relative">
-                        <button
-                            onClick={(e) => toggleActionMenu(id, e)}
-                            className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-                        >
-                            <MoreVertical size={16} />
-                        </button>
+    // 3-Tier Fallback for Table Heads: Custom Template → API Default → Hardcoded Default
+    const tableHeads = useMemo<TableHead[]>(() => {
+        // Priority 1: Selected custom template
+        if (selectedTemplateData?.tableHeads) {
+            return selectedTemplateData.tableHeads;
+        }
+        // Priority 2: API default template
+        if (defaultTemplateData?.tableHeads) {
+            return defaultTemplateData.tableHeads;
+        }
+        // Priority 3: Hardcoded fallback
+        return DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS as TableHead[];
+    }, [selectedTemplateData, defaultTemplateData]);
 
-                    </div>
-                )
-            }
-        },
-        {
-            header: 'Current Stage',
-            accessorKey: 'currentStage',
-            cell: info => {
+    // Helper function to convert TableHead to DataTable Column
+    const convertTableHeadToColumn = (head: TableHead): ColumnDef<AdmissionLead> => {
+        const baseColumn: ColumnDef<AdmissionLead> = {
+            header: head.name,
+            accessorKey: head.value,
+            meta: {
+                width: 150,
+                align: 'center' as const,
+            } as ExtendedColumnMeta<AdmissionLead>,
+        };
+
+        // Special formatting for name field
+        if (head.value === 'name') {
+            baseColumn.cell = (info) => {
                 const val = info.getValue() as string;
-                return <Badge variant={val}>{val}</Badge>;
-            },
-            meta: {
-                width: 132,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Student Name',
-            accessorKey: 'name',
-            cell: info => <span className="font-medium cursor-pointer">{info.getValue() as string}</span>,
-            meta: {
-                width: 217,
-                align: 'left' as const,
-                isBold: true, // This will make it black via DataTable
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Form No.',
-            accessorKey: 'applicationNumber',
-            meta: {
-                width: 133,
-                align: 'center' as const,
-                fontWeight: 500,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Date',
-            accessorKey: 'date',
-            cell: info => {
+                return (
+                    <span 
+                        className="text-primary cursor-pointer hover:underline" 
+                        title="Click to view application details"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToAdmissionDetails(info.row.original._id);
+                        }}
+                    >
+                        {val}
+                    </span>
+                );
+            };
+            return baseColumn;
+        }
+
+        // Special formatting for application number
+        if (head.value === 'applicationNumber') {
+            baseColumn.cell = (info) => {
+                const val = info.getValue() as string;
+                return (
+                    <span 
+                        className="text-primary cursor-pointer hover:underline" 
+                        title="Click to view application details"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigateToAdmissionDetails(info.row.original._id);
+                        }}
+                    >
+                        {val}
+                    </span>
+                );
+            };
+            return baseColumn;
+        }
+        // Special formatting for specific fields
+        if (head.value === 'date' || head.value === 'dob' || head.value === 'doa') {
+            baseColumn.cell = (info) => {
                 const val = info.getValue();
                 return val ? format(new Date(val as number), 'dd-MMM-yyyy') : '-';
-            },
-            meta: {
-                width: 140,
+            };
+        }
+
+        if (head.value === 'name') {
+            baseColumn.cell = (info) => <span className="font-medium">{info.getValue() as string}</span>;
+            baseColumn.meta = {
+                width: 217,
+                align: 'left' as const,
+                isBold: true,
+            } as ExtendedColumnMeta<AdmissionLead>;
+        }
+
+        if (head.value === 'currentStage') {
+            baseColumn.cell = (info) => {
+                const val = info.getValue() as string;
+                return <Badge variant={val}>{val}</Badge>;
+            };
+            baseColumn.meta = {
+                width: 132,
                 align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Tags',
-            accessorKey: 'tags',
-            cell: info => {
+            } as ExtendedColumnMeta<AdmissionLead>;
+        }
+
+        if (head.value === 'tag' || head.value === 'selectedTags') {
+            baseColumn.accessorKey = 'tags'; // API returns 'tags' field
+            baseColumn.cell = (info) => {
                 const tags = info.getValue() as any[];
                 return (
                     <div className="flex flex-wrap gap-1">
@@ -374,47 +814,163 @@ const AdmissionStudentData = () => {
                         )) : '-'}
                     </div>
                 );
+            };
+        }
+
+        return baseColumn;
+    };
+
+    // Columns with dynamic styling
+    const columns = useMemo<ColumnDef<AdmissionLead>[]>(() => {
+        const dynamicColumns: ColumnDef<AdmissionLead>[] = [
+            {
+                id: 'select',
+                header: () => (
+                    <div className="flex items-center justify-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={(data?.data?.length || 0) > 0 && selectedRows.size === (data?.data?.length || 0)}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            className="cursor-pointer"
+                        />
+                        <span>S.No</span>
+                    </div>
+                ),
+                cell: ({ row }) => (
+                    <div className="flex items-center justify-center gap-2">
+                        <input
+                            type="checkbox"
+                            checked={selectedRows.has(row.original._id)}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                handleSelectRow(row.original._id, e.target.checked);
+                            }}
+                            className="cursor-pointer"
+                        />
+                        <span>{(pageNumber - 1) * pageSize + row.index + 1}</span>
+                    </div>
+                ),
+                meta: {
+                    width: 100,
+                    align: 'center' as const,
+                } as ExtendedColumnMeta<AdmissionLead>,
             },
-            meta: {
-                width: 150,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Course',
-            accessorKey: 'course',
-            meta: {
-                width: 164,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Phone',
-            accessorKey: 'phone',
-            meta: {
-                width: 120,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Father Name',
-            accessorKey: 'fatherName',
-            cell: info => info.getValue() || '-',
-            meta: {
-                width: 150,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-        {
-            header: 'Receipt Id',
-            id: 'receiptId',
-            cell: () => '-',
-            meta: {
-                width: 120,
-                align: 'center' as const,
-            } as ExtendedColumnMeta<AdmissionLead>,
-        },
-    ], [pageNumber, pageSize]);
+            {
+                header: 'Action',
+                id: 'actions',
+                cell: info => {
+                    const student = info.row.original;
+                    return (
+                        <ActionMenu
+                            items={[
+                                // 1. View Admission - Always visible
+                                { 
+                                    label: 'View Admission', 
+                                    onClick: () => handleViewAdmission(student._id), 
+                                    icon: <User size={14} className="text-blue-500" /> 
+                                },
+                                // 2. View Transactions - Always visible
+                                { 
+                                    label: 'View Transactions', 
+                                    onClick: () => handleViewTransactions(student), 
+                                    icon: <Receipt size={14} className="text-orange-500" /> 
+                                },
+                                // 3. View Timeline - Always visible
+                                { 
+                                    label: 'View Timeline', 
+                                    onClick: () => handleViewTimeline(student), 
+                                    icon: <Clock size={14} className="text-blue-500" /> 
+                                },
+                                // 4. View Documents - Always visible
+                                { 
+                                    label: 'View Documents', 
+                                    onClick: () => handleViewDocuments(student), 
+                                    icon: <FileText size={14} className="text-green-500" /> 
+                                },
+                                // 5. Verify Documents - Always visible
+                                { 
+                                    label: 'Verify Documents', 
+                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_self'), 
+                                    icon: <FileText size={14} className="text-blue-600" /> 
+                                },
+                                // 6. Delete Admission - Permission-based, disabled if has transactions
+                                { 
+                                    label: 'Delete Admission', 
+                                    onClick: () => handleDeleteAdmission(student._id), 
+                                    icon: <Trash2 size={14} className="text-red-500" />,
+                                    hidden: !checkPermission('deleteAdmissionStudentData'),
+                                    disabled: (student.transactions?.length || 0) > 0,
+                                    className: 'text-red-600 hover:text-red-700'
+                                },
+                                // 7. View Follow Up - Permission-based
+                                { 
+                                    label: 'View Follow Up', 
+                                    onClick: () => handleViewFollowUp(student), 
+                                    icon: <MessageSquare size={14} className="text-blue-500" />,
+                                    hidden: !checkPermission('viewAdmissionStudentData')
+                                },
+                                // 8. View Bank Details - Always visible
+                                { 
+                                    label: 'View Bank Details', 
+                                    onClick: () => handleViewBankDetails(student), 
+                                    icon: <Landmark size={14} className="text-purple-500" /> 
+                                },
+                                // 9. Move Application - Permission-based, hidden for Approved, disabled for Moved
+                                { 
+                                    label: 'Move Application', 
+                                    onClick: () => handleMoveApplication(student), 
+                                    icon: <ArrowRight size={14} className="text-blue-500" />,
+                                    hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage === 'Approved',
+                                    disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                },
+                                // 10. Move Student - Permission-based, hidden for non-Approved, disabled for Moved
+                                { 
+                                    label: 'Move Student', 
+                                    onClick: () => handleMoveStudent(student), 
+                                    icon: <ArrowRight size={14} className="text-green-500" />,
+                                    hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage !== 'Approved',
+                                    disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
+                                },
+                                // 11. Click to Call - Permission-based
+                                { 
+                                    label: 'Click to Call', 
+                                    onClick: () => handleClickToCall(student), 
+                                    icon: <Phone size={14} className="text-green-500" />,
+                                    hidden: !checkPermission('peerToPeerCallForAdmission')
+                                },
+                                // 12. Print Form - Always visible
+                                { 
+                                    label: 'Print Form', 
+                                    onClick: () => handlePrintForm(student), 
+                                    icon: <Printer size={14} className="text-gray-500" /> 
+                                },
+                            ]}
+                        />
+                    )
+                }
+            },
+            {
+                header: 'Current Stage',
+                accessorKey: 'currentStage',
+                cell: info => {
+                    const val = info.getValue() as string;
+                    return <Badge variant={val}>{val}</Badge>;
+                },
+                meta: {
+                    width: 132,
+                    align: 'center' as const,
+                } as ExtendedColumnMeta<AdmissionLead>,
+            },
+        ];
+
+        // Add columns from template heads
+        tableHeads.forEach((head) => {
+            dynamicColumns.push(convertTableHeadToColumn(head));
+        });
+
+        return dynamicColumns;
+    }, [pageNumber, pageSize, tableHeads, selectedRows, data, handleSelectAll, handleSelectRow, handleViewAdmission, handleViewTransactions, handleViewTimeline, handleViewDocuments, handleDeleteAdmission, handleViewBankDetails, handleViewFollowUp, handleMoveApplication, handleMoveStudent, handleClickToCall, checkPermission]);
+
 
 
     // Tabs Logic
@@ -456,40 +1012,121 @@ const AdmissionStudentData = () => {
     }, [stageSetup, stageCounts]);
 
 
+    const breadcrumbItems = [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Admissions', href: '/admissions' },
+        { label: 'Application Data' }
+    ];
+
     return (
-        <div className="w-full max-w-full min-w-0 p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="w-full max-w-full font-sans pb-8 px-4">
             {/* Header */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Application Data</h1>
-                    <div className="flex items-center text-sm text-gray-500 mt-1">
-                        <span className="mr-2">Select Session</span>
-                        <select
-                            className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
-                            value={session}
-                            onChange={handleSessionChange}
-                        >
-                            {sessions?.map(s => (
-                                <option key={s._id} value={s.name}>{s.name}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Application Data</h1>
+                    <Breadcrumb items={breadcrumbItems} />
                 </div>
 
-                <div className="flex space-x-2">
-                    <Button variant="primary" onClick={() => setIsAddModalOpen(true)}>Add Application Data</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleExportExcel} disabled={isExporting}>
-                        <FileSpreadsheet className="mr-1 h-4 w-4" /> {isExporting ? 'Exporting...' : 'Excel'}
-                    </Button>
-                    <Button variant="outline" className="flex items-center" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" /> Print</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleGenerateReport}>Generate Report</Button>
-                    <Button variant="outline" className="flex items-center" onClick={() => setIsUploadModalOpen(true)}>Upload Excel</Button>
-                    <Button variant="outline" className="flex items-center" onClick={() => setIsFilterModalOpen(true)}><Filter className="mr-1 h-4 w-4" /> Filter</Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleRefresh}>
-                        <RefreshCw className={`mr-1 h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} /> Refresh
-                    </Button>
-                    <Button variant="outline" className="flex items-center" onClick={handleNeedHelp}>Need Help</Button>
+                <div className="flex items-center gap-2">
+                    {/* Session Selector */}
+                    <Dropdown
+                        options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
+                        value={session}
+                        onChange={handleSessionChange}
+                        placeholder="Select Session"
+                        containerClassName="min-w-[200px]"
+                        className="!py-1.5 !min-h-[36px] text-sm font-semibold"
+                    />
 
+                    {/* Filter Button */}
+                    <Button
+                        variant="outline"
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${isFilterModalOpen ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+
+                    {/* Refresh Button */}
+                    <Button
+                        variant="outline"
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={handleRefresh}
+                        title="Refresh"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} />
+                    </Button>
+
+                    {/* Upload Excel Button - Show if has permission */}
+                    {checkPermission('uploadAdmissionStudentData') && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={() => setIsUploadModalOpen(true)}
+                            title="Upload Excel"
+                        >
+                            <Upload className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Excel Export Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleExportExcel}
+                            title="Export to Excel"
+                        >
+                            <FileSpreadsheet className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Print Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handlePrint}
+                            title="Print"
+                        >
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Generate Report Button - Show if data exists OR has permission */}
+                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleGenerateReport}
+                            title="Generate Report"
+                        >
+                            <FileText className="h-4 w-4" />
+                        </Button>
+                    )}
+
+                    {/* Need Help Button - Always show */}
+                    <Button
+                        variant="outline"
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={handleNeedHelp}
+                        title="Need Help"
+                    >
+                        <HelpCircle className="h-4 w-4" />
+                    </Button>
+
+                    {/* Add Application Data Button - Show if has permission */}
+                    {checkPermission('addAdmissionStudentData') && (
+                        <Button
+                            variant="primary"
+                            onClick={() => setIsAddModalOpen(true)}
+                            title="Add Application Data"
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Application Data
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -511,43 +1148,133 @@ const AdmissionStudentData = () => {
                 ))}
             </div>
 
-            {/* View Admission Details (Inline) */}
-            {isViewAdmissionOpen && (
-                <ViewAdmissionDetails
-                    studentId={viewAdmissionStudentId}
-                    onClose={() => setIsViewAdmissionOpen(false)}
+            {/* Bulk Action Buttons - Show when rows are selected */}
+            {selectedRows.size > 0 && !hasError && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-700">
+                                {selectedRows.size} student{selectedRows.size > 1 ? 's' : ''} selected
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {/* Send Email */}
+                            {checkPermission('sendBulkAdmissionReminderEmail') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendEmail}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Send Email"
+                                >
+                                    <Mail size={16} className="mr-1" />
+                                    Send Email
+                                </Button>
+                            )}
+
+                            {/* Send WhatsApp Web */}
+                            {checkPermission('sendMultipleAdmissionReminderWhatsAppWebCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendWhatsappWeb}
+                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
+                                    title="Send WhatsApp Web"
+                                >
+                                    <MessageCircle size={16} className="mr-1" />
+                                    WhatsApp Web
+                                </Button>
+                            )}
+
+                            {/* Send WhatsApp */}
+                            {checkPermission('sendMultipleAdmissionReminderWhatsAppCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendWhatsapp}
+                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
+                                    title="Send WhatsApp"
+                                >
+                                    <MessageCircle size={16} className="mr-1" />
+                                    WhatsApp
+                                </Button>
+                            )}
+
+                            {/* Send SMS */}
+                            {checkPermission('sendMultipleAdmissionReminderSMSCommunication') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkSendSms}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Send SMS"
+                                >
+                                    <Send size={16} className="mr-1" />
+                                    Send SMS
+                                </Button>
+                            )}
+
+                            {/* Print Forms - No permission required */}
+                            <Button
+                                variant="outline"
+                                onClick={handlePrintSelectedForms}
+                                className="!py-1.5 !px-3 text-sm border-gray-300 text-gray-700 hover:bg-gray-100"
+                                title="Print Forms"
+                            >
+                                <Printer size={16} className="mr-1" />
+                                Print Forms
+                            </Button>
+
+                            {/* Bulk Update Counselor */}
+                            {checkPermission('counselorUpdateBulkRequest') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={handleBulkUpdateCounselor}
+                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
+                                    title="Bulk Update Counselor"
+                                >
+                                    <Users size={16} className="mr-1" />
+                                    Update Counselor
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* View Admission (Edit Mode) */}
+            <AddApplicationDataPanel
+                isOpen={isViewAdmissionOpen}
+                onClose={() => {
+                    setIsViewAdmissionOpen(false);
+                    setViewAdmissionStudentId(null);
+                }}
+                mode="edit"
+                studentId={viewAdmissionStudentId || undefined}
+                onSuccess={() => {
+                    refetch();
+                    refetchStages();
+                }}
+            />
+
+            {/* Template Selection Tabs - Show if templates exist */}
+            {templates && templates.length > 0 && (
+                <HorizontalTabs
+                    tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
+                    activeTab={selectedTemplate}
+                    onTabChange={setSelectedTemplate}
+                    className="px-0 mb-4"
                 />
             )}
 
-            {/* Search Bar */}
-            <Card className="mb-4 !p-4">
-                <div className="w-1/4">
-                    <Select
-                        label="Search By"
-                        options={[
-                            { label: 'Name', value: 'name' },
-                            { label: 'Application Number', value: 'applicationNumber' },
-                            { label: 'Mobile No.', value: 'phone' },
-                            { label: 'Father Name', value: 'fatherName' }
-                        ]}
-                        value={searchBy}
-                        onChange={(e) => setSearchBy(e.target.value)}
-                    />
-                </div>
-            </Card>
-
-            {/* Data Table with built-in search */}
-            <Card className="overflow-hidden">
-                <div className="p-4 border-b font-semibold text-gray-700 uppercase text-sm tracking-wider text-center">
-                    APPLICATIONS
-                </div>
+            {/* Data Table with integrated Search By */}
+            {!hasError && (
                 <DataTable
                     columns={columns}
                     data={data?.data || []}
                     isLoading={isLoading}
                     showSearch={true}
-                    searchPlaceholder="Search by Name/Application No./Mobile No./Father Name"
+                    searchPlaceholder="Search..."
                     onSearch={handleSearch}
+                    searchByOptions={ADMISSION_SEARCH_BY_OPTIONS}
+                    searchByValue={searchBy}
+                    onSearchByChange={(value) => setSearchBy(value)}
                     showPagination={true}
                     manualPagination={true}
                     rowCount={data?.totalCount || 0}
@@ -558,21 +1285,27 @@ const AdmissionStudentData = () => {
                     }}
                     maxHeight="600px"
                 />
-            </Card>
+            )}
 
-            <AddStudentModal
+
+            {/* Add Application Data Panel */}
+            <AddApplicationDataPanel
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
-                onSubmit={handleAddStudent}
-                isLoading={addStudentMutation.isPending}
-                entityId={entityId}
+                mode="add"
+                onSuccess={() => {
+                    refetch();
+                    refetchStages();
+                }}
             />
+
 
             <FilterModal
                 isOpen={isFilterModalOpen}
                 onClose={() => setIsFilterModalOpen(false)}
                 onApply={handleApplyFilters}
                 currentFilters={currentFilters}
+                stages={stageCounts?.map((s: any) => s.stage) || []}
             />
 
             <UploadExcelModal
@@ -581,98 +1314,7 @@ const AdmissionStudentData = () => {
                 onUpload={handleUploadExcel}
             />
 
-            {/* Fixed Position Dropdown Menu */}
-            {openActionId && actionMenuPosition && (
-                <div
-                    className="fixed bg-white rounded-md shadow-lg border border-gray-100 z-[9999] overflow-hidden w-40 action-menu-dropdown"
-                    style={{
-                        top: actionMenuPosition.top,
-                        left: actionMenuPosition.left
-                    }}
-                >
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handlePrintForm(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Printer size={14} className="mr-2 text-gray-500" />
-                        Print Form
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewAdmission(openActionId);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <User size={14} className="mr-2 text-blue-500" />
-                        View Admission
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewTimeline(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Clock size={14} className="mr-2 text-blue-500" />
-                        View Timeline
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            // Navigate to verify page
-                            if (student) window.open(`/admission/verify-documents/${student._id}`, '_blank');
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <FileText size={14} className="mr-2 text-blue-600" />
-                        Verify Documents
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewDocuments(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <FileText size={14} className="mr-2 text-green-500" />
-                        View Documents
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewBankDetails(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Landmark size={14} className="mr-2 text-purple-500" />
-                        View Bank Details
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewTransactions(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Receipt size={14} className="mr-2 text-orange-500" />
-                        View Transactions
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewFollowUp(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <MessageSquare size={14} className="mr-2 text-blue-500" />
-                        View Follow Up
-                    </button>
-                </div>
-            )}
+
 
             <TimelineModal
                 isOpen={isTimelineOpen}
@@ -682,9 +1324,21 @@ const AdmissionStudentData = () => {
 
             <ViewDocumentsModal
                 isOpen={isViewDocumentsOpen}
-                onClose={() => setIsViewDocumentsOpen(false)}
+                onClose={() => {
+                    setIsViewDocumentsOpen(false);
+                    setDocumentStudent(null);
+                }}
                 student={documentStudent}
+                entityName={documentStudent?.name}
+                permissions={permissions}
+                onUploadSuccess={() => refetch()}
+                apiConfig={{
+                    getPresignedUrl: admissionStudentDataService.getPresignedUrl,
+                    uploadFileToUrl: admissionStudentDataService.uploadFileToUrl,
+                    uploadDocuments: admissionStudentDataService.uploadAdmissionDocuments,
+                }}
             />
+
 
             <BankDetailsModal
                 isOpen={isBankDetailsOpen}
@@ -704,6 +1358,69 @@ const AdmissionStudentData = () => {
                 student={followUpStudent}
             />
 
+            <MoveApplicationModal
+                isOpen={isMoveApplicationOpen}
+                onClose={() => setIsMoveApplicationOpen(false)}
+                student={moveApplicationStudent}
+                onSuccess={() => {
+                    // Refresh data after successful move
+                    refetch();
+                }}
+            />
+
+            <MoveStudentModal
+                isOpen={isMoveStudentOpen}
+                onClose={() => setIsMoveStudentOpen(false)}
+                student={moveStudentStudent}
+                onSuccess={() => {
+                    // Refresh data after successful move
+                    refetch();
+                }}
+            />
+
+            {/* Bulk Action Modals */}
+            <SendEmailModal
+                isOpen={isSendEmailOpen}
+                onClose={handleEmailModalClose}
+                selectedStudents={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendWhatsappWebModal
+                isOpen={isSendWhatsappWebOpen}
+                onClose={handleWhatsappWebModalClose}
+                selectedStudents={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendWhatsappModal
+                isOpen={isSendWhatsappOpen}
+                onClose={handleWhatsappModalClose}
+                selectedLeads={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <SendSmsModal
+                isOpen={isSendSmsOpen}
+                onClose={handleSmsModalClose}
+                selectedLeads={getSelectedStudents()}
+                onSuccess={clearSelection}
+            />
+
+            <BulkUpdateCounselorModal
+                isOpen={isBulkCounselorOpen}
+                onClose={() => setIsBulkCounselorOpen(false)}
+                selectedCount={selectedRows.size}
+                entityId={entityId}
+                onUpdate={handleCounselorUpdate}
+            />
+
+            {/* Need Help Panel */}
+            <NeedHelpPanel
+                isOpen={isHelpPanelOpen}
+                onClose={() => setIsHelpPanelOpen(false)}
+                page="applicationData"
+            />
 
         </div>
     );

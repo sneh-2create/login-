@@ -32,6 +32,10 @@ export interface BaseDataTableProps {
     showSearch?: boolean;
     searchPlaceholder?: string;
     onSearch?: (_query: string) => void;
+    // Search By dropdown
+    searchByOptions?: ReadonlyArray<{ readonly label: string; readonly value: string }> | Array<{ label: string; value: string }>;
+    searchByValue?: string;
+    onSearchByChange?: (_value: string) => void;
     // Pagination
     showPagination?: boolean;
     itemsPerPageOptions?: number[];

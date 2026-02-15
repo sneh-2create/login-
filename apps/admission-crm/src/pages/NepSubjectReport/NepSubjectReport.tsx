@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, ReactNode } from 'react';
 import { admissionService } from '@od-erp/api-client';
 import { useNepSubjectReport } from '@od-erp/query';
-import { processNepSubjectReportData, transformNepSubjectReportForExport } from '@od-erp/utils';
-import { Button, Select, Title, Card, DataTable } from '@od-erp/ui';
+import { processNepSubjectReportData, addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
+import { Button, Dropdown, Breadcrumb, DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { NepSubjectReportTableRow } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
+import { format } from 'date-fns';
 
 const NepSubjectReport = () => {
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<NepSubjectReportTableRow[]>([]);
+    const [showFilter, setShowFilter] = useState(true);
 
     // Dropdown Data
     const [courses, setCourses] = useState<any[]>([]);
@@ -33,7 +35,22 @@ const NepSubjectReport = () => {
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const preferences = useAppSelector((state) => state.auth.preferences);
+    const showBatch = preferences?.entityPreferences?.showBatch;
+    
+    // Display Names
+    const displayNames = useMemo(() => {
+        const prefNames = preferences?.entityPreferences?.displayNames || [];
+        const get = (key: string, defaultVal: string) => prefNames.find((n: any) => n.value === key)?.name || defaultVal;
+        return {
+            course: get('course', 'Course'),
+            stream: get('stream', 'Stream'),
+            batch: get('batch', 'Batch'),
+            subjectCombination: get('subjectCombination', 'Subject Combination'),
+        };
+    }, [preferences]);
 
     // Query Hook parameters
     const { data: reportData, isLoading, refetch } = useNepSubjectReport(
@@ -43,7 +60,8 @@ const NepSubjectReport = () => {
         selectedStream || undefined,
         selectedBatch || undefined,
         selectedGroup.value,
-        selectedGroup.name
+        selectedGroup.name,
+        false
     );
 
     useEffect(() => {
@@ -51,20 +69,40 @@ const NepSubjectReport = () => {
     }, []);
 
     useEffect(() => {
-        if (selectedCourse) {
+        if (selectedCourse && courses.length > 0) {
             const courseObj = courses.find(c => c.name === selectedCourse);
             if (courseObj) {
-                setStreams(courseObj.stream || []);
-                setBatches(courseObj.batch || []);
-                // Reset child selections when course changes
-                if (!courseObj.stream?.includes(selectedStream)) setSelectedStream('');
-                if (!courseObj.batch?.includes(selectedBatch)) setSelectedBatch('');
+                const courseStreams = courseObj.stream || [];
+                const courseBatches = courseObj.batch || [];
+
+                setStreams(courseStreams);
+                setBatches(courseBatches);
+
+                // Auto-select first stream if current selection is invalid or empty
+                if (courseStreams.length > 0 && (!selectedStream || !courseStreams.includes(selectedStream))) {
+                    setSelectedStream(courseStreams[0]);
+                } else if (courseStreams.length === 0) {
+                    setSelectedStream('');
+                }
+
+                // Auto-select first batch if current selection is invalid or empty AND batch is shown
+                if (showBatch) {
+                    if (courseBatches.length > 0 && (!selectedBatch || !courseBatches.includes(selectedBatch))) {
+                        setSelectedBatch(courseBatches[0]);
+                    } else if (courseBatches.length === 0) {
+                        setSelectedBatch('');
+                    }
+                } else {
+                    setSelectedBatch('');
+                }
             }
         } else {
             setStreams([]);
             setBatches([]);
+            setSelectedStream('');
+            setSelectedBatch('');
         }
-    }, [selectedCourse, courses]);
+    }, [selectedCourse, courses, showBatch]);
 
     useEffect(() => {
         if (reportData) {
@@ -92,7 +130,32 @@ const NepSubjectReport = () => {
             setData([]);
             return;
         }
+
         const processed = processNepSubjectReportData(rawData);
+
+        // Check if Total row exists, if not calculate and add
+        const hasTotal = processed.some((row: any) => row.name === 'Total' || row.course === 'Total');
+
+        if (!hasTotal && processed.length > 0) {
+            const totalRow: any = {
+                position: 0,
+                name: 'Total',
+                code: '',
+                seats: 0,
+                availableSeats: 0,
+                filledSeats: 0,
+                pendingApplications: 0
+            };
+
+            processed.forEach((item: any) => {
+                totalRow.seats += (Number(item.seats) || 0);
+                totalRow.availableSeats += (Number(item.availableSeats) || 0);
+                totalRow.filledSeats += (Number(item.filledSeats) || 0);
+                totalRow.pendingApplications += (Number(item.pendingApplications) || 0);
+            });
+            processed.push(totalRow);
+        }
+
         setData(processed);
     };
 
@@ -103,11 +166,59 @@ const NepSubjectReport = () => {
     const handleExport = () => {
         setExportLoading(true);
         try {
-            const exportData = transformNepSubjectReportForExport(data);
-            const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();
+            const ws: xlsx.WorkSheet = {};
+
+            const tableStartRow = addExcelReportHeader(ws, entityName, `${displayNames.subjectCombination} Report`);
+
+            // Columns definition for export
+            const exportColumns = [
+                { header: 'S.No', key: 'position' },
+                { header: 'Name', key: 'name' },
+                { header: 'Code', key: 'code' },
+                { header: 'Seats', key: 'seats' },
+                { header: 'Available Seats', key: 'availableSeats' },
+                { header: 'Filled Seats', key: 'filledSeats' },
+                { header: 'Pending Applications', key: 'pendingApplications' },
+            ];
+
+            if (showBatch) {
+                exportColumns.splice(3, 0, { header: displayNames.batch, key: 'batch' });
+            }
+
+            // Table Headers
+            const tableHeaders = exportColumns.map(c => c.header);
+            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: { r: tableStartRow, c: 0 } });
+
+            // Data
+            const dataRows = data.map((row: any) => {
+                const isTotalRow = row.name === 'Total';
+
+                return exportColumns.map((col) => {
+                    // S.No logic
+                    if (col.key === 'position') {
+                        if (isTotalRow) return '';
+                        return row.position;
+                    }
+
+                    // Handle Batch column for non-total rows
+                    if (col.key === 'batch') {
+                        return isTotalRow ? '' : (row.batch || selectedBatch || '-');
+                    }
+
+                    return row[col.key] || (row[col.key] === 0 ? 0 : '');
+                });
+            });
+
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+            // Footer
+            const footerRow = tableStartRow + 1 + dataRows.length + 2;
+            addExcelReportFooter(ws, footerRow);
+
             xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
-            xlsx.writeFile(wb, 'Nep Subject Report.xlsx');
+            xlsx.writeFile(wb, `${displayNames.subjectCombination}_Report_${session}_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -116,108 +227,219 @@ const NepSubjectReport = () => {
     };
 
     const handlePrint = () => {
-        localStorage.setItem('nepSubjectData', JSON.stringify(data));
+        const printData = {
+            data,
+            showBatch,
+            displayNames,
+            entityName
+        };
+        localStorage.setItem('nepSubjectPrintData', JSON.stringify(printData));
         window.open('/admission/print/nepSubjectReport', '_blank');
     };
 
-    const columns: ColumnDef<NepSubjectReportTableRow>[] = [
-        { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() === 0 ? '' : info.getValue() },
-        { accessorKey: 'name', header: 'Subject Name' },
-        { accessorKey: 'code', header: 'Subject Code', cell: info => info.getValue() || '-' },
-        { accessorKey: 'seats', header: 'Seats' },
-        { accessorKey: 'availableSeats', header: 'Available Seats' },
-        { accessorKey: 'filledSeats', header: 'Filled Seats' },
-        { accessorKey: 'pendingApplications', header: 'Pending Applications' },
-    ];
+    const columns: ColumnDef<NepSubjectReportTableRow>[] = useMemo(() => {
+        const cols: ColumnDef<NepSubjectReportTableRow>[] = [
+            {
+                accessorKey: 'position',
+                header: 'S.No',
+                cell: info => {
+                    const row = info.row.original;
+                    if (row.name === 'Total') return '';
+                    return <span className="text-gray-500">{info.getValue() as ReactNode}</span>;
+                }
+            },
+            {
+                accessorKey: 'name',
+                header: 'Name',
+                cell: info => {
+                    const row = info.row.original;
+                    return row.name === 'Total' ? <span className="font-bold">Total</span> : <span className="font-medium text-gray-900">{info.getValue() as ReactNode}</span>;
+                }
+            },
+            {
+                accessorKey: 'code',
+                header: 'Code',
+                cell: info => (info.getValue() as ReactNode) || ''
+            }
+        ];
+
+        if (showBatch) {
+            cols.push({
+                accessorKey: 'batch',
+                header: displayNames.batch,
+                cell: info => {
+                    const row = info.row.original;
+                    if (row.name === 'Total') return '';
+                    return (info.getValue() as ReactNode) || selectedBatch || '';
+                }
+            });
+        }
+
+        cols.push(
+            {
+                accessorKey: 'seats',
+                header: 'Seats',
+                cell: info => <span className="text-gray-900">{info.getValue() as ReactNode}</span>
+            },
+            {
+                accessorKey: 'availableSeats',
+                header: 'Available Seats',
+                cell: info => <span className="font-medium text-green-600">{info.getValue() as ReactNode}</span>
+            },
+            {
+                accessorKey: 'filledSeats',
+                header: 'Filled Seats',
+                cell: info => <span className="font-medium text-blue-600">{info.getValue() as ReactNode}</span>
+            },
+            {
+                accessorKey: 'pendingApplications',
+                header: 'Pending Applications',
+                cell: info => <span className="font-medium text-orange-600">{info.getValue() as ReactNode}</span>
+            }
+        );
+
+        return cols;
+    }, [showBatch, selectedBatch]);
 
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-white gap-6">
-            <div className="flex justify-between items-center">
+        <div className="w-full max-w-full font-sans pb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <div className="text-xs text-gray-500 mb-1 cursor-pointer">
-                        Dashboard &gt; Admission &gt; <b>NEP Subject Report</b>
-                    </div>
-                    <Title variant="pageTitle">NEP Subject Report</Title>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{displayNames.subjectCombination} Report</h1>
+                    <Breadcrumb
+                        items={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Reports', href: '/admission/reports' },
+                            { label: `${displayNames.subjectCombination} Report` }
+                        ]}
+                    />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
-                        onClick={handlePrint}
-                        leftIcon={<Printer size={16} />}
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setShowFilter(!showFilter)}
+                        title="Filter"
                     >
-                        Print
+                        <SlidersHorizontal className="h-4 w-4" />
                     </Button>
+
                     <Button
                         variant="outline"
-                        onClick={handleExport}
-                        isLoading={exportLoading}
-                        leftIcon={<Download size={16} />}
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                        onClick={handleSearch}
+                        title="Refresh/Go"
                     >
-                        Export to Excel
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
+
+                    {data.length > 0 && (
+                        <>
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handlePrint}
+                                title="Print"
+                            >
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handleExport}
+                                isLoading={exportLoading}
+                                title="Export to Excel"
+                            >
+                                <Download className="h-4 w-4" />
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
-            <Card className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Course</label>
-                        <Select
-                            value={selectedCourse}
-                            onChange={(e) => setSelectedCourse(e.target.value)}
-                            options={[
-                                { value: '', label: 'Select Course' },
-                                ...courses.map(c => ({ value: c.name, label: c.name }))
-                            ]}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Stream</label>
-                        <Select
-                            value={selectedStream}
-                            onChange={(e) => setSelectedStream(e.target.value)}
-                            options={[
-                                { value: '', label: 'Select Stream' },
-                                ...streams.map(s => ({ value: s, label: s }))
-                            ]}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Batch</label>
-                        <Select
-                            value={selectedBatch}
-                            onChange={(e) => setSelectedBatch(e.target.value)}
-                            options={[
-                                { value: '', label: 'Select Batch' },
-                                ...batches.map(b => ({ value: b, label: b }))
-                            ]}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Group By</label>
-                        <Select
-                            value={selectedGroup.value}
-                            onChange={(e) => {
-                                const group = groupByOptions.find(g => g.value === e.target.value);
-                                if (group) setSelectedGroup(group);
-                            }}
-                            options={groupByOptions.map(g => ({ value: g.value, label: g.name }))}
-                        />
-                    </div>
+            {showFilter && (
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.course}</label>
+                            <Dropdown
+                                value={selectedCourse}
+                                onChange={(val) => setSelectedCourse(val as string)}
+                                options={[
+                                    { value: '', label: 'Select Course' },
+                                    ...courses.map(c => ({ value: c.name, label: c.displayName || c.name }))
+                                ]}
+                                placeholder={`Select ${displayNames.course}`}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.stream}</label>
+                            <Dropdown
+                                value={selectedStream}
+                                onChange={(val) => setSelectedStream(val as string)}
+                                options={[
+                                    { value: '', label: `Select ${displayNames.stream}` },
+                                    ...streams.map(s => ({ value: s, label: s }))
+                                ]}
+                                placeholder={`Select ${displayNames.stream}`}
+                                className="w-full"
+                            />
+                        </div>
+                        {showBatch && (
+                            <div className="w-full">
+                                <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.batch}</label>
+                                <Dropdown
+                                    value={selectedBatch}
+                                    onChange={(val) => setSelectedBatch(val as string)}
+                                    options={[
+                                        { value: '', label: `Select ${displayNames.batch}` },
+                                        ...batches.map(b => ({ value: b, label: b }))
+                                    ]}
+                                    placeholder={`Select ${displayNames.batch}`}
+                                    className="w-full"
+                                />
+                            </div>
+                        )}
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.subjectCombination} Type</label>
+                            <Dropdown
+                                value={selectedGroup.value}
+                                onChange={(val) => {
+                                    const group = groupByOptions.find(g => g.value === val);
+                                    if (group) setSelectedGroup(group);
+                                }}
+                                options={groupByOptions.map(g => ({ value: g.value, label: g.name }))}
+                                placeholder="Select Group"
+                                className="w-full"
+                            />
+                        </div>
 
-                    <div>
-                        <Button onClick={handleSearch} isLoading={isLoading}>Go</Button>
+                        <div className="w-full md:w-auto">
+                            <div className="w-full md:w-auto">
+                                <Button onClick={handleSearch} isLoading={isLoading} className="w-full">Go</Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </Card>
+            )}
 
-            <div className="w-full max-w-full overflow-x-auto">
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    isLoading={isLoading}
-                />
-            </div>
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={isLoading}
+                        showSearch={false}
+                    />
+                </div>
+            )}
+
+            {!isLoading && data.length === 0 && (
+                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
+                </div>
+            )}
         </div>
     );
 };

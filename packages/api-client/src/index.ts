@@ -20,4 +20,9 @@ export { dailyCollectionReportService } from './services/AdmissionCrmServices/da
 export { admissionVisitService } from './services/AdmissionCrmServices/admissionVisit.service';
 export { admissionNoteService } from './services/AdmissionCrmServices/admissionNote.service';
 export { sessionService } from './services/session.service';
+export { excelTemplateService } from './services/excelTemplate.service';
+export { feeMasterService } from './services/feeMaster.service';
+export { pdfTemplateService } from './services/pdfTemplate.service';
+export { faqService } from './services/faq.service';
 export { default as apiClient } from './client';
+export { communicationService } from './services/communication.service';

@@ -1,20 +1,22 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useAdmissionFollowUps, useAddAdmissionFollowUp, useEditAdmissionFollowUp } from '@od-erp/query';
 import { AdmissionLead } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
-import { X, MessageSquare, Edit2, RotateCw, Check } from 'lucide-react';
+import { X, MessageSquare, RotateCw, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTable, Button } from '@od-erp/ui';
+import { DataTable, Button, Input, DatePicker } from '@od-erp/ui'; // Added Input, DatePicker
 import { ColumnDef } from '@tanstack/react-table';
+import StudentInfoBar from '../StudentInfoBar';
 
 interface ViewFollowUpModalProps {
     isOpen: boolean;
     onClose: () => void;
     student: AdmissionLead | null;
     onSaveSuccess?: () => void;
+    inline?: boolean;
 }
 
-const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFollowUpModalProps) => {
+const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = false }: ViewFollowUpModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
 
     const { data: followUps, isLoading: isFollowUpsLoading } = useAdmissionFollowUps(entityId, student?._id || '');
@@ -22,37 +24,84 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
     const editFollowUp = useEditAdmissionFollowUp();
 
     // Form State
-    const [followUpDate, setFollowUpDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [followUpDate, setFollowUpDate] = useState<Date>(new Date()); // Changed to Date
     const [time, setTime] = useState<string>(format(new Date(), 'HH:mm'));
     const [remark, setRemark] = useState<string>('');
     const [editId, setEditId] = useState<string | null>(null);
     const [status, setStatus] = useState<string>('pending');
+    const [remarkError, setRemarkError] = useState<string>('');
+    // State for inline completion remarks
+    const completionRemarksRef = useRef<Record<string, string>>({});
 
     const resetForm = () => {
-        setFollowUpDate(new Date().toISOString().split('T')[0]);
+        setFollowUpDate(new Date()); // Reset to Date
         setTime(format(new Date(), 'HH:mm'));
         setRemark('');
         setEditId(null);
         setStatus('pending');
+        setRemarkError('');
     };
 
-    const handleEdit = (row: any) => {
-        setEditId(row._id);
-        const date = new Date(row.followUpDate);
-        setFollowUpDate(date.toISOString().split('T')[0]);
-        setTime(format(date, 'HH:mm'));
-        setRemark(row.followUpQuery || '');
-        setStatus(row.status || 'pending');
+    // Time validation handler (matching Angular)
+    const handleTimeChange = (newTime: string) => {
+        setTime(newTime);
+        
+        if (newTime) {
+            const currentTime = new Date();
+            const selectedTime = new Date(followUpDate);
+            const [hours, minutes] = newTime.split(':').map(Number);
+            selectedTime.setHours(hours, minutes);
+
+            if (selectedTime < currentTime) {
+                alert("Can't set time before current time");
+                // Reset to current time
+                const currentHour = ('0' + currentTime.getHours()).slice(-2);
+                const currentMinute = ('0' + currentTime.getMinutes()).slice(-2);
+                setTime(`${currentHour}:${currentMinute}`);
+            }
+        }
+    };
+
+    // Remark validation (matching Angular: 2-100 chars, alphanumeric with ', -, .)
+    const validateRemark = (value: string): boolean => {
+        if (!value || value.trim().length < 2) {
+            setRemarkError('Remark must be at least 2 characters');
+            return false;
+        }
+        if (value.length > 100) {
+            setRemarkError('Remark must not exceed 100 characters');
+            return false;
+        }
+        // Pattern: alphanumeric with special chars (', -, .)
+        const pattern = /^[a-zA-Z0-9\s',.-]+$/;
+        if (!pattern.test(value)) {
+            setRemarkError("Remark can only contain letters, numbers, and special characters (', -, .)");
+            return false;
+        }
+        setRemarkError('');
+        return true;
+    };
+
+    const handleRemarkChange = (value: string) => {
+        setRemark(value);
+        if (value) {
+            validateRemark(value);
+        } else {
+            setRemarkError('');
+        }
     };
 
     const handleMarkCompleted = async (row: any) => {
+        const remark = completionRemarksRef.current[row._id] || 'completed';
         const payload: any = {
             ...row,
             status: 'completed',
-            completionRemark: 'completed'
+            completionRemark: remark
         };
         try {
             await editFollowUp.mutateAsync(payload);
+            // Clear local state for this row
+            delete completionRemarksRef.current[row._id];
         } catch (error) {
             console.error('Failed to mark as completed', error);
         }
@@ -60,6 +109,11 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
 
     const handleSubmit = async () => {
         if (!student) return;
+
+        // Validate remark before submission
+        if (!validateRemark(remark)) {
+            return;
+        }
 
         const date = new Date(followUpDate);
         const [hours, minutes] = time.split(':').map(Number);
@@ -139,7 +193,25 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
         {
             header: 'Completion Remark',
             accessorKey: 'completionRemark',
-            cell: info => info.getValue() || '-'
+            cell: info => {
+                const isPending = info.row.original.status?.toLowerCase() === 'pending';
+                if (isPending) {
+                    return (
+                        <textarea
+                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            rows={2}
+                            placeholder="Enter completion remark..."
+                            defaultValue={completionRemarksRef.current[info.row.original._id] || ''}
+                            onChange={(e) => {
+                                completionRemarksRef.current[info.row.original._id] = e.target.value;
+                            }}
+                            onClick={(e) => e.stopPropagation()} // Prevent row selection if any
+                        />
+                    );
+                }
+                return info.getValue() || '-';
+            },
+            size: 200
         },
         {
             header: 'Action',
@@ -151,20 +223,12 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                         {isPending && (
                             <button
                                 onClick={() => handleMarkCompleted(info.row.original)}
-                                className="p-1 rounded hover:bg-green-50 text-green-500"
+                                className="p-1 rounded hover:bg-green-50 text-green-500 bg-green-50 border border-green-200"
                                 title="Mark as Completed"
                             >
                                 <Check size={16} />
                             </button>
                         )}
-                        <button
-                            disabled={!isPending}
-                            onClick={() => handleEdit(info.row.original)}
-                            className={`p-1 rounded transition-colors ${isPending ? 'text-blue-500 hover:bg-blue-50' : 'text-gray-400 cursor-not-allowed'}`}
-                            title="Edit FollowUp"
-                        >
-                            <Edit2 size={16} />
-                        </button>
                     </div>
                 );
             }
@@ -173,49 +237,9 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
 
     if (!isOpen || !student) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col">
-                <div className="flex justify-between items-center p-4 border-b">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                            <MessageSquare className="mr-2 h-5 w-5 text-blue-600" />
-                            Follow Ups
-                        </h2>
-                        {/* Student Details Header */}
-                        <div className="hidden md:flex flex-wrap gap-4 text-sm text-gray-600 border-l pl-4 ml-4">
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">Name</span>
-                                {student.name}
-                            </div>
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">Application Number</span>
-                                {student.applicationNumber}
-                            </div>
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">Father Name</span>
-                                {student.fatherName || '-'}
-                            </div>
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">School Name</span>
-                                {student.course}
-                            </div>
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">Course</span>
-                                {(student as any).stream || '-'}
-                            </div>
-                            <div>
-                                <span className="font-semibold block text-xs uppercase text-gray-400">Stage</span>
-                                {student.currentStage}
-                            </div>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                        <X size={24} />
-                    </button>
-                </div>
-
-                <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-6">
+    // Content component
+    const content = (
+        <div className={inline ? "space-y-6" : "p-6 overflow-y-auto flex-1 flex flex-col gap-6"}>
                     {/* Schedule Follow-Up Form */}
                     <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                         <div className="flex justify-between items-center mb-4">
@@ -224,37 +248,61 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                                 {editId && <span className="text-sm font-normal text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">Editing Mode</span>}
                             </h4>
                             <div className="flex gap-2">
-                                <button onClick={resetForm} className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full" title="Reset Form">
+                                <button
+                                    onClick={resetForm}
+                                    className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full"
+                                    title="Reset Form"
+                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
+                                >
                                     <RotateCw size={18} />
                                 </button>
                                 <Button
                                     onClick={handleSubmit}
                                     isLoading={addFollowUp.isPending || editFollowUp.isPending}
                                     className="bg-blue-600 hover:bg-blue-700 text-white"
+                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                 >
                                     {editId ? 'Update' : 'Save'}
                                 </Button>
                             </div>
                         </div>
 
+                        {!editId && followUps?.some((f: any) => f.status === 'pending') && (
+                            <div className="mb-4 bg-orange-50 border-l-4 border-orange-500 p-4">
+                                <div className="flex">
+                                    <div className="flex-shrink-0">
+                                        <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-3">
+                                        <p className="text-sm text-orange-700">
+                                            A pending follow-up already exists. Please complete or edit the existing follow-up before scheduling a new one.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">FollowUp Date</label>
-                                    <input
-                                        type="date"
+                                    <DatePicker
                                         value={followUpDate}
-                                        onChange={(e) => setFollowUpDate(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        onChange={(date: Date | null) => date && setFollowUpDate(date)}
+                                        minDate={new Date()}
+                                        className="w-full"
+                                        disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                    <input
+                                    <Input
+                                        label="Time"
                                         type="time"
                                         value={time}
-                                        onChange={(e) => setTime(e.target.value)}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        onChange={(e) => handleTimeChange(e.target.value)}
+                                        disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                     />
                                 </div>
                             </div>
@@ -263,10 +311,16 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                                 <textarea
                                     rows={5}
                                     value={remark}
-                                    onChange={(e) => setRemark(e.target.value)}
+                                    onChange={(e) => handleRemarkChange(e.target.value)}
                                     placeholder="Enter remark here..."
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 resize-none disabled:bg-gray-100 disabled:text-gray-500 ${
+                                        remarkError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                                    }`}
+                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                 />
+                                {remarkError && (
+                                    <p className="mt-1 text-sm text-red-600">{remarkError}</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -285,15 +339,32 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess }: ViewFoll
                         )}
                     </div>
                 </div>
+    );
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg">
-                    <button
-                        onClick={onClose}
-                        className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 px-4 rounded hover:bg-gray-50 transition-colors"
-                    >
-                        Close
+    // Inline mode - render content directly
+    if (inline) {
+        return content;
+    }
+
+    // Modal mode - render with modal wrapper
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden m-4">
+                <div className="flex justify-between items-center px-6 py-4 border-b">
+                    <div className="flex items-center gap-4">
+                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                            <MessageSquare className="mr-2 h-5 w-5 text-primary" />
+                            Follow Ups
+                        </h2>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
+                        <X size={20} />
                     </button>
                 </div>
+
+                <StudentInfoBar student={student} />
+
+                {content}
             </div>
         </div>
     );

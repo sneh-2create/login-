@@ -10,9 +10,13 @@ export const PERMISSIONS = {
     EDIT_PROFILE: 'edit_profile',
 } as const;
 
-export * from './menu.config';
-export * from './dashboard.config';
-export * from './ui.config';
+export * from './admission';
 export * from './badge.config';
+export * from './dashboard.config';
+export * from './documents';
+export * from './menu.config';
+export * from './report.defaults';
 export * from './table.config';
+export * from './ui.config';
+export * from './studentFields';
 export * from './login.config';

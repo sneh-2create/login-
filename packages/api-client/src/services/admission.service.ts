@@ -15,7 +15,6 @@ export const admissionService = {
             queryParams += `&isLEET=${isLeet}`;
         }
         // Angular: URLAddress('/list/course?entity=' +queryParams)
-        // Reverting to /list/course as /admission/list/course 404'd
         const response = await apiClient.get(`/list/course?${queryParams}`);
         return response.data;
     },
@@ -64,6 +63,33 @@ export const admissionService = {
         if (counselorId) queryParams += `&counselorId=${counselorId}`;
 
         const response = await apiClient.get(`/counselorTagReport/admissionReports?${queryParams}`);
+        return response.data;
+    },
+
+    getStreamList: async (entityId: string, course: string) => {
+        const response = await apiClient.get(`/list/stream?entity=${entityId}&course=${course}`);
+        return response.data;
+    },
+
+    getBatchList: async (entityId: string, course: string, stream: string) => {
+        const response = await apiClient.get(`/list/batch?entity=${entityId}&course=${course}&stream=${stream}`);
+        return response.data;
+    },
+
+    getSourceList: async (entityId: string) => {
+        const response = await apiClient.get(`/list/source?entity=${entityId}`);
+        return response.data;
+    },
+
+    addReportFile: async (formData: {
+        reportType: string;
+        tableHeads: any[];
+        filterValues: any[];
+        sortBy: string;
+        entity: string;
+        qac?: string;
+    }) => {
+        const response = await apiClient.post(`/add/reportFile`, formData);
         return response.data;
     },
 };
