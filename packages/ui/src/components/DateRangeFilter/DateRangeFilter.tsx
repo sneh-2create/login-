@@ -28,7 +28,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
                 className="h-8 text-xs w-32"
                 aria-label="Start Date"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-[var(--color-muted-foreground)]">-</span>
             <Input
                 type="date"
                 value={endDate}

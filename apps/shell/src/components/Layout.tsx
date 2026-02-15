@@ -51,7 +51,7 @@ export const Layout: React.FC = () => {
         );
     }
 
-    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
     const toggleSidebar = () => {
         setIsSidebarExpanded(!isSidebarExpanded);

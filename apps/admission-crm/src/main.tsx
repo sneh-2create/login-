@@ -47,7 +47,7 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
         );
     }
 
-    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
     const toggleSidebar = () => {
         setIsSidebarExpanded(!isSidebarExpanded);
