@@ -4,16 +4,25 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useMenu, useSession, useAppSelector, useAppDispatch, logout } from '@od-erp/store';
 import { cn } from '../../utils';
 import { getIconSrc } from './IconMapping';
-import { LayoutDashboard, LogOut } from 'lucide-react';
+import { LayoutDashboard, LogOut, X } from 'lucide-react';
 import { SidebarExpansionPanel } from '../../global/SidebarExpansionPanel';
 import Cookies from 'js-cookie';
 
 interface SidebarProps {
     className?: string;
     collapsed?: boolean;
+    isMobile?: boolean;
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ 
+    className, 
+    collapsed = false, 
+    isMobile = false, 
+    isOpen = true,
+    onClose 
+}) => {
     const location = useLocation();
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -30,6 +39,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
     const userName = session?.user?.name || "User";
     const userRole = session?.user?.role || "Admin";
     const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+    // Mobile: Always show as expanded
+    const isExpandedView = !collapsed || isMobile;
 
     // Dynamic font size based on institute name length
     const getFontSize = (name: string) => {
@@ -76,25 +88,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
         };
     }, []);
 
-    const sidebarWidth = collapsed ? '100px' : '265px';
+    const sidebarWidth = isMobile ? '265px' : (collapsed ? '100px' : '265px');
+    
+    // Calculate transform for mobile
+    const mobileTransform = isMobile 
+        ? (isOpen ? 'translateX(0)' : 'translateX(-100%)')
+        : 'none';
 
     return (
         <>
+            {/* Mobile Backdrop */}
+            {isMobile && isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/50 z-[59] backdrop-blur-sm transition-opacity"
+                    onClick={onClose}
+                />
+            )}
+
             <aside
                 className={cn(
-                    "bg-[var(--sidebar-bg)] shadow-lg transition-all duration-300 z-[58] flex flex-col fixed left-0 top-0",
+                    "bg-[var(--sidebar-bg)] shadow-lg transition-all duration-300 z-[60] flex flex-col fixed left-0 top-0",
                     "border-r border-[var(--sidebar-border)]",
                     className
                 )}
-                style={{ width: sidebarWidth, height: '100vh' }}
+                style={{ 
+                    width: sidebarWidth, 
+                    height: '100vh',
+                    transform: mobileTransform,
+                }}
                 onMouseLeave={handleMouseLeave}
             >
                 {/* Fixed Header - Logo + Institute Name */}
                 <div className={cn(
-                    "border-b border-[var(--sidebar-border)] flex items-center justify-center transition-all duration-300",
-                    collapsed ? "h-[80px] py-4" : "h-[80px] px-4 py-3"
+                    "border-b border-[var(--sidebar-border)] flex items-center transition-all duration-300 relative",
+                    isExpandedView ? "h-[80px] px-4 py-3 justify-between" : "h-[80px] py-4 justify-center",
+                    isMobile ? "h-[70px] px-2" : "h-[80px]",
                 )}>
-                    {collapsed ? (
+                    {!isExpandedView ? (
                         // Collapsed: Show logo only (centered)
                         <div className="flex items-center justify-center">
                             {logoUrl ? (
@@ -106,21 +136,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                             )}
                         </div>
                     ) : (
-                        // Expanded: Show logo + institute name
-                        <div className="flex items-center gap-3 w-full">
-                            {logoUrl ? (
-                                <img src={logoUrl} alt="Logo" className="h-12 w-12 object-contain flex-shrink-0" />
-                            ) : (
-                                <div className="h-12 w-12 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                                    {instituteName.substring(0, 2).toUpperCase()}
-                                </div>
+                        // Expanded: Show logo + institute name + Close Button (Mobile)
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                {logoUrl ? (
+                                    <img src={logoUrl} alt="Logo" className="h-10 w-10 object-contain flex-shrink-0" />
+                                ) : (
+                                    <div className="h-10 w-10 bg-[var(--color-primary)] rounded-lg flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                                        {instituteName.substring(0, 2).toUpperCase()}
+                                    </div>
+                                )}
+                                <h2 className={cn(
+                                    "font-bold text-[var(--color-foreground)] leading-tight",
+                                    isMobile ? "line-clamp-2 max-w-[150px]" : "truncate flex-1",
+                                    getFontSize(instituteName)
+                                )}>
+                                    {instituteName}
+                                </h2>
+                            </div>
+                            
+                            {/* Mobile Close Button */}
+                            {isMobile && onClose && (
+                                <button 
+                                    onClick={onClose}
+                                    className="p-1 rounded-md hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)] transition-colors ml-2 flex-shrink-0"
+                                >
+                                    <X size={20} />
+                                </button>
                             )}
-                            <h2 className={cn(
-                                "font-bold text-[var(--color-foreground)] leading-tight flex-1",
-                                getFontSize(instituteName)
-                            )}>
-                                {instituteName}
-                            </h2>
                         </div>
                     )}
                 </div>
@@ -157,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                         className={cn(
                                             "relative flex items-center w-full px-3 py-3 cursor-pointer rounded-xl transition-all duration-200 group",
                                             isSelected ? "bg-[var(--color-primary)] text-white" : "hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)]",
-                                            collapsed ? "justify-center flex-col gap-1" : "justify-start gap-4"
+                                            !isExpandedView ? "justify-center flex-col gap-1" : "justify-start gap-4"
                                         )}
                                         onMouseEnter={() => handleMouseEnter(item)}
                                         onClick={() => handleItemClick(item)}
@@ -177,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                         </div>
 
                                         {/* Title (Only if Expanded) */}
-                                        {!collapsed && (
+                                        {isExpandedView && (
                                             <span className={cn(
                                                 "text-sm font-medium tracking-wide flex-1 truncate",
                                                 isSelected ? "text-white" : "text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)]"
@@ -191,7 +234,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                             <div
                                                 className={cn(
                                                     "flex items-center justify-center rounded-full text-[10px] font-bold shadow-sm",
-                                                    collapsed ? "absolute top-2 right-2 w-4 h-4" : "w-5 h-5",
+                                                    !isExpandedView ? "absolute top-2 right-2 w-4 h-4" : "w-5 h-5",
                                                     isSelected ? "bg-white text-[var(--color-primary)]" : "bg-[var(--color-primary)] text-white"
                                                 )}
                                             >
@@ -200,7 +243,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                         )}
 
                                         {/* Collapsed Label */}
-                                        {collapsed && (
+                                        {!isExpandedView && (
                                             <span className={cn(
                                                 "text-[10px] truncate max-w-full",
                                                 isSelected ? "text-white" : "text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)]"
@@ -218,9 +261,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                 {/* Fixed Footer - User Details + Logout */}
                 <div className={cn(
                     "border-t border-[var(--sidebar-border)] transition-all duration-300",
-                    collapsed ? "h-[70px] py-4" : "h-[80px] px-4 py-3"
+                    !isExpandedView ? "h-[70px] py-4" : "h-[80px] px-4 py-3",
+                    isMobile ? "h-[70px] px-2" : "h-[80px]",
                 )}>
-                    {collapsed ? (
+                    {!isExpandedView ? (
                         // Collapsed: Show logout icon only (centered)
                         <div className="flex items-center justify-center h-full">
                             <button
@@ -269,6 +313,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                 onMouseLeave={() => {
                     if (collapsed) handleMouseLeave();
                 }}
+                isMobile={isMobile}
             />
         </>
     );

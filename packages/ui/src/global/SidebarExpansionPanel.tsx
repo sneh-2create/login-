@@ -12,6 +12,7 @@ interface SidebarExpansionPanelProps {
     onMouseLeave: () => void;
     leftOffset?: number;
     onClose?: () => void;
+    isMobile?: boolean;
 }
 
 
@@ -123,7 +124,8 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     onMouseEnter,
     onMouseLeave,
     leftOffset = 100,
-    onClose
+    onClose,
+    isMobile=false
 }) => {
     if (!item || !item.submenu) return null;
 
@@ -248,10 +250,12 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     // Use 2 columns if:
     // 1. Estimated height exceeds viewport (PRIMARY trigger)
     // 2. OR more than 10 leaf items (SECONDARY trigger)
-    const shouldUseMultiColumn = estimatedHeight > MAX_SINGLE_COLUMN_HEIGHT || leafCount > 10;
+    // 3. AND NOT Mobile
+    const shouldUseMultiColumn = !isMobile && (estimatedHeight > MAX_SINGLE_COLUMN_HEIGHT || leafCount > 10);
 
     // Layout Logic: Dynamic column based on item count
-    const containerWidthClass = shouldUseMultiColumn ? 'w-[640px]' : 'w-[320px]';
+    // On mobile, use full width up to a max, or fixed sidebar width
+    const containerWidthClass = isMobile ? 'w-[280px]' : (shouldUseMultiColumn ? 'w-[640px]' : 'w-[320px]');
 
     return (
         <>
@@ -276,7 +280,7 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
                 onMouseLeave={onMouseLeave}
             >
                 {/* Header with Title and Close */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                <div className={`flex items-center justify-between ${isMobile ? 'px-2 py-3' : 'p-4'} border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm`}>
                     <div className="flex items-center gap-3">
                         {/* Optional Icon */}
                         {/* Header Icon */}

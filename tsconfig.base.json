@@ -22,6 +22,12 @@
         "noFallthroughCasesInSwitch": true,
         "baseUrl": ".",
         "paths": {
+            "@od-erp/types": [
+                "./packages/types/src"
+            ],
+            "@od-erp/types/*": [
+                "./packages/types/src/*"
+            ],
             "@od-erp/ui": [
                 "./packages/ui/src"
             ],
