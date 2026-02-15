@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { AdmissionLead, AdmissionLeadLog } from '@od-erp/types';
-import { useAdmissionLeadLog } from '@od-erp/query';
+import { useState, useMemo } from 'react';
+import { AdmissionLead } from '@od-erp/types';
+import { useAdmissionLeadLog, useClickToCall } from '@od-erp/query';
+import { useViewAdmissionStudentData } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
 import { X, PhoneCall, Download } from 'lucide-react';
-import { Card } from '@od-erp/ui';
+import StudentInfoBar from '../StudentInfoBar';
 
 interface CallsModalProps {
     isOpen: boolean;
@@ -15,57 +16,103 @@ interface CallsModalProps {
 const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
     const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
 
+    // Get myOperatorId from localStorage
+    const myOperatorId = localStorage.getItem('myOperatorId') || '';
+
+    // Fetch student timeline data
+    const { data: studentData } = useViewAdmissionStudentData(student?._id || '');
+
+    // Fetch API logs
     const { data: leadLogsData, isLoading } = useAdmissionLeadLog({
         entity: entityId,
         session,
-        phone: student?.phone, // Fetch logs by phone
+        phone: student?.phone,
         pageSize: 100,
         pageNumber: 1
     });
 
-    // Filter for logs that have call details
-    // Assuming 'callDetails' presence defines a call log, or specific callStatus
-    const callsData = leadLogsData?.data?.filter(log => log.callDetails) || [];
+    // Click to call mutation
+    const clickToCallMutation = useClickToCall();
+
+    // Combine data from both sources and filter by source 'myOperator'
+    const callsData = useMemo(() => {
+        const timelineData = studentData?.timeline || [];
+        const apiLogsData = leadLogsData?.data || [];
+        
+        // Concatenate both sources
+        const combinedData = [...timelineData, ...apiLogsData];
+        
+        // Filter by source 'myOperator' (matching Angular logic)
+        const filteredData = combinedData.filter((item: any) => item.source === 'myOperator');
+        
+        // Sort by date (newest first)
+        return filteredData.sort((a: any, b: any) => {
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
+            return dateB - dateA;
+        });
+    }, [studentData, leadLogsData]);
+
+    // Check permission
+    const hasClickToCallPermission = permissions.includes('peerToPeerCallForAdmission');
+
+    // Handle click to call
+    const handleClickToCall = () => {
+        if (!student) return;
+
+        const formData = {
+            entity: entityId,
+            session,
+            phone: student.phone,
+            applicationNumber: student.applicationNumber,
+            myOperatorId
+        };
+
+        clickToCallMutation.mutate(formData, {
+            onSuccess: () => {
+                // Call initiated successfully
+                // Success is handled by query invalidation
+            },
+            onError: (error: any) => {
+                console.error('Failed to initiate call:', error);
+            }
+        });
+    };
 
     if (!isOpen || !student) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden m-4">
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                         <PhoneCall size={24} className="text-blue-600" />
                         Calls
                     </h2>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500">
-                        <X size={20} />
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {/* Click To Call Button */}
+                        {hasClickToCallPermission && (
+                            <button
+                                onClick={handleClickToCall}
+                                disabled={clickToCallMutation.isPending}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <PhoneCall size={16} />
+                                {clickToCallMutation.isPending ? 'Calling...' : 'Click To Call'}
+                            </button>
+                        )}
+                        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500">
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Student Info Bar */}
-                <div className="bg-gray-50 p-4 border-b flex justify-between items-center text-sm">
-                    <div className="flex gap-6">
-                        <div>
-                            <span className="text-gray-500 block text-xs">Name</span>
-                            <span className="font-semibold text-gray-800">{student.name}</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500 block text-xs">Application Number</span>
-                            <span className="font-semibold text-gray-800">{student.applicationNumber || '-'}</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500 block text-xs">Phone</span>
-                            <span className="font-semibold text-gray-800">{student.phone}</span>
-                        </div>
-                        <div>
-                            <span className="text-gray-500 block text-xs">Course</span>
-                            <span className="font-semibold text-gray-800">{student.course || 'NA'}</span>
-                        </div>
-                    </div>
-                </div>
+                <StudentInfoBar student={student} />
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
@@ -98,36 +145,31 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                                 <tr>
                                                     <th className="px-4 py-3 rounded-tl-md">Index</th>
                                                     <th className="px-4 py-3">Call Date</th>
-                                                    <th className="px-4 py-3">Call Remark</th>
-                                                    <th className="px-4 py-3 rounded-tr-md text-right">Action</th>
+                                                    <th className="px-4 py-3 rounded-tr-md">Call Remark</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-100">
-                                                {callsData.map((log: AdmissionLeadLog, index: number) => (
-                                                    <tr key={log._id} className="hover:bg-gray-50">
+                                                {callsData.map((log: any, index: number) => (
+                                                    <tr key={log._id || index} className="hover:bg-gray-50">
                                                         <td className="px-4 py-3 text-gray-500 font-medium">{index + 1}</td>
                                                         <td className="px-4 py-3 font-semibold text-gray-700">
                                                             {log.date ? format(log.date, 'dd/MM/yyyy - hh:mm a') : '-'}
                                                         </td>
-                                                        <td className="px-4 py-3 text-gray-600 max-w-lg">
-                                                            {log.remark || '-'}
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right">
-                                                            {log.callDetails?.callRecordingLink ? (
-                                                                <a
-                                                                    href={log.callDetails.callRecordingLink}
-                                                                    target="_blank"
-                                                                    rel="noopener noreferrer"
-                                                                    className="inline-flex flex-col items-center text-blue-600 hover:text-blue-800 text-xs gap-1"
-                                                                >
-                                                                    <span className="font-semibold text-[10px] text-gray-500 uppercase">Recording Link</span>
-                                                                    <div className="flex items-center gap-1">
+                                                        <td className="px-4 py-3 text-gray-600">
+                                                            <div>{log.remark || '-'}</div>
+                                                            {log.callDetails?.callRecordingLink && (
+                                                                <div className="mt-2 flex flex-col gap-1">
+                                                                    <span className="text-xs font-semibold text-gray-500">Recording Link:</span>
+                                                                    <a
+                                                                        href={log.callDetails.callRecordingLink}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs gap-1"
+                                                                    >
                                                                         <PhoneCall size={14} />
                                                                         <span>Download</span>
-                                                                    </div>
-                                                                </a>
-                                                            ) : (
-                                                                <span className="text-gray-400 text-xs italic">No Recording</span>
+                                                                    </a>
+                                                                </div>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -136,13 +178,18 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                         </table>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {callsData.map((log: AdmissionLeadLog) => (
-                                            <Card key={log._id} className="p-4 hover:shadow-md transition-shadow">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                                        {log.date ? format(log.date, 'dd MMM yyyy') : '-'}
-                                                    </span>
+                                    <div className="space-y-4">
+                                        {callsData.map((log: any, index: number) => (
+                                            <div key={log._id || index} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-semibold text-gray-600">
+                                                            {log.date ? format(log.date, 'dd/MM/yyyy') : '-'}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">
+                                                            {log.date ? format(log.date, 'hh:mm a') : ''}
+                                                        </span>
+                                                    </div>
                                                     {log.callDetails?.callRecordingLink && (
                                                         <a
                                                             href={log.callDetails.callRecordingLink}
@@ -155,20 +202,23 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                                         </a>
                                                     )}
                                                 </div>
-                                                <p className="text-sm text-gray-700 mt-2 line-clamp-3">
-                                                    {log.remark || 'No remark'}
-                                                </p>
-                                                <div className="mt-3 pt-3 border-t text-xs text-gray-500 flex justify-between">
-                                                    <span>{log.date ? format(log.date, 'hh:mm a') : ''}</span>
-                                                    {log.counselorName && <span>By: {log.counselorName}</span>}
+                                                <div className="border-t pt-3">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <PhoneCall size={16} className="text-blue-600" />
+                                                        <span className="text-xs font-semibold text-gray-700">Call</span>
+                                                    </div>
+                                                    <div className="text-sm font-semibold text-gray-800 mb-1">Remark</div>
+                                                    <p className="text-sm text-gray-700">
+                                                        {log.remark || 'No remark'}
+                                                    </p>
                                                 </div>
-                                            </Card>
+                                            </div>
                                         ))}
                                     </div>
                                 )
                             ) : (
-                                <div className="text-center py-12 text-blue-500 font-medium text-sm">
-                                    No Call Records Found !
+                                <div className="text-center py-12 text-gray-500 font-medium text-sm">
+                                    No Records found !
                                 </div>
                             )}
                         </div>

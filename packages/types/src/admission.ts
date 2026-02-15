@@ -133,6 +133,11 @@ export interface AdmissionLeadLogPayload {
     memberDetails?: boolean;
     search?: string;
     phone?: string;
+    studentData?: string;
+    sourceId?: string;
+    remark?: string;
+    visitDate?: number;
+    tags?: string[];
 }
 
 export interface AdmissionLeadLogResponse {
@@ -218,10 +223,20 @@ export interface AdmissionLeadPayload {
     pageNumber: number;
     pageSize: number;
     search?: string;
-    searchType?: string; // 'name', 'phone', 'applicationNumber', 'fatherName', 'references'
+    searchBy?: string; // 'name', 'phone', 'applicationNumber', 'fatherName', 'references'
     counselorId?: string;
     startDate?: number;
     endDate?: number;
+    course?: string[];
+    stream?: string[];
+    batch?: string[];
+    tag?: string[];
+    source?: string[];
+    engagementStatus?: string[];
+    followUpStartDate?: number;
+    followUpEndDate?: number;
+    memberDetails?: boolean;
+    stage?: string;
 }
 
 export interface AdmissionStudentDataPayload {
@@ -252,13 +267,18 @@ export interface AdmissionStageSetup {
     entity: string;
     session: string;
     stage: string;
+    stageName: string; // Added stageName
+    stageType?: string; // Added stageType
     sequence: number;
     txnRequired: boolean;
     fields: any[];
     currentStage?: string; // Mapped property
+    stageCounselor?: string[]; // Array of counselor IDs for stage
+    transactionRequired?: boolean; // Alternative name used in some places
 }
 
 export interface AdmissionStageCount {
+    _id: string; // Added _id
     stage: string;
     count: number;
     currentStage?: string; // keeping for backward compatibility if any
@@ -282,6 +302,10 @@ export interface AdmissionTransaction {
         category?: string;
         applicationNumber?: string;
     };
+    receipt?: {
+        admissionHead: string;
+        paidAmount: number;
+    }[];
     paymentDetails: {
         refId?: string;
         date: number;
@@ -310,6 +334,7 @@ export interface AdmissionTransactionPayload {
     search?: string;
     pageNumber?: number;
     pageSize?: number;
+    voucherStatus?: string;
 }
 
 
@@ -369,4 +394,30 @@ export interface AdmissionNotePayload {
     studentId?: string;
     pageSize?: number;
     pageNumber?: number;
+}
+
+// --- Template Types ---
+export interface AdmissionTableHead {
+    value: string;
+    name: string;
+    seqNo: number;
+}
+
+export interface TemplateFilterValue {
+    filter: 'stage' | 'course' | 'startDate' | 'endDate' | 'tags' | 
+            'engagementStatus' | 'counselor' | 'source';
+    value: any;
+}
+
+export interface AdmissionTemplate {
+    _id: string;
+    viewName: string;
+    tableHeads: AdmissionTableHead[];
+    filterValues?: TemplateFilterValue[];
+    sortBy?: string;
+    sortOrder?: 'ascending' | 'descending';
+}
+
+export interface DefaultTemplateResponse {
+    tableHeads: AdmissionTableHead[];
 }

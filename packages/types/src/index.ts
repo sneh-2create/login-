@@ -15,7 +15,10 @@ export interface User {
     role: string;
     userType: string;
     employeeId?: string;
+    myOperatorId?: string;
+    mobile?: string;
     permissions?: string[];
+    entityGroup?: string[];
 }
 
 export interface EntityDetails {
@@ -82,5 +85,7 @@ export * from './dashboard';
 export * from './admission';
 export * from './table';
 export * from './badge';
-export * from './login';
 export * from './theme.types';
+export * from './excelTemplate';
+export * from './feeMaster';
+export * from './login';

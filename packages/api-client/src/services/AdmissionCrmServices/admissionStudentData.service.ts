@@ -99,5 +99,99 @@ export const admissionStudentDataService = {
         const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
         return response.data;
     },
-};
+    
+    deleteAdmissionStudentData: async (id: string) => {
+        const response = await apiClient.get<any>(`/delete/AdmissionStudentData?id=${id}`);
+        return response.data;
+    },
 
+    // Move Application Methods
+    moveAdmissionStudentData: async (payload: any) => {
+        const response = await apiClient.post<any>('/moveToEntity/admissionStudentData', payload);
+        return response.data;
+    },
+
+    getAdmissionStudentDataStageCount: async (payload: {
+        course: string;
+        stream: string;
+        category: string;
+        oldNew: string;
+        stages: string[];
+        entity: string;
+        session: string;
+    }) => {
+        const response = await apiClient.post<number>('/getStageCount/admissionStudentData', payload);
+        return response.data;
+    },
+
+    listSubjectCombination: async (entity: string, session: string, course: string, stream: string) => {
+        const response = await apiClient.get<any[]>(`/list/subjectCombination?entity=${entity}&session=${session}&course=${course}&stream=${stream}`);
+        return response.data;
+    },
+
+    getCourseData: async (courseId: string) => {
+        const response = await apiClient.get<any>(`/view/course?id=${courseId}`);
+        return response.data;
+    },
+
+    viewFeeMasterData: async (entity: string, session: string) => {
+        const response = await apiClient.get<any>(`/view/feeMaster?entity=${entity}&session=${session}`);
+        return response.data;
+    },
+
+    viewStudentMaster: async (entity: string, session: string) => {
+        const response = await apiClient.get<any>(`/view/studentMaster?entity=${entity}&session=${session}`);
+        return response.data;
+    },
+
+    checkDuplicate: async (payload: {
+        entity: string;
+        session: string;
+        field: string;
+        value: string;
+        excludeId?: string;
+    }) => {
+        const response = await apiClient.post<{ duplicates: any[] }>('/checkDuplicate/admissionStudentData', payload);
+        return response.data;
+    },
+
+    listSubjectCombinationWithBatch: async (
+        entityId: string,
+        session: string,
+        course: string,
+        stream: string,
+        batch?: string
+    ) => {
+        let queryParams = `entity=${entityId}&session=${session}&course=${encodeURIComponent(course)}&stream=${stream}`;
+        if (batch) {
+            queryParams += `&batch=${batch}`;
+        }
+        const response = await apiClient.get<any[]>(`/list/subjectCombination?${queryParams}`);
+        return response.data;
+    },
+
+    listNepSubject: async (
+        entityId: string,
+        session: string,
+        course: string,
+        stream: string,
+        batch?: string
+    ) => {
+        let queryParams = `entity=${entityId}&session=${session}&course=${encodeURIComponent(course)}&stream=${stream}`;
+        if (batch) {
+            queryParams += `&batch=${batch}`;
+        }
+        const response = await apiClient.get<any[]>(`/list/nepSubject?${queryParams}`);
+        return response.data;
+    },
+
+    listPartnerInstitute: async (entityId: string) => {
+        const response = await apiClient.get<any[]>(`/list/partnerInstitute?entity=${entityId}`);
+        return response.data;
+    },
+
+    getStageCounselor: async (payload: { entity: string; stageCounselor: string[] }) => {
+        const response = await apiClient.post<{ id: string; name: string; mobile: string; email: string }>('/getStageCounselor/admissionStudentData', payload);
+        return response.data;
+    },
+};

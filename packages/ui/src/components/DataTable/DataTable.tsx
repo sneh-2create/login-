@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-table';
 import { Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { ExtendedColumnMeta, BaseDataTableProps } from '@od-erp/types';
+import { Dropdown } from '../Atoms/Dropdown';
 import {
     FONT_WEIGHT_NUMERIC_MAP,
     FONT_WEIGHT_STRING_MAP,
@@ -42,6 +43,9 @@ export function DataTable<TData, TValue>({
     pageCount,
     rowCount,
     onPaginationChange,
+    searchByOptions,
+    searchByValue,
+    onSearchByChange,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -207,8 +211,21 @@ export function DataTable<TData, TValue>({
             <div className={`w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
                 {/* Search Section */}
                 {showSearch && (
-                    <div className="w-full h-16 p-3 box-border flex items-center border-b border-[var(--color-border)]">
-                        <div className="w-full h-10 relative flex items-center gap-0">
+                    <div className="w-full min-h-16 p-3 box-border flex items-center gap-3 border-b border-[var(--color-border)]">
+                        {/* Search By Dropdown (optional) */}
+                        {searchByOptions && searchByOptions.length > 0 && (
+                            <div className="w-48 flex-shrink-0">
+                                <Dropdown
+                                    value={searchByValue || ''}
+                                    onChange={(val) => onSearchByChange?.(val as string)}
+                                    options={searchByOptions}
+                                    placeholder="Search By"
+                                />
+                            </div>
+                        )}
+                        
+                        {/* Search Input */}
+                        <div className="flex-1 h-10 relative flex items-center gap-0">
                             <input
                                 type="text"
                                 className="w-full h-10 px-4 pr-10 border border-[var(--color-border)] rounded-lg bg-[var(--color-background)] font-sans text-sm font-normal leading-5 tracking-ui-tight text-[var(--color-foreground)] outline-none box-border placeholder:text-[var(--color-muted-foreground)] focus:border-[var(--color-primary)]"

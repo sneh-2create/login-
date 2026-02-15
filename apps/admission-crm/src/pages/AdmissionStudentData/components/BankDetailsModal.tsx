@@ -24,22 +24,32 @@ const BankDetailsModal = ({ isOpen, onClose, student }: BankDetailsModalProps) =
     const editStudentMutation = useEditAdmissionStudentData();
 
     useEffect(() => {
-        if (student && student.bankDetails) {
-            setBankDetails({
-                bankName: student.bankDetails.bankName || '',
-                branchName: student.bankDetails.branchName || '',
-                ifscCode: student.bankDetails.ifscCode || '',
-                accountNumber: student.bankDetails.accountNumber || '',
-                studentName: student.bankDetails.studentName || ''
-            });
-        } else if (student) {
-            setBankDetails({
-                bankName: '',
-                branchName: '',
-                ifscCode: '',
-                accountNumber: '',
-                studentName: ''
-            });
+        if (student) {
+            let bankData = student.bankDetails;
+            
+            // Handle legacy array format (backward compatibility with Angular)
+            if (Array.isArray(bankData)) {
+                bankData = bankData[0] || {};
+            }
+            
+            // Initialize with existing data or empty strings
+            if (bankData) {
+                setBankDetails({
+                    bankName: bankData.bankName || '',
+                    branchName: bankData.branchName || '',
+                    ifscCode: bankData.ifscCode || '',
+                    accountNumber: bankData.accountNumber || '',
+                    studentName: bankData.studentName || ''
+                });
+            } else {
+                setBankDetails({
+                    bankName: '',
+                    branchName: '',
+                    ifscCode: '',
+                    accountNumber: '',
+                    studentName: ''
+                });
+            }
         }
     }, [student, isOpen]);
 
@@ -53,9 +63,26 @@ const BankDetailsModal = ({ isOpen, onClose, student }: BankDetailsModalProps) =
     const handleSubmit = async () => {
         if (!student) return;
 
-        // Validation (mimicking Angular)
-        if (!bankDetails.bankName || bankDetails.bankName.length < 2) {
-            alert('Bank Name is required and must be at least 2 characters.');
+        // Full validation matching Angular implementation
+        if (!bankDetails.bankName) {
+            alert('Bank Name is required.');
+            return;
+        }
+        
+        if (bankDetails.bankName.length < 2) {
+            alert('Minimum field length: 2');
+            return;
+        }
+        
+        if (bankDetails.bankName.length > 100) {
+            alert('Maximum field length: 100');
+            return;
+        }
+        
+        // Pattern validation: alphanumeric + space, apostrophe, hyphen, dot
+        const pattern = /^[a-zA-Z0-9 '-.]+$/;
+        if (!pattern.test(bankDetails.bankName)) {
+            alert('Only Alpha Numeric Required (letters, numbers, spaces, apostrophes, hyphens, and dots allowed)');
             return;
         }
 
@@ -79,8 +106,8 @@ const BankDetailsModal = ({ isOpen, onClose, student }: BankDetailsModalProps) =
     if (!isOpen || !student) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh] overflow-hidden">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                         <Landmark className="mr-2 h-5 w-5 text-blue-600" />

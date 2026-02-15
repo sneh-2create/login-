@@ -1,44 +1,135 @@
-import { useState, useMemo, useEffect } from 'react';
-import { Card, DataTable, Button, Input, Select } from '@od-erp/ui';
-import { useAdmissionLead, useAddAdmissionLead, useCounselors, useSessions } from '@od-erp/query';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { DataTable, Button, Breadcrumb, ActionMenu, useToast } from '@od-erp/ui';
+import { useAdmissionLead, useSessions, useBulkCounselorUpdate } from '@od-erp/query';
+import { useAdmissionStageSetup, useAdmissionStages, useAdmissionMaster, useEditAdmissionStudentData } from '@od-erp/query';
 import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Filter, Plus, MoreVertical, Clock, MessageSquare, Plane, FileText, PhoneCall } from 'lucide-react';
-import { useAppSelector } from '@od-erp/store';
+import { Plus, Clock, MessageSquare, Plane, FileText, PhoneCall, Search, SlidersHorizontal, RefreshCw, Download } from 'lucide-react';
+import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 import TimelineModal from '../../components/Modals/TimelineModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
 import VisitsModal from '../../components/Modals/VisitsModal';
 import NotesModal from '../../components/Modals/NotesModal';
 import CallsModal from '../../components/Modals/CallsModal';
+import ReferenceModal from '../../components/Modals/ReferenceModal';
+import FilterCard from './components/FilterCard';
+import AddLeadForm from './components/AddLeadForm';
+
+import SendSmsModal from './components/Modals/SendSmsModal';
+import SendWhatsappModal from './components/Modals/SendWhatsappModal';
+import BulkUpdateCounselorModal from './components/Modals/BulkUpdateCounselorModal';
+import TableTagSelect from './components/TableTagSelect';
 
 const AdmissionLeads = () => {
     // Metadata
-    const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
+    const dispatch = useAppDispatch();
+    const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
+
+    // State for Bulk Action Menu
+    const [isBulkActionOpen, setIsBulkActionOpen] = useState(false);
+    const bulkActionRef = useRef<HTMLDivElement>(null);
+
+    // Modal States
+    const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
+    const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
+    const [isBulkUpdateCounselorOpen, setIsBulkUpdateCounselorOpen] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (bulkActionRef.current && !bulkActionRef.current.contains(event.target as Node)) {
+                setIsBulkActionOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     // State
-    const session = useAppSelector((state) => state.session.academicSession) || '';
+    const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const { data: sessions } = useSessions(entityId);
-    const [showAddForm, setShowAddForm] = useState(false);
+
+    // Display Names from Entity Preferences
+    const entityPreferences = useAppSelector((state: any) => state.auth.entityDetails?.entityPreferences);
+    const displayNames = useMemo(() => {
+        const names = entityPreferences?.displayNames || [];
+        return {
+            course: names.find((d: any) => d.value === 'course')?.name || 'Class',
+            stream: names.find((d: any) => d.value === 'stream')?.name || 'Stream',
+            batch: names.find((d: any) => d.value === 'batch')?.name || 'Batch',
+        };
+    }, [entityPreferences]);
+
+    // Query Data
+    const { data: stagesSetup } = useAdmissionStageSetup(entityId, session || '');
+    const { refetch: refetchStageCounts } = useAdmissionStages(entityId, session);
+    const { data: admissionMaster } = useAdmissionMaster(entityId, session);
+
+    const [selectedStage, setSelectedStage] = useState<string>(''); // Default to first stage or empty
+
+    const [showFilterDialog, setShowFilterDialog] = useState(false);
     const [globalSearch, setGlobalSearch] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchType, setSearchType] = useState('name');
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
-    // Add Lead Form State
-    const [formData, setFormData] = useState({
-        phone: '',
-        name: '',
-        email: '',
-        alternatePhone: '',
-        class: '',
-        applicationNumber: '',
-        source: '',
-        campusVisited: false,
-        addCounselor: false,
-        counselorId: ''
+    const user = useAppSelector((state: any) => state.auth.user);
+    const isAdmissionAdmin = permissions.includes('isAdmissionAdmin');
+
+    // Filter State
+    const [filters, setFilters] = useState({
+        startDate: undefined as number | undefined,
+        endDate: undefined as number | undefined,
+        followUpEndDate: new Date().setHours(23, 59, 59, 999), // Default to end of today (Angular parity)
+        counselorId: '',
+        course: [] as string[],
+        stream: [] as string[],
+        batch: [] as string[],
+        tag: [] as string[],
+        source: [] as string[],
+        engagementStatus: ['notEngaged', 'engagedWithPendingFollowUp'] as string[],
+        memberDetails: false
     });
 
+    // Set default counselor when user/permissions load
+    useEffect(() => {
+        if (!isAdmissionAdmin && user?.employeeId && !filters.counselorId) {
+            setFilters(prev => ({ ...prev, counselorId: user.employeeId || '' }));
+        }
+    }, [isAdmissionAdmin, user, filters.counselorId]);
+
+    // Set default stage when stages load
+    useEffect(() => {
+        if (stagesSetup && stagesSetup.length > 0 && !selectedStage && !globalSearch) {
+            // Angular Logic: Filter by stageType == 'lead' and sort by sequence
+            const leadStages = stagesSetup.filter(s => s.stageType === 'lead');
+            leadStages.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+
+            if (leadStages.length > 0) {
+                setSelectedStage(leadStages[0].stage);
+            } else {
+                 const sortedStages = [...stagesSetup].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+                 const firstLead = sortedStages.find(s => s.stageType === 'lead');
+                 if(firstLead) {
+                    setSelectedStage(firstLead.stage);
+                 }
+            }
+        }
+    }, [stagesSetup, selectedStage, globalSearch]);
+
+    // Handle session changes - reload data
+    useEffect(() => {
+        if (session) {
+            setPagination({ pageIndex: 0, pageSize: 10 });
+            setSelectedStage('');
+        }
+    }, [session]);
+
+    // ... (rest of code)
     const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
     const [followUpStudent, setFollowUpStudent] = useState<AdmissionLead | null>(null);
@@ -49,204 +140,434 @@ const AdmissionLeads = () => {
     const [isNotesOpen, setIsNotesOpen] = useState(false);
     const [callsStudent, setCallsStudent] = useState<AdmissionLead | null>(null);
     const [isCallsOpen, setIsCallsOpen] = useState(false);
-    const [openActionId, setOpenActionId] = useState<string | null>(null);
+    const [referenceStudent, setReferenceStudent] = useState<AdmissionLead | null>(null);
+    const [isReferenceOpen, setIsReferenceOpen] = useState(false);
+    
+    // Pending Tag State (Strict Parity)
+    const [pendingTag, setPendingTag] = useState<{ tag: any, student: any } | null>(null);
+    const { mutate: updateStudent } = useEditAdmissionStudentData();
 
-    const [actionMenuPosition, setActionMenuPosition] = useState<{ top: number; left: number } | null>(null);
+    // Edit Lead State
+    const [editLeadData, setEditLeadData] = useState<AdmissionLead | null>(null);
+    const [isLeadFormOpen, setIsLeadFormOpen] = useState(false);
 
-    // Queries
-    const { data: counselors } = useCounselors(entityId, 'counselor');
+    const handleEditLead = (student: AdmissionLead) => {
+        setEditLeadData(student);
+        setIsLeadFormOpen(true);
+    };
+
+    const handleAddLead = () => {
+        setEditLeadData(null);
+        setIsLeadFormOpen(true);
+    };
 
     // Derived Payload
-    const payload: AdmissionLeadPayload = useMemo(() => ({
-        entity: entityId,
-        session,
-        pageNumber: pagination.pageIndex + 1,
-        pageSize: pagination.pageSize,
-        search: searchTerm,
-        searchType: globalSearch ? undefined : searchType,
-    }), [entityId, session, pagination, searchTerm, searchType, globalSearch]);
+    const payload: AdmissionLeadPayload = useMemo(() => {
+        const _payload: any = {
+            entity: entityId,
+            session,
+            pageNumber: pagination.pageIndex + 1,
+            pageSize: pagination.pageSize,
+            memberDetails: filters.memberDetails,
+        };
 
-    const { data, isLoading } = useAdmissionLead(payload);
-    const addLeadMutation = useAddAdmissionLead();
+        if (globalSearch) {
+             if (filters.counselorId) _payload.counselorId = filters.counselorId;
+             
+             if (searchTerm) {
+                 _payload.search = searchTerm;
+                 _payload.searchBy = searchType; 
+             } else {
+                 // Angular Fallback for Global Search with NO search term:
+                 // 1. Tags: 'positive' 
+                 if (admissionMaster?.tags) {
+                     const positiveTags = admissionMaster.tags
+                         .filter((t: any) => t.label === 'positive')
+                         .map((t: any) => t.tag);
+                     if (positiveTags.length > 0) {
+                         _payload.tag = positiveTags;
+                     }
+                 }
 
-    // Handlers
-    const handleAddLead = async () => {
-        try {
-            await addLeadMutation.mutateAsync({
-                ...formData,
-                entityId,
-                session,
-                campusVisited: formData.campusVisited ? 'yes' : 'no'
-            });
-            setShowAddForm(false);
-            setFormData({
-                phone: '', name: '', email: '', alternatePhone: '', class: '',
-                applicationNumber: '', source: '', campusVisited: false,
-                addCounselor: false, counselorId: ''
-            });
-        } catch (err) {
-            console.error(err);
-            alert('Failed to add lead');
+                 // 2. FollowUpDates: set to default
+                 _payload.followUpStartDate = new Date(new Date(0).setHours(0, 0, 0, 0)).getTime();
+                 const todayEnd = new Date();
+                 todayEnd.setHours(23, 59, 59, 999);
+                 _payload.followUpEndDate = filters.followUpEndDate || todayEnd.getTime();
+
+                 // 3. Stage: 'lead'
+                 if (stagesSetup) {
+                     const leadStage = stagesSetup.find((s: any) => s.stageType === 'lead');
+                     if (leadStage) {
+                         _payload.stage = leadStage.stage;
+                     }
+                 } else if (selectedStage) {
+                     _payload.stage = selectedStage;
+                 }
+                 
+                 // 4. EngagementStatus
+                 if (filters.engagementStatus?.length) {
+                     _payload.engagementStatus = filters.engagementStatus;
+                 }
+             }
+        } else {
+            // Normal Mode - Include all filters
+            _payload.followUpStartDate = new Date(new Date(0).setHours(0, 0, 0, 0)).getTime();
+            _payload.followUpEndDate = filters.followUpEndDate;
+            
+            if (filters.startDate) _payload.startDate = filters.startDate;
+            if (filters.endDate) _payload.endDate = filters.endDate;
+            if (filters.counselorId) _payload.counselorId = filters.counselorId;
+            if (filters.course?.length) _payload.course = filters.course;
+            if (filters.stream?.length) _payload.stream = filters.stream;
+            if (filters.batch?.length) _payload.batch = filters.batch;
+            if (filters.tag?.length) _payload.tag = filters.tag;
+            if (filters.source?.length) _payload.source = filters.source;
+            if (filters.engagementStatus?.length) _payload.engagementStatus = filters.engagementStatus;
+            
+            // Stage is only sent in Normal Mode
+            if (selectedStage) {
+                _payload.stage = selectedStage;
+            }
+
+            if (searchTerm) {
+                _payload.search = searchTerm;
+                _payload.searchBy = searchType;
+            }
         }
+
+        return _payload as AdmissionLeadPayload;
+    }, [entityId, session, pagination, searchTerm, searchType, globalSearch, selectedStage, filters]);
+
+    const { data, isLoading, refetch } = useAdmissionLead(payload);
+
+    // Row Selection State
+    const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
+
+    // Handle row selection
+    const handleSelectRow = (id: string) => {
+        setSelectedRows(prev => ({
+            ...prev,
+            [id]: !prev[id]
+        }));
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const newSelected: Record<string, boolean> = {};
+            data?.data.forEach(row => {
+                newSelected[row._id] = true;
+            });
+            setSelectedRows(newSelected);
+        } else {
+            setSelectedRows({});
+        }
+    };
+
+    const selectedCount = Object.keys(selectedRows).filter(key => selectedRows[key]).length;
+
+const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
+        setFilters(newFilters);
+        setGlobalSearch(newGlobalSearch);
+        setPagination({ ...pagination, pageIndex: 0 });
     };
 
     const handleViewTimeline = (student: AdmissionLead) => {
         setTimelineStudent(student);
         setIsTimelineOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewFollowUp = (student: AdmissionLead) => {
         setFollowUpStudent(student);
         setIsFollowUpOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewVisits = (student: AdmissionLead) => {
         setVisitsStudent(student);
         setIsVisitsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewNotes = (student: AdmissionLead) => {
         setNotesStudent(student);
         setIsNotesOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
     const handleViewCalls = (student: AdmissionLead) => {
         setCallsStudent(student);
         setIsCallsOpen(true);
-        setOpenActionId(null);
-        setActionMenuPosition(null);
     };
 
-    const toggleActionMenu = (id: string, event: React.MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        if (openActionId === id) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        } else {
-            const rect = event.currentTarget.getBoundingClientRect();
-            setOpenActionId(id);
-            setActionMenuPosition({
-                top: rect.bottom + 5,
-                left: rect.left - 100 // Adjust to align better
-            });
-        }
+    const handleViewReference = (student: AdmissionLead) => {
+        setReferenceStudent(student);
+        setIsReferenceOpen(true);
     };
 
-    // Close dropdown when clicking outside
-    const handleDocumentClick = (e: MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest('.action-menu-dropdown')) {
-            setOpenActionId(null);
-            setActionMenuPosition(null);
-        }
-    };
+    const handleExport = async () => {
+        try {
+            const exportPayload = {
+                ...payload,
+                pageNumber: 1,
+                pageSize: 10000 // Fetch all records for export
+            };
 
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            document.addEventListener('click', handleDocumentClick);
-        }
-        return () => {
-            if (typeof document !== 'undefined') {
-                document.removeEventListener('click', handleDocumentClick);
+            const xlsx = await import('xlsx');
+            const { admissionLeadService } = await import('@od-erp/api-client');
+
+            const response = await admissionLeadService.listAdmissionLeads(exportPayload);
+            const exportData = response.data || [];
+
+            if (exportData.length === 0) {
+                alert('No data to export');
+                return;
             }
+
+            const excelRows = exportData.map((lead: AdmissionLead) => ({
+                'Application Number': lead.applicationNumber || '-',
+                'Date': lead.date ? format(new Date(lead.date), 'dd-MMM-yyyy') : '-',
+                'Name': lead.name,
+                'Phone': lead.phone,
+                'Class': lead.course || lead.class || '-',
+                'Stream': lead.stream || '-',
+                'Source': lead.source || '-',
+                'Current Stage': lead.currentStage || '-',
+                'Father Name': lead.fatherName || '-',
+                'Email': lead.email || '-',
+                'Campus Visited': lead.campusVisited || 'no'
+            }));
+
+            const wb = xlsx.utils.book_new();
+            const ws = xlsx.utils.json_to_sheet(excelRows);
+            xlsx.utils.book_append_sheet(wb, ws, "Admission Leads");
+            xlsx.writeFile(wb, `Admission_Leads_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
+
+        } catch (error) {
+            console.error('Export failed:', error);
+            alert('Failed to export data');
+        }
+    };
+
+    const { showToast } = useToast();
+    const { mutate: bulkUpdateCounselor } = useBulkCounselorUpdate();
+
+    const handleBulkUpdateCounselor = (counselorId: string) => {
+        const studentDataIds = Object.keys(selectedRows).filter(key => selectedRows[key]);
+        
+        if (studentDataIds.length === 0) {
+             showToast('error', 'No leads selected');
+             return;
+        }
+
+        const payload = {
+            studentDataIds,
+            entity: entityId,
+            counselor: counselorId
         };
-    }, []);
+
+        bulkUpdateCounselor(payload, {
+            onSuccess: () => {
+                showToast('success', 'Counselor updated successfully');
+                setIsBulkUpdateCounselorOpen(false);
+                setSelectedRows({});
+                refetch();
+            },
+            onError: (err: any) => {
+                showToast('error', err.response?.data?.message || err.message || 'Failed to update counselor');
+            }
+        });
+    };
+
+    const breadcrumbItems = [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Admission', href: '#' },
+        { label: 'Admission Leads', href: '#' }
+    ];
+
+    // Display Name Helper
+    const getDisplayName = (key: string) => {
+        return entityPreferences?.displayNames?.find((d: any) => d.value === key)?.name;
+    };
 
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(
         () => [
             {
-                header: 'Action',
                 id: 'actions',
-                cell: info => {
-                    const id = info.row.original._id;
-                    return (
-                        <div className="relative">
-                            <button
-                                onClick={(e) => toggleActionMenu(id, e)}
-                                className="p-1 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-                            >
-                                <MoreVertical size={16} />
-                            </button>
-                        </div>
-                    );
-                },
-                size: 60
+                header: () => (
+                    <div className="flex items-center gap-2 pl-2">
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            checked={!!data?.data?.length && selectedCount === data?.data.length}
+                            onChange={(e) => handleSelectAll(e.target.checked)}
+                        />
+                        <span className="font-semibold text-gray-700">Action</span>
+                    </div>
+                ),
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-3 justify-center">
+                        <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            checked={!!selectedRows[row.original._id]}
+                            onChange={() => handleSelectRow(row.original._id)}
+                        />
+                        <ActionMenu
+                            items={[
+                                { label: 'Edit Lead', onClick: () => handleEditLead(row.original), icon: <FileText size={14} /> },
+                                { label: 'Timeline', onClick: () => handleViewTimeline(row.original), icon: <Clock size={14} /> },
+                                { label: 'Follow Ups', onClick: () => handleViewFollowUp(row.original), icon: <Plane size={14} /> },
+                                { label: 'Notes', onClick: () => handleViewNotes(row.original), icon: <FileText size={14} /> },
+                                { label: 'Calls', onClick: () => handleViewCalls(row.original), icon: <PhoneCall size={14} /> },
+                                { label: 'Visits', onClick: () => handleViewVisits(row.original), icon: <Plane size={14} /> },
+                                ...(row.original.source === 'Reference' ? [{
+                                    label: 'Reference',
+                                    onClick: () => handleViewReference(row.original),
+                                    icon: <FileText size={14} />
+                                }] : []),
+                            ]}
+                        />
+                    </div>
+                ),
+                size: 100,
+                enableSorting: false
             },
             {
                 header: 'Tag',
-                accessorKey: 'tags',
-                cell: () => (
-                    <select className="border rounded px-2 py-1 text-xs bg-green-100 text-green-800 border-green-200">
-                        <option>Select Tag</option>
-                        <option>Duplicate</option>
-                        <option>INTERESTED</option>
-                    </select>
-                ),
-                size: 120
+                accessorKey: 'tag',
+                cell: info => <TableTagSelect 
+                    student={info.row.original} 
+                    onTagChange={(tag) => {
+                        if (tag.label === 'positive') {
+                            setPendingTag({ tag, student: info.row.original });
+                            handleViewFollowUp(info.row.original);
+                        }
+                    }}
+                />,
+                size: 140
             },
             {
-                header: 'Application Number',
+                header: getDisplayName('applicationNumber') || 'Application Number',
                 accessorKey: 'applicationNumber',
-                cell: info => <span className="font-semibold">{info.getValue() as string || '-'}</span>
+                cell: info => <span className="font-semibold text-gray-700">{info.getValue() as string || '-'}</span>,
+                size: 140
             },
             {
                 header: 'Date',
                 accessorKey: 'date',
-                cell: info => info.getValue() ? format(info.getValue() as number, 'dd-MMM-yyyy') : '-'
+                cell: info => <span className="text-gray-600">{info.getValue() ? format(info.getValue() as number, 'dd-MMM-yyyy') : '-'}</span>,
+                size: 110
             },
             {
                 header: 'Name',
                 accessorKey: 'name',
-                cell: info => <span className="font-medium">{info.getValue() as string}</span>
+                cell: info => <span className="font-medium text-gray-800">{info.getValue() as string}</span>,
+                size: 180
             },
+
             {
                 header: 'Phone',
-                accessorKey: 'phone'
+                accessorKey: 'phone',
+                cell: info => {
+                    const phone = info.getValue() as string;
+                    if (permissions.includes('viewAdmissionPhoneNumber')) {
+                        return <span className="font-mono text-gray-600">{phone}</span>;
+                    }
+                    return <span className="font-mono text-gray-400">{phone ? phone.replace(/(\d{2})\d+(\d{4})/, '$1****$2') : '-'}</span>;
+                },
+                size: 120
             },
             {
-                header: 'Class',
-                accessorKey: 'course', // Mapping 'Class' to 'course' field based on context
-                cell: info => info.getValue() || 'Class 1' // Fallback for demo
+                header: getDisplayName('course'),
+                accessorKey: 'course',
+                cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
+                size: 100
             },
             {
-                header: 'Stream',
+                header: getDisplayName('stream'),
                 accessorKey: 'stream',
-                cell: info => info.getValue() || 'Class 1' // Fallback for demo
+                cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
+                size: 100
             },
             {
                 header: 'Source',
                 accessorKey: 'source',
                 cell: info => (
-                    <span className="bg-red-400 text-white px-3 py-1 rounded-full text-xs">
+                    <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-medium">
                         {info.getValue() as string || 'Reference'}
                     </span>
-                )
+                ),
+                size: 120
             }
         ],
-        []
+        [permissions, selectedRows, data, displayNames]
     );
 
     return (
-        <div className="w-full max-w-full min-w-0 p-6 space-y-6 bg-gray-50 h-full overflow-y-auto">
+        <div className="w-full max-w-full font-sans pb-8 px-4">
             {/* Header */}
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Admission Lead</h1>
-                    <div className="text-xs text-gray-500 mt-1">
-                        Select Session
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Lead</h1>
+                    <Breadcrumb items={breadcrumbItems} />
+                </div>
+                <div className="flex items-center gap-3">
+                    {selectedCount > 0 && permissions.includes('counselorUpdateBulkRequest') && (
+                        <Button
+                            variant="outline"
+                            className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 flex items-center gap-2 py-1 h-8 text-xs"
+                            onClick={() => setIsBulkUpdateCounselorOpen(true)}
+                        >
+                            <SlidersHorizontal size={14} />
+                            Bulk Update Counselor
+                        </Button>
+                    )}
+
+                    {/* Bulk Actions in Toolbar */}
+                    {selectedCount > 0 && (
+                        <div className="relative mr-2 animate-in fade-in slide-in-from-right-4 duration-300" ref={bulkActionRef}>
+                            <Button
+                                variant="outline"
+                                className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 flex items-center gap-2"
+                                onClick={() => setIsBulkActionOpen(!isBulkActionOpen)}
+                            >
+                                <MessageSquare size={16} />
+                                Send Message
+                            </Button>
+
+                            {isBulkActionOpen && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 ring-1 ring-black ring-opacity-5 py-1">
+                                    <button
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-left hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={!permissions.includes('sendMultipleAdmissionReminderSMSCommunication')}
+                                        onClick={() => {
+                                            setIsSmsModalOpen(true);
+                                            setIsBulkActionOpen(false);
+                                        }}
+                                    >
+                                        <MessageSquare size={16} />
+                                        <span>Send SMS</span>
+                                    </button>
+                                    <button
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-left hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled={!permissions.includes('sendMultipleAdmissionReminderWhatsAppCommunication')}
+                                        onClick={() => {
+                                            setIsWhatsappModalOpen(true);
+                                            setIsBulkActionOpen(false);
+                                        }}
+                                    >
+                                        <MessageSquare size={16} />
+                                        <span>Send WhatsApp</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="text-xs text-gray-500 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
                         <select
-                            className="ml-2 border-none bg-transparent font-semibold text-gray-700 focus:ring-0"
+                            className="bg-transparent font-semibold text-gray-700 focus:ring-0 border-none p-0 cursor-pointer text-sm outline-none"
                             value={session}
-                            disabled
+                            onChange={(e) => dispatch(setAcademicSession(e.target.value))}
                         >
                             {sessions?.map(s => (
                                 <option key={s._id} value={s.name}>{s.name}</option>
@@ -254,229 +575,159 @@ const AdmissionLeads = () => {
                             {!sessions?.length && <option value={session}>{session}</option>}
                         </select>
                     </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <Button variant="outline" leftIcon={<Filter size={16} />}>Filter</Button>
+
                     <Button
-                        variant="primary"
-                        className="bg-[#1f2937] hover:bg-gray-800 text-white"
-                        leftIcon={<Plus size={16} />}
-                        onClick={() => setShowAddForm(!showAddForm)}
+                        variant="outline"
+                        className={`!p-2 !w-10 !h-10 border-gray-200 shadow-sm ${showFilterDialog ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700 bg-white'}`}
+                        onClick={() => setShowFilterDialog(!showFilterDialog)}
+                        title="Filter"
                     >
-                        Add Lead
+                        <SlidersHorizontal className="h-4 w-4" />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-10 h-5 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer ${globalSearch ? 'bg-blue-600 justify-end' : 'justify-start'}`} onClick={() => setGlobalSearch(!globalSearch)}>
-                            <div className="bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ease-in-out"></div>
-                        </div>
-                        <span className="text-xs text-gray-500">Global Search</span>
-                    </div>
+
+                    <Button
+                        variant="outline"
+                        className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-gray-500 hover:text-gray-700 bg-white"
+                        onClick={() => { refetch(); refetchStageCounts(); }}
+                        title="Refresh"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-green-600 hover:bg-green-50 hover:text-green-700 bg-white"
+                        onClick={handleExport}
+                        title="Export to Excel"
+                    >
+                        <Download className="h-4 w-4" />
+                    </Button>
+
+                    {permissions.includes('addAdmissionStudentData') && (
+                        <Button
+                            variant="primary"
+                            className="text-white flex items-center gap-2 shadow-sm"
+                            onClick={handleAddLead}
+                        >
+                            <Plus size={18} />
+                            Add Lead
+                        </Button>
+                    )}
                 </div>
             </div>
 
+            {/* Filter Card */}
+            {showFilterDialog && (
+                <div className="mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                    <FilterCard
+                        onClose={() => setShowFilterDialog(false)}
+                        onApply={handleApplyFilters}
+                        initialFilters={filters}
+                        initialGlobalSearch={globalSearch}
+                    />
+                </div>
+            )}
+
             {/* Search Bar */}
-            <Card className="p-3 shadow-sm border border-gray-200">
-                <div className="flex gap-0 divide-x divide-gray-200">
-                    <div className="w-1/4 px-2">
+            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 mb-6 max-w-2xl mx-auto">
+                <div className="flex items-center divide-x divide-gray-200">
+                    <div className="px-3">
                         <select
-                            className="w-full border-none focus:ring-0 text-sm text-gray-600 bg-transparent"
+                            className="w-32 border-none focus:ring-0 text-sm font-medium text-gray-600 bg-transparent py-2 outline-none cursor-pointer"
                             value={searchType}
                             onChange={(e) => setSearchType(e.target.value)}
                         >
-                            <option value="name">Search By Name</option>
-                            <option value="phone">Search By Phone</option>
-                            <option value="applicationNumber">Search By App No</option>
+                            <option value="name">Name</option>
+                            <option value="phone">Phone</option>
+                            <option value="applicationNumber">{getDisplayName('applicationNumber') || 'App No'}</option>
                         </select>
                     </div>
-                    <div className="w-3/4 px-2">
+                    <div className="flex-1 px-3 flex items-center">
+                        <Search size={18} className="text-gray-400 mr-2" />
                         <input
                             type="text"
-                            className="w-full border-none focus:ring-0 text-sm"
-                            placeholder="Search by Name/Application No./Mobile No./Father Name/References"
+                            className="w-full border-none focus:ring-0 text-sm py-2 outline-none placeholder-gray-400"
+                            placeholder="Search leads..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                 </div>
-            </Card>
+            </div>
 
-            {/* Add Lead Form */}
-            {showAddForm && (
-                <Card className="p-4 border-t-4 border-blue-500 shadow-md">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-gray-700 uppercase text-sm">Add Lead</h3>
-                        <div className="cursor-pointer text-gray-400 hover:text-gray-600" onClick={() => setShowAddForm(false)}>x</div>
+
+
+
+
+
+
+            {/* Add/Edit Lead Drawer */}
+            {isLeadFormOpen && (
+                <div className="fixed inset-0 z-[100] flex justify-end">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200"
+                        onClick={() => setIsLeadFormOpen(false)}
+                    />
+
+                    {/* Drawer Panel */}
+                    <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+                        <AddLeadForm
+                            onClose={() => setIsLeadFormOpen(false)}
+                            onSuccess={() => {
+                                setIsLeadFormOpen(false);
+                                refetch();
+                                refetchStageCounts();
+                            }}
+                            entityId={entityId}
+                            session={session}
+                            permissions={permissions}
+                            initialData={editLeadData}
+                            isEditMode={!!editLeadData}
+                        />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                        <Input
-                            label="Phone Number"
-                            placeholder="Phone Number"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
-                        <Input
-                            label="Name"
-                            placeholder="Name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                        <Input
-                            label="Email"
-                            placeholder="Email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        />
-                        <Input
-                            label="Alternate Phone Number"
-                            placeholder="Alternate Phone Number"
-                            value={formData.alternatePhone}
-                            onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
-                        />
-                        <Select
-                            label="Select Class"
-                            options={[{ value: 'class1', label: 'Class 1' }, { value: 'class2', label: 'Class 2' }]}
-                            value={formData.class}
-                            onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                        />
-                        <Input
-                            label="Application Number"
-                            placeholder="Application Number"
-                            value={formData.applicationNumber}
-                            onChange={(e) => setFormData({ ...formData, applicationNumber: e.target.value })}
-                        />
-                        <Select
-                            label="Choose Source"
-                            options={[{ value: 'reference', label: 'Reference' }, { value: 'walkin', label: 'Walk-in' }]}
-                            value={formData.source}
-                            onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                        />
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-semibold text-gray-500">Campus visited</label>
-                            <select
-                                className="border rounded px-2 py-2 text-sm"
-                                value={formData.campusVisited ? 'yes' : 'no'}
-                                onChange={(e) => setFormData({ ...formData, campusVisited: e.target.value === 'yes' })}
-                            >
-                                <option value="no">No</option>
-                                <option value="yes">Yes</option>
-                            </select>
-                        </div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className={`w-8 h-4 flex items-center bg-gray-300 rounded-full p-0.5 cursor-pointer ${formData.addCounselor ? 'bg-blue-600 justify-end' : 'justify-start'}`} onClick={() => setFormData({ ...formData, addCounselor: !formData.addCounselor })}>
-                                <div className="bg-white w-3 h-3 rounded-full shadow"></div>
-                            </div>
-                            <label className="text-xs text-gray-600">Add Counselor</label>
-                        </div>
-                    </div>
-                    {formData.addCounselor && (
-                        <div className="mt-4 md:w-1/4">
-                            <Select
-                                label="Select Counselor"
-                                options={counselors?.map((c: any) => ({ value: c._id, label: c.name })) || []}
-                                value={formData.counselorId}
-                                onChange={(e) => setFormData({ ...formData, counselorId: e.target.value })}
-                            />
-                        </div>
-                    )}
-                    <div className="flex justify-end mt-4">
-                        <Button variant="primary" onClick={handleAddLead} isLoading={addLeadMutation.isPending}>Submit</Button>
-                    </div>
-                </Card>
+                </div>
             )}
+
+
 
             {/* Table */}
-            <Card className="overflow-hidden shadow-sm border border-gray-200">
-                <div className="w-full max-w-full overflow-x-auto">
-                    <DataTable
-                        data={data?.data || []}
-                        columns={columns}
-                        isLoading={isLoading}
-                    />
-                </div>
-                {/* Pagination Footer */}
-                <div className="p-3 border-t bg-gray-50 flex justify-between items-center text-xs text-gray-600">
-                    <span>Showing {data?.data?.length || 0} of {data?.totalCount || 0} entries</span>
-                    <div className="flex gap-2">
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={pagination.pageIndex === 0}
-                            onClick={() => setPagination(p => ({ ...p, pageIndex: p.pageIndex - 1 }))}
-                        >
-                            Previous
-                        </button>
-                        <button
-                            className="px-2 py-1 border rounded bg-white hover:bg-gray-100 disabled:opacity-50"
-                            disabled={!data || data.data.length < pagination.pageSize}
-                            onClick={() => setPagination(p => ({ ...p, pageIndex: p.pageIndex + 1 }))}
-                        >
-                            Next
-                        </button>
-                    </div>
-                </div>
-            </Card>
+            <div className="w-full max-w-full overflow-x-auto">
+                <DataTable
+                    data={data?.data || []}
+                    columns={columns}
+                    isLoading={isLoading}
+                />
+            </div>
 
-            {/* Action Menu Dropdown */}
-            {openActionId && actionMenuPosition && (
-                <div
-                    className="fixed bg-white rounded-md shadow-lg border border-gray-100 z-[9999] overflow-hidden w-40 action-menu-dropdown"
-                    style={{
-                        top: actionMenuPosition.top,
-                        left: actionMenuPosition.left
-                    }}
-                >
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewTimeline(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Clock size={14} className="mr-2 text-blue-500" />
-                        View Timeline
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewFollowUp(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <MessageSquare size={14} className="mr-2 text-green-500" />
-                        Follow Up
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewVisits(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <Plane size={14} className="mr-2 text-orange-500" />
-                        Visits
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewCalls(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <PhoneCall size={14} className="mr-2 text-indigo-500" />
-                        Calls
-                    </button>
-                    <button
-                        onClick={() => {
-                            const student = data?.data?.find(s => s._id === openActionId);
-                            if (student) handleViewNotes(student);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center transition-colors"
-                    >
-                        <FileText size={14} className="mr-2 text-purple-500" />
-                        Notes
-                    </button>
+            <SendSmsModal
+                isOpen={isSmsModalOpen}
+                onClose={() => {
+                    setIsSmsModalOpen(false);
+                    setSelectedRows({});
+                }}
+                selectedLeads={data?.data.filter(row => selectedRows[row._id]) || []}
+            />
 
-                </div>
-            )}
+            <SendWhatsappModal
+                isOpen={isWhatsappModalOpen}
+                onClose={() => {
+                    setIsWhatsappModalOpen(false);
+                    setSelectedRows({});
+                }}
+                selectedLeads={data?.data.filter(row => selectedRows[row._id]) || []}
+            />
+
+            <BulkUpdateCounselorModal
+                isOpen={isBulkUpdateCounselorOpen}
+                onClose={() => {
+                    setIsBulkUpdateCounselorOpen(false);
+                    setSelectedRows({});
+                }}
+                selectedCount={selectedCount}
+                entityId={entityId}
+                onUpdate={handleBulkUpdateCounselor}
+            />
 
             <TimelineModal
                 isOpen={isTimelineOpen}
@@ -486,8 +737,28 @@ const AdmissionLeads = () => {
 
             <ViewFollowUpModal
                 isOpen={isFollowUpOpen}
-                onClose={() => setIsFollowUpOpen(false)}
+                onClose={() => {
+                    setIsFollowUpOpen(false);
+                    setPendingTag(null);
+                }}
                 student={followUpStudent}
+                onSaveSuccess={() => {
+                     if (pendingTag && followUpStudent && pendingTag.student._id === followUpStudent._id) {
+                        updateStudent({
+                           id: pendingTag.student._id,
+                           data: { tag: pendingTag.tag.tag }, 
+                       }, {
+                           onSuccess: () => {
+                               showToast('success', 'Tag updated successfully');
+                               setPendingTag(null);
+                               refetch(); // Refresh list to show new tag
+                           },
+                           onError: () => {
+                               showToast('error', 'Failed to update tag');
+                           }
+                       });
+                   }
+                }}
             />
 
             <VisitsModal
@@ -506,6 +777,12 @@ const AdmissionLeads = () => {
                 isOpen={isNotesOpen}
                 onClose={() => setIsNotesOpen(false)}
                 student={notesStudent}
+            />
+
+            <ReferenceModal
+                isOpen={isReferenceOpen}
+                onClose={() => setIsReferenceOpen(false)}
+                student={referenceStudent}
             />
         </div>
     );

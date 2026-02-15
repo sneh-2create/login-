@@ -17,9 +17,13 @@ export const admissionLeadService = {
         return response.data;
     },
 
-    // Potentially needed for specific updates like tags if not covered by generic update
     updateAdmissionLeadTag: async (payload: { id: string; tag: string }) => {
         const response = await apiClient.post<any>('/update/tag', payload);
+        return response.data;
+    },
+
+    bulkCounselorUpdate: async (payload: { studentDataIds: string[], entity: string, counselor: string }) => {
+        const response = await apiClient.post<any>('/bulkUpdateCounselor/bulkRequest', payload);
         return response.data;
     }
 };

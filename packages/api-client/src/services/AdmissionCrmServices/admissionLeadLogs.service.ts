@@ -7,6 +7,11 @@ export const admissionLeadLogsService = {
         return response.data;
     },
 
+    addAdmissionLeadLogs: async (formData: any) => {
+        const response = await apiClient.post<any>('/add/admissionLeadLogs', formData);
+        return response.data;
+    },
+
     viewAdmissionLeadLogs: async (id: string) => {
         const response = await apiClient.get<any>(`/view/admissionLeadLogs?id=${id}`);
         return response.data;
@@ -24,6 +29,16 @@ export const admissionLeadLogsService = {
 
     clickToCall: async (formData: any) => {
         const response = await apiClient.post<any>('/peerToPeerCall/admissionLeadLogs', formData);
+        return response.data;
+    },
+
+    convertAdmissionLeadLog: async (formData: any) => {
+        const response = await apiClient.post<any>('/convert/admissionLeadLogs', formData);
+        return response.data;
+    },
+
+    listAdmissionStudentDataMobile: async (formData: any) => {
+        const response = await apiClient.post<any>('/list/admissionStudentDataMobile', formData);
         return response.data;
     }
 };

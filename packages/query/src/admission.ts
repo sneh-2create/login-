@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
-import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService, admissionVisitService, admissionNoteService } from '@od-erp/api-client';
-import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload } from '@od-erp/types';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService, admissionVisitService, admissionNoteService, admissionService, admissionStudentDataService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload, CounselorTagReportTableRow } from '@od-erp/types';
 
 export const useSourceWiseReport = (
     entityId: string,
@@ -56,7 +56,8 @@ export const useNepSubjectReport = (
     stream?: string,
     batch?: string,
     subjectGroupValue?: string,
-    subjectGroupName?: string
+    subjectGroupName?: string,
+    enabled: boolean = true
 ) => {
     return useQuery<NepSubjectReportData[]>({
         queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
@@ -69,7 +70,7 @@ export const useNepSubjectReport = (
             subjectGroupValue,
             subjectGroupName
         ),
-        enabled: !!entityId && !!session,
+        enabled: !!entityId && !!session && enabled,
         staleTime: 30000,
     });
 };
@@ -78,8 +79,8 @@ export const useCounselorProductivityReport = (
     entityId: string,
     session: string,
     stageType: 'lead' | 'application',
-    startDate: number,
-    endDate: number,
+    startDate?: number,
+    endDate?: number,
     counselorId?: string
 ) => {
     return useQuery<CounselorProductivityReportData[]>({
@@ -97,10 +98,31 @@ export const useCounselorProductivityReport = (
     });
 };
 
+export const useCounselorTagReport = (
+    entityId: string,
+    session: string,
+    counselorId?: string,
+    startDate?: number,
+    endDate?: number
+) => {
+    return useQuery<CounselorTagReportTableRow[]>({
+        queryKey: ['counselorTagReport', entityId, session, counselorId, startDate, endDate],
+        queryFn: () => counselorTagReportService.counselorTagList(
+            entityId,
+            session,
+            counselorId,
+            startDate,
+            endDate
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
 export const useCounselors = (entityId: string, role?: string) => {
     return useQuery<any[]>({
         queryKey: ['counselors', entityId, role],
-        queryFn: () => counselorTagReportService.listEmployee(entityId, role),
+        queryFn: () => admissionService.listEmployee(entityId, role),
         enabled: !!entityId,
         staleTime: 60000 * 5,
     });
@@ -141,6 +163,29 @@ export const useAdmissionLeadLog = (payload: AdmissionLeadLogPayload) => {
     });
 };
 
+export const useAddAdmissionLeadLog = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadLogsService.addAdmissionLeadLogs,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionVisit'] });
+        },
+    });
+};
+
+export const useClickToCall = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadLogsService.clickToCall,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['viewAdmissionStudentData'] });
+        },
+    });
+};
+
+
 export const useAddAdmissionLead = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -157,6 +202,29 @@ export const useUpdateAdmissionLead = () => {
         mutationFn: admissionLeadService.updateAdmissionLead,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useBulkCounselorUpdate = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.bulkCounselorUpdate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useEditAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+            queryClient.invalidateQueries({ queryKey: ['viewAdmissionStudentData'] });
         },
     });
 };
@@ -189,6 +257,7 @@ export const useAdmissionNote = (payload: AdmissionNotePayload, enabled?: boolea
     });
 };
 
+
 export const useAddAdmissionNote = () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -198,3 +267,54 @@ export const useAddAdmissionNote = () => {
         },
     });
 };
+
+export const useCourses = (entityId: string, session: string) => {
+    return useQuery<any[]>({
+        queryKey: ['courses', entityId, session],
+        queryFn: () => admissionService.getCourseList(entityId, session),
+        enabled: !!entityId && !!session,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useStreams = (entityId: string, course: string) => {
+    return useQuery<string[]>({
+        queryKey: ['streams', entityId, course],
+        queryFn: () => admissionService.getStreamList(entityId, course),
+        enabled: !!entityId && !!course,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useBatches = (entityId: string, course: string, stream: string, enabled: boolean = true) => {
+    return useQuery<string[]>({
+        queryKey: ['batches', entityId, course, stream],
+        queryFn: () => admissionService.getBatchList(entityId, course, stream),
+        enabled: !!entityId && !!course && !!stream && enabled,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useSources = (entityId: string, session: string) => {
+    return useQuery<string[]>({
+        queryKey: ['sources', entityId, session],
+        queryFn: async () => {
+            const data = await admissionService.viewAdmissionMaster(entityId, session);
+            return data.source || [];
+        },
+        enabled: !!entityId && !!session,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useAddReportFile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionService.addReportFile,
+        onSuccess: () => {
+            // Invalidate templates cache if it exists
+            queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+        },
+    });
+};
+

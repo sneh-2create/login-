@@ -1,4 +1,7 @@
 
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
+
 export const calculateReportTotals = (data: any[], keysToSum: string[], additionalKeysToSum: string[] = []) => {
     if (!data || data.length === 0) return [];
 
@@ -57,10 +60,7 @@ export const processTableData = (data: any[], keysToSum: string[] = []): any[] =
 
 export const processVacantSeatsReportData = (data: any[]): any[] => {
     if (!data) return [];
-    return data.map((item, index) => ({
-        position: index + 1,
-        ...item
-    }));
+    return calculateReportTotals(data, [], ['seats', 'availableSeats', 'filledSeats', 'pendingApplications']);
 };
 
 export const transformVacantSeatsForExport = (data: any[], displayNames: any, showBatch: boolean): any[] => {
@@ -76,33 +76,79 @@ export const transformVacantSeatsForExport = (data: any[], displayNames: any, sh
         }
         row['Name'] = item.name;
         row['Seats'] = item.seats;
-        row['Available'] = item.availableSeats;
-        row['Filled'] = item.filledSeats;
-        row['Pending'] = item.pendingApplications;
+        row['Available Seats'] = item.availableSeats;
+        row['Filled Seats'] = item.filledSeats;
+        row['Pending Applications'] = item.pendingApplications;
         return row;
     });
 };
 
-// Admission Summary Report
+// Process Admission Summary Report Data
 export const processAdmissionSummaryData = (data: any[]): { processedRows: any[], dynamicColumns: string[] } => {
     if (!data || !Array.isArray(data)) return { processedRows: [], dynamicColumns: [] };
 
-    // Identify dynamic columns (keys that are not fixed)
-    const fixedKeys = ['course', 'stream', 'total', 'totalOpen', 'position'];
-    const dynamicColumns = new Set<string>();
+    const dynamicColumnsSet = new Set<string>();
 
+    // 1. First pass: Collect all unique dynamic column names from the nested 'data' array
     data.forEach(row => {
-        Object.keys(row).forEach(key => {
-            if (!fixedKeys.includes(key) && typeof row[key] === 'number') {
-                dynamicColumns.add(key);
-            }
+        if (Array.isArray(row.data)) {
+            row.data.forEach((item: any) => {
+                if (item.name) {
+                    dynamicColumnsSet.add(item.name);
+                }
+            });
+        }
+    });
+
+    const dynamicColumns = Array.from(dynamicColumnsSet);
+
+    // 2. Second pass: Flatten the data and ensure all rows have all columns (init with 0)
+    const processedRows = data.map((row, index) => {
+        const newRow = { ...row, position: index + 1 };
+        
+        // Initialize all dynamic columns to 0
+        dynamicColumns.forEach(col => {
+            newRow[col] = 0;
+        });
+
+        // Fill in actual values
+        if (Array.isArray(row.data)) {
+            row.data.forEach((item: any) => {
+                if (item.name) {
+                    newRow[item.name] = item.value;
+                }
+            });
+        }
+        return newRow;
+    });
+
+    // 3. Calculate Totals Row
+    const totalRow: any = {
+        position: '', 
+        course: 'Total',
+        stream: '',
+        total: 0,
+        totalOpen: 0
+    };
+
+    // Initialize total row dynamic columns
+    dynamicColumns.forEach(col => {
+        totalRow[col] = 0;
+    });
+
+    processedRows.forEach(row => {
+        totalRow.total += (row.total || 0);
+        totalRow.totalOpen += (row.totalOpen || 0);
+
+        dynamicColumns.forEach(col => {
+            totalRow[col] += (row[col] || 0);
         });
     });
 
-    const dynCols = Array.from(dynamicColumns);
-    const processedRows = calculateReportTotals(data, dynCols, ['total', 'totalOpen']);
+    // Append total row
+    processedRows.push(totalRow);
 
-    return { processedRows, dynamicColumns: dynCols };
+    return { processedRows, dynamicColumns };
 };
 
 export const transformAdmissionSummaryForExport = (data: any[], columns: any[]): any[] => {
@@ -119,7 +165,7 @@ export const transformAdmissionSummaryForExport = (data: any[], columns: any[]):
 // Course Wise Tag Report
 export const processCourseWiseTagData = (data: any[], tags: string[]): any[] => {
     if (!data) return [];
-    return calculateReportTotals(data, tags, ['total']);
+    return calculateReportTotals(data, tags, ['totalCount']);
 };
 
 export const transformCourseWiseTagForExport = (data: any[], tags: string[]): any[] => {
@@ -129,7 +175,7 @@ export const transformCourseWiseTagForExport = (data: any[], tags: string[]): an
             'S.No': item.position,
             'Course': item.course,
             'Stream': item.stream || '-',
-            'Total': item.total
+            'Total Count': item.totalCount
         };
         tags.forEach(tag => {
             row[tag] = item[tag] || 0;
@@ -238,3 +284,27 @@ export const transformNepSubjectReportForExport = (data: any[]): any[] => {
         'Pending Applications': item.pendingApplications
     }));
 };
+
+export const addExcelReportHeader = (ws: XLSX.WorkSheet, entityName: string, reportName: string, filterSummary?: string[][]) => {
+    XLSX.utils.sheet_add_aoa(ws, [['This is a system-generated report by Okie Dokie']], { origin: "A1" });
+    XLSX.utils.sheet_add_aoa(ws, [[`Generated At: ${format(new Date(), 'dd-MMM-yyyy HH:mm a')}`]], { origin: "A2" });
+    XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+    XLSX.utils.sheet_add_aoa(ws, [[entityName]], { origin: "A4" });
+    XLSX.utils.sheet_add_aoa(ws, [[reportName]], { origin: "A5" });
+
+    let currentRow = 6;
+
+    if (filterSummary && filterSummary.length > 0) {
+        XLSX.utils.sheet_add_aoa(ws, [['Filter Summary:']], { origin: { r: currentRow - 1, c: 0 } });
+        XLSX.utils.sheet_add_aoa(ws, filterSummary, { origin: { r: currentRow, c: 0 } });
+        currentRow += filterSummary.length + 1;
+    }
+
+    XLSX.utils.sheet_add_aoa(ws, [[]], { origin: { r: currentRow, c: 0 } });
+    return currentRow + 1;
+};
+
+export const addExcelReportFooter = (ws: XLSX.WorkSheet, startRow: number) => {
+    XLSX.utils.sheet_add_aoa(ws, [['Principal\'s Signature', '', '', '', 'Authorised Signature']], { origin: { r: startRow, c: 0 } });
+};
+// ... (content will be generated after checking package.json)
