@@ -26,9 +26,9 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
             <div>
                 <Title as="p" variant="subtitle">{title}</Title>
                 {isLoading ? (
-                    <Loader2 className="w-6 h-6 animate-spin text-gray-400 mt-1" />
+                    <Loader2 className="w-6 h-6 animate-spin text-[var(--color-muted-foreground)] mt-1" />
                 ) : (
-                    <Title as="h3" variant="cardTitle" className="text-2xl font-bold text-gray-800 mt-1">
+                    <Title as="h3" variant="cardTitle" className="text-2xl font-bold text-[var(--color-foreground)] mt-1">
                         {value}
                     </Title>
                 )}

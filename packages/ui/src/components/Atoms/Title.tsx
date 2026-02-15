@@ -17,13 +17,13 @@ export const Title: React.FC<TitleProps> = ({
     style = {},
     color
 }) => {
-    const baseStyles = "font-sans text-gray-800";
+    const baseStyles = "font-sans text-[var(--color-foreground)]";
 
     const variants = {
         pageTitle: "text-2xl font-bold mb-6",
         sectionTitle: "text-lg font-bold mb-4",
-        cardTitle: "text-base font-semibold text-gray-700",
-        subtitle: "text-sm text-gray-500",
+        cardTitle: "text-base font-semibold text-[var(--color-foreground)]",
+        subtitle: "text-sm text-[var(--color-muted-foreground)]",
         body: "text-base"
     };
 

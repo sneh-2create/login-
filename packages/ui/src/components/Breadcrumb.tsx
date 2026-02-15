@@ -34,7 +34,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
                             {/* Separator */}
                             {!isFirst && (
                                 <ChevronRight
-                                    className="w-4 h-4 text-gray-400"
+                                    className="w-4 h-4 text-[var(--color-muted-foreground)]"
                                     aria-hidden="true"
                                 />
                             )}
@@ -45,7 +45,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
                                     to={item.href}
                                     className={cn(
                                         "flex items-center gap-1.5 hover:text-[var(--color-primary)] transition-colors",
-                                        "text-gray-600 font-medium"
+                                        "text-[var(--color-muted-foreground)] font-medium"
                                     )}
                                 >
                                     {isFirst && showHomeIcon && !item.icon && (
@@ -60,7 +60,7 @@ export const Breadcrumb: React.FC<BreadcrumbProps> = ({
                                         "flex items-center gap-1.5",
                                         isLast
                                             ? "text-[var(--color-primary)] font-semibold"
-                                            : "text-gray-600 font-medium"
+                                            : "text-[var(--color-muted-foreground)] font-medium"
                                     )}
                                     aria-current={isLast ? "page" : undefined}
                                 >

@@ -1,12 +1,14 @@
 import React, { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-import { Sidebar, Header } from '@od-erp/ui';
+import { Sidebar, Header, FloatingThemePicker } from '@od-erp/ui';
 import {
     useAppDispatch,
     useAppSelector,
     // toggleSidebar,
     setMenuConfig,
+    setPrimaryColor,
 } from '@od-erp/store';
+import { mapHexToThemeColor } from '@od-erp/utils';
 
 import { menuConfig } from '@od-erp/constants';
 
@@ -26,22 +28,13 @@ export const Layout: React.FC = () => {
         }
     }, [dispatch]);
 
-    // Dynamic Theming
+    // Sync backend primary color with theme system
     useEffect(() => {
         if (entityDetails?.primaryColour) {
-            document.documentElement.style.setProperty('--color-primary', entityDetails.primaryColour);
-        } else {
-            // Fallback to CSS default (remove override)
-            document.documentElement.style.removeProperty('--color-primary');
+            const themeColor = mapHexToThemeColor(entityDetails.primaryColour);
+            dispatch(setPrimaryColor(themeColor));
         }
-
-        if (entityDetails?.secondaryColour) {
-            document.documentElement.style.setProperty('--color-secondary', entityDetails.secondaryColour);
-        } else {
-            // Fallback to CSS default
-            document.documentElement.style.removeProperty('--color-secondary');
-        }
-    }, [entityDetails]);
+    }, [entityDetails?.primaryColour, dispatch]);
 
     // const handleLogout = () => {
     //     dispatch(logout());
@@ -52,7 +45,7 @@ export const Layout: React.FC = () => {
 
     if (isPrint) {
         return (
-            <div className="min-h-screen bg-white w-full">
+            <div className="min-h-screen w-full" style={{ background: 'var(--color-background)' }}>
                 <Outlet />
             </div>
         );
@@ -65,7 +58,7 @@ export const Layout: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen overflow-hidden bg-gray-50">
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-muted)' }}>
             {/* Sidebar (Fixed Left, Full Height) */}
             <Sidebar collapsed={!isSidebarExpanded} />
 
@@ -78,9 +71,12 @@ export const Layout: React.FC = () => {
                 <Header isSidebarExpanded={isSidebarExpanded} onToggleSidebar={toggleSidebar} />
 
                 {/* Page Content */}
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6 bg-white">
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6" style={{ background: 'var(--color-background)' }}>
                     <Outlet />
                 </main>
+
+                {/* Floating Theme Picker */}
+                <FloatingThemePicker />
             </div>
         </div>
     );

@@ -22,5 +22,7 @@ export * from './components/Sidebar/Sidebar';
 export * from './components/LoadingState/LoadingState';
 export * from './components/Header';
 export * from './components/Breadcrumb';
+export * from './components/ThemeSwitcher';
+export * from './components/FloatingThemePicker';
 export { cn } from './utils';
 export { useTypingText } from './hooks/useTypingText';

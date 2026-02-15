@@ -14,9 +14,9 @@ export const DashboardSection: React.FC<DashboardSectionProps> = ({
     rightElement
 }) => {
     return (
-        <Card className="flex flex-col h-full bg-white shadow-sm rounded-lg border border-gray-100">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#fcfcfc] rounded-t-lg">
-                <Title as="h3" variant="sectionTitle" className="text-lg font-bold text-gray-800 m-0">
+        <Card className="flex flex-col h-full shadow-sm rounded-lg">
+            <div className="px-6 py-4 border-b border-[var(--color-border)] flex justify-between items-center bg-[var(--color-muted)] rounded-t-lg">
+                <Title as="h3" variant="sectionTitle" className="text-lg font-bold text-[var(--color-foreground)] m-0">
                     {title}
                 </Title>
                 {rightElement && (

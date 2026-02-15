@@ -6,20 +6,39 @@
 
 @layer base {
     :root {
+        /* ============================================
+           THEME-CONTROLLED VARIABLES
+           These are set dynamically by the theme system
+           DO NOT set default values here!
+           ============================================ */
+        /* --color-primary (set by theme system) */
+        /* --color-primary-hover (set by theme system) */
+        /* --color-primary-light (set by theme system) */
+        /* --color-primary-dark (set by theme system) */
+        /* --color-background (set by theme system) */
+        /* --color-foreground (set by theme system) */
+        /* --color-muted (set by theme system) */
+        /* --color-border (set by theme system) */
+        /* --color-card (set by theme system) */
+        /* --sidebar-bg (set by theme system) */
+        /* --sidebar-border (set by theme system) */
+        /* --sidebar-item-active-bg (set by theme system) */
+        /* --sidebar-submenu-icon-bg (set by theme system) */
+        /* --sidebar-submenu-icon-color (set by theme system) */
+        /* --header-bg (set by theme system) */
+        /* --header-border (set by theme system) */
+
+        /* ============================================
+           STATIC VARIABLES (not controlled by theme)
+           ============================================ */
         /* Brand Colors (Legacy Angular Parity) */
         --color-brand: var(--color-primary);
         --color-brand-dark: #272631;
-        /* Brand/Logo Area Background */
         --color-brand-hover: #cf4320;
 
-        /* State Colors */
-        --color-primary: #e95029;
-        --color-primary-dark: #4854b0;
+        /* State Colors (semantic, not theme-controlled) */
         --color-secondary: #6c757d;
-        --color-success: #0abb87;
-        --color-warning: #ffb822;
-        --color-danger: #fd397a;
-        --color-info: #5578eb;
+        /* --color-success, --color-warning, --color-danger, --color-info set by theme system */
 
         /* Base Colors */
         --color-dark: #282a3c;
@@ -30,19 +49,14 @@
 
         /* Layout specific */
         --aside-bg: #ffffff;
-        --header-bg: #ffffff;
         --header-height: 80px;
         --header-height-mobile: 50px;
         --aside-width: 265px;
         --aside-minimize-width: 80px;
 
-        /* Sidebar Component Colors */
-        --sidebar-item-active-bg: #f0f3ff;
+        /* Sidebar Component Colors (non-theme) */
         --sidebar-section-title: #3F4254;
         --sidebar-bullet-inactive: #b8bac3;
-        --sidebar-border: #eff2f5;
-        --sidebar-submenu-icon-bg: color-mix(in srgb, var(--color-brand) 10%, transparent);
-        --sidebar-submenu-icon-color: var(--color-brand);
 
         /* Typography */
         --font-family: "Lato", Poppins, Helvetica, sans-serif;
@@ -130,6 +144,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }

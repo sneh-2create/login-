@@ -16,3 +16,4 @@ export * from './ui.config';
 export * from './badge.config';
 export * from './table.config';
 export * from './login.config';
+export * from './theme.constants';

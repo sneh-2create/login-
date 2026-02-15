@@ -457,15 +457,15 @@ const AdmissionStudentData = () => {
 
 
     return (
-        <div className="w-full max-w-full min-w-0 p-6 bg-gray-50 min-h-screen font-sans">
+        <div className="w-full max-w-full min-w-0 p-6 bg-[var(--color-background)] min-h-screen font-sans">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Application Data</h1>
-                    <div className="flex items-center text-sm text-gray-500 mt-1">
+                    <h1 className="text-2xl font-bold text-[var(--color-foreground)]">Application Data</h1>
+                    <div className="flex items-center text-sm text-[var(--color-muted-foreground)] mt-1">
                         <span className="mr-2">Select Session</span>
                         <select
-                            className="bg-transparent font-semibold text-gray-700 outline-none cursor-pointer"
+                            className="bg-transparent font-semibold text-[var(--color-foreground)] outline-none cursor-pointer"
                             value={session}
                             onChange={handleSessionChange}
                         >

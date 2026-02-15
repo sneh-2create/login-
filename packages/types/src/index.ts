@@ -83,3 +83,4 @@ export * from './admission';
 export * from './table';
 export * from './badge';
 export * from './login';
+export * from './theme.types';

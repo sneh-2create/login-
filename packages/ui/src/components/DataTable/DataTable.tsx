@@ -133,7 +133,7 @@ export function DataTable<TData, TValue>({
     const getCellClassName = (column: ColumnDef<TData, TValue>) => {
         const meta = column.meta as ExtendedColumnMeta<TData> | undefined;
         // Default matches the clean, spacious look
-        const baseClasses = 'px-6 py-4 font-sans text-sm leading-5 tracking-tight align-middle border-b border-ui-gray-50 group-hover:bg-gray-50/50 transition-colors';
+        const baseClasses = 'px-6 py-4 font-sans text-sm leading-5 tracking-tight align-middle border-b border-[var(--color-border)] transition-colors';
         const alignClass = meta?.align ? (meta.align === 'center' ? 'text-center' : meta.align === 'right' ? 'text-right' : 'text-left') : 'text-left';
 
         // Determine font weight - Headers are bold in screenshot, body name is bold
@@ -142,7 +142,7 @@ export function DataTable<TData, TValue>({
 
         if (meta?.isBold) {
             fontWeightClass = 'font-bold';
-            textColorClass = 'text-black'; // Precise black #000
+            textColorClass = 'text-[var(--color-foreground)]';
         } else if (meta?.fontWeight) {
             // ... existing logic fallback ...
             if (typeof meta.fontWeight === 'number') {
@@ -150,10 +150,10 @@ export function DataTable<TData, TValue>({
             } else {
                 fontWeightClass = FONT_WEIGHT_STRING_MAP[meta.fontWeight] || DEFAULT_FONT_WEIGHT;
             }
-            textColorClass = 'text-gray-600';
+            textColorClass = 'text-[var(--color-muted-foreground)]';
         } else {
             fontWeightClass = 'font-normal';
-            textColorClass = 'text-gray-600'; // Precise #4B5563
+            textColorClass = 'text-[var(--color-muted-foreground)]';
         }
 
         // Allow overriding text color via meta.textColor
@@ -204,20 +204,20 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className={`w-full flex justify-center items-start p-0 font-sans ${containerClassName}`}>
-            <div className={`w-full bg-white border border-ui-gray-100 rounded-xl overflow-hidden flex flex-col ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
+            <div className={`w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
                 {/* Search Section */}
                 {showSearch && (
-                    <div className="w-full h-16 p-3 box-border flex items-center border-b border-ui-gray-200">
+                    <div className="w-full h-16 p-3 box-border flex items-center border-b border-[var(--color-border)]">
                         <div className="w-full h-10 relative flex items-center gap-0">
                             <input
                                 type="text"
-                                className="w-full h-10 px-4 pr-10 border border-ui-gray-200 rounded-lg bg-white font-sans text-sm font-normal leading-5 tracking-ui-tight text-ui-gray-800 outline-none box-border placeholder:text-ui-placeholder focus:border-blue-500"
+                                className="w-full h-10 px-4 pr-10 border border-[var(--color-border)] rounded-lg bg-[var(--color-background)] font-sans text-sm font-normal leading-5 tracking-ui-tight text-[var(--color-foreground)] outline-none box-border placeholder:text-[var(--color-muted-foreground)] focus:border-[var(--color-primary)]"
                                 placeholder={searchPlaceholder}
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                             />
                             <div className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center pointer-events-none z-10">
-                                <Search className="w-4 h-4 text-ui-gray-400" strokeWidth={1.5} />
+                                <Search className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
                             </div>
                         </div>
                     </div>
@@ -225,8 +225,8 @@ export function DataTable<TData, TValue>({
 
                 {/* Table Section */}
                 <div className="w-full overflow-x-auto overflow-y-auto" style={maxHeight ? { maxHeight: maxHeight } : {}}>
-                    <table className="w-full border-collapse bg-white">
-                        <thead className="bg-ui-gray-50">
+                    <table className="w-full border-collapse bg-[var(--color-card)]">
+                        <thead className="bg-[var(--color-muted)]">
                             <tr className="h-[50px]">
                                 {table.getHeaderGroups().map((headerGroup) =>
                                     headerGroup.headers.map((header) => {
@@ -234,19 +234,19 @@ export function DataTable<TData, TValue>({
                                         return (
                                             <th
                                                 key={header.id}
-                                                className="px-6 py-3 text-left font-sans text-xs font-bold tracking-wide text-ui-gray-700 bg-ui-gray-50 border-b border-ui-gray-200"
+                                                className="px-6 py-3 text-left font-sans text-xs font-bold tracking-wide text-[var(--color-foreground)] border-b border-[var(--color-border)]"
                                                 style={getHeaderStyle(column)}
                                                 onClick={enableSorting && header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
                                             >
-                                                <div className={`flex items-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-ui-gray-700' : ''}`}>
+                                                <div className={`flex items-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-[var(--color-primary)]' : ''}`}>
                                                     {flexRender(column.header, header.getContext())}
                                                     {enableSorting && header.column.getCanSort() && (
                                                         <span className="ml-1">
                                                             {{
-                                                                asc: <ArrowUp className="h-3 w-3 text-ui-gray-400" />,
-                                                                desc: <ArrowDown className="h-3 w-3 text-ui-gray-400" />,
+                                                                asc: <ArrowUp className="h-3 w-3 text-[var(--color-muted-foreground)]" />,
+                                                                desc: <ArrowDown className="h-3 w-3 text-[var(--color-muted-foreground)]" />,
                                                             }[header.column.getIsSorted() as string] ?? (
-                                                                    <ArrowUpDown className="h-3 w-3 text-ui-gray-400" />
+                                                                    <ArrowUpDown className="h-3 w-3 text-[var(--color-muted-foreground)]" />
                                                                 )}
                                                         </span>
                                                     )}
@@ -262,14 +262,14 @@ export function DataTable<TData, TValue>({
                                 <tr>
                                     <td
                                         colSpan={columns.length}
-                                        className="px-3 py-8 text-center font-sans text-sm text-ui-gray-600 align-middle"
+                                        className="px-3 py-8 text-center font-sans text-sm text-[var(--color-muted-foreground)] align-middle"
                                     >
                                         Loading...
                                     </td>
                                 </tr>
                             ) : table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
-                                    <tr key={row.id} className="min-h-[48px] border-b border-ui-gray-100 last:border-b-0 hover:bg-ui-gray-50 transition-colors group">
+                                    <tr key={row.id} className="min-h-[48px] border-b border-[var(--color-border)] last:border-b-0 hover:bg-[var(--color-muted)] transition-colors group">
                                         {row.getVisibleCells().map((cell) => {
                                             const column = cell.column.columnDef;
                                             return (
@@ -288,7 +288,7 @@ export function DataTable<TData, TValue>({
                                 <tr>
                                     <td
                                         colSpan={columns.length}
-                                        className="px-3 py-3 text-center font-sans text-sm text-ui-gray-600 align-middle"
+                                        className="px-3 py-3 text-center font-sans text-sm text-[var(--color-muted-foreground)] align-middle"
                                     >
                                         No data available
                                     </td>
@@ -300,14 +300,14 @@ export function DataTable<TData, TValue>({
 
                 {/* Pagination Section */}
                 {showPagination && (
-                    <div className="w-full h-[65px] px-6 py-3 box-border flex justify-between items-center border-t border-ui-gray-100 bg-white">
+                    <div className="w-full h-[65px] px-6 py-3 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)]">
                         <div className="flex items-center gap-2">
-                            <span className="font-sans text-sm text-gray-600">
+                            <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
                                 Items per page:
                             </span>
                             <div className="relative">
                                 <select
-                                    className="h-8 pl-3 pr-7 border border-ui-gray-200 rounded-md bg-white text-sm text-gray-700 cursor-pointer outline-none focus:border-blue-500 appearance-none min-w-[60px]"
+                                    className="h-8 pl-3 pr-7 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] text-sm text-[var(--color-foreground)] cursor-pointer outline-none focus:border-[var(--color-primary)] appearance-none min-w-[60px]"
                                     style={{
                                         backgroundImage: `url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22 fill=%22none%22%3E%3Cpath d=%22M1 1L5 5L9 1%22 stroke=%22%236B7280%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E')`,
                                         backgroundRepeat: 'no-repeat',
@@ -331,14 +331,14 @@ export function DataTable<TData, TValue>({
                             </span>
                             <div className="flex gap-2">
                                 <button
-                                    className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded-md bg-white cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     onClick={handlePrevPage}
                                     disabled={!table.getCanPreviousPage()}
                                 >
                                     <ChevronLeft className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
                                 </button>
                                 <button
-                                    className="w-8 h-8 flex items-center justify-center border border-ui-gray-200 rounded-md bg-white cursor-pointer hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     onClick={handleNextPage}
                                     disabled={!table.getCanNextPage()}
                                 >
