@@ -29,34 +29,35 @@
         /* --header-border (set by theme system) */
 
         /* ============================================
-           STATIC VARIABLES (not controlled by theme)
+           LEGACY VARIABLES (now theme-controlled)
+           These are set dynamically by the theme system
            ============================================ */
-        /* Brand Colors (Legacy Angular Parity) */
-        --color-brand: var(--color-primary);
-        --color-brand-dark: #272631;
-        --color-brand-hover: #cf4320;
+        /* --color-brand (set by theme system) */
+        /* --color-brand-dark (set by theme system) */
+        /* --color-brand-hover (set by theme system) */
+        /* --color-secondary (set by theme system) */
+        /* --color-dark (set by theme system) */
+        /* --color-light (set by theme system) */
+        /* --color-white (set by theme system) */
+        /* --color-grey-1 (set by theme system) */
+        /* --color-grey-2 (set by theme system) */
+        /* --aside-bg (set by theme system) */
+        /* --sidebar-section-title (set by theme system) */
+        /* --sidebar-bullet-inactive (set by theme system) */
+        /* --border-color (set by theme system) */
+        /* --ui-gray-50 through --ui-gray-900 (set by theme system) */
+        /* --ui-green, --ui-orange, --ui-red, --ui-orange-light (set by theme system) */
+        /* --ui-placeholder-color (set by theme system) */
+        /* --ui-status-paid-bg, --ui-status-pending-bg, --ui-status-failed-bg (set by theme system) */
 
-        /* State Colors (semantic, not theme-controlled) */
-        --color-secondary: #6c757d;
-        /* --color-success, --color-warning, --color-danger, --color-info set by theme system */
-
-        /* Base Colors */
-        --color-dark: #282a3c;
-        --color-light: #ffffff;
-        --color-white: #ffffff;
-        --color-grey-1: #f7f8fa;
-        --color-grey-2: #ebedf2;
-
-        /* Layout specific */
-        --aside-bg: #ffffff;
+        /* ============================================
+           STATIC VARIABLES (never change with theme)
+           ============================================ */
+        /* Layout Dimensions */
         --header-height: 80px;
         --header-height-mobile: 50px;
         --aside-width: 265px;
         --aside-minimize-width: 80px;
-
-        /* Sidebar Component Colors (non-theme) */
-        --sidebar-section-title: #3F4254;
-        --sidebar-bullet-inactive: #b8bac3;
 
         /* Typography */
         --font-family: "Lato", Poppins, Helvetica, sans-serif;
@@ -77,38 +78,13 @@
         --border-radius-sm: 0.2rem;
         --border-radius-md: 0.25rem;
         --border-radius-lg: 0.3rem;
-        --border-color: #dee2e6;
-
-        /* UI Design System Colors */
-        --ui-gray-50: #f9fafb;
-        --ui-gray-100: #f3f4f6;
-        --ui-gray-200: #e5e7eb;
-        --ui-gray-300: #d1d5db;
-        --ui-gray-400: #9ca3af;
-        --ui-gray-500: #6b7280;
-        --ui-gray-600: #4b5563;
-        --ui-gray-700: #374151;
-        --ui-gray-800: #1f2937;
-        --ui-gray-900: #111827;
-        --ui-green: #4caf50;
-        --ui-orange: #ff6b35;
-        --ui-red: #ff5252;
-        --ui-orange-light: #f97316;
 
         /* UI Letter Spacing */
         --ui-letter-spacing-tight: -0.5px;
         --ui-letter-spacing-tighter: -0.225px;
         --ui-letter-spacing-wide: 0.05px;
 
-        /* Status Badge Background Colors */
-        --ui-status-paid-bg: #d4edd6;
-        --ui-status-pending-bg: #ffedd5;
-        --ui-status-failed-bg: #f8d7da;
-
-        /* UI Input Placeholder Color */
-        --ui-placeholder-color: #adaebc;
-
-        /* Login Screen Colors */
+        /* Login Screen Colors (static - not theme-controlled) */
         --login-primary: #e95028;
         --login-primary-hover: #d04320;
         --login-primary-shadow: rgba(249, 115, 22, 0.2);

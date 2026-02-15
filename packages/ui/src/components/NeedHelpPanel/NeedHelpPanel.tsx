@@ -43,22 +43,22 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
     return (
         <>
             {/* Backdrop */}
-            <div 
+            <div
                 className="fixed inset-0 bg-black/50 z-[99] transition-opacity"
                 onClick={onClose}
             />
 
             {/* Side Panel */}
-            <div className="fixed right-0 top-0 h-full w-full md:w-[40%] bg-white shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out overflow-y-auto">
+            <div className="fixed right-0 top-0 h-full w-full md:w-[40%] bg-[var(--color-card)] shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out overflow-y-auto">
                 {/* Header */}
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-3 py-2 flex justify-between items-center z-10">
-                    <h3 className="text-xl font-semibold text-gray-800">Answers to your questions</h3>
+                <div className="sticky top-0 bg-[var(--color-card)] border-b border-[var(--color-border)] px-3 py-2 flex justify-between items-center z-10">
+                    <h3 className="text-xl font-semibold text-[var(--color-foreground)]">Answers to your questions</h3>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-[var(--color-muted)] rounded-full transition-colors"
                         aria-label="Close"
                     >
-                        <X className="h-5 w-5 text-gray-600" />
+                        <X className="h-5 w-5 text-[var(--color-muted-foreground)]" />
                     </button>
                 </div>
 
@@ -71,17 +71,16 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
                     ) : faqs.length > 0 ? (
                         <div className="space-y-4">
                             {faqs.map((faq, index) => (
-                                <div key={faq._id} className="border border-gray-200 rounded-lg overflow-hidden">
+                                <div key={faq._id} className="border border-[var(--color-border)] rounded-lg overflow-hidden">
                                     {/* Accordion Header */}
                                     <button
                                         onClick={() => toggleExpand(index)}
-                                        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors flex items-center justify-between text-left"
+                                        className="w-full px-4 py-3 bg-[var(--color-muted)] hover:bg-[var(--color-muted)]/80 transition-colors flex items-center justify-between text-left"
                                     >
                                         <div className="flex items-center flex-1 min-w-0">
                                             <svg
-                                                className={`h-4 w-4 text-gray-500 transition-transform flex-shrink-0 ${
-                                                    expandedIndex === index ? 'rotate-90' : ''
-                                                }`}
+                                                className={`h-4 w-4 text-[var(--color-muted-foreground)] transition-transform flex-shrink-0 ${expandedIndex === index ? 'rotate-90' : ''
+                                                    }`}
                                                 fill="none"
                                                 viewBox="0 0 24 24"
                                                 stroke="currentColor"
@@ -89,11 +88,11 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                                             </svg>
                                             <div className="ml-3 flex-1 min-w-0">
-                                                <span className="font-medium text-gray-900 block">{faq.question}</span>
+                                                <span className="font-medium text-[var(--color-foreground)] block">{faq.question}</span>
                                                 {expandedIndex !== index && faq.description && (
-                                                    <span className="text-sm text-gray-500 block truncate">
-                                                        {faq.description.length > 35 
-                                                            ? `${faq.description.substring(0, 35)}...` 
+                                                    <span className="text-sm text-[var(--color-muted-foreground)] block truncate">
+                                                        {faq.description.length > 35
+                                                            ? `${faq.description.substring(0, 35)}...`
                                                             : faq.description}
                                                     </span>
                                                 )}
@@ -115,7 +114,7 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
 
                                     {/* Accordion Content */}
                                     {expandedIndex === index && (
-                                        <div className="p-4 bg-white space-y-4">
+                                        <div className="p-4 bg-[var(--color-card)] space-y-4">
                                             {/* Video */}
                                             {faq.videoUrl && (
                                                 <div className="flex justify-center">
@@ -134,7 +133,7 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
 
                                             {/* Answer */}
                                             <div
-                                                className="text-gray-700 prose prose-sm max-w-none"
+                                                className="text-[var(--color-foreground)] prose prose-sm max-w-none"
                                                 dangerouslySetInnerHTML={{ __html: faq.answer }}
                                             />
                                         </div>
@@ -143,7 +142,7 @@ export const NeedHelpPanel = ({ isOpen, onClose, page }: NeedHelpPanelProps) => 
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-12 text-gray-500">
+                        <div className="text-center py-12 text-[var(--color-muted-foreground)]">
                             *No Data Found
                         </div>
                     )}
