@@ -21,9 +21,17 @@ const SubMenuColumn: React.FC<{
     isActive: (_path?: string) => boolean;
     onLinkClick: () => void;
     onFavorite: (_e: React.MouseEvent, _item: SubMenuItem) => void;
-}> = ({ items, isActive, onLinkClick, onFavorite }) => {
+    useMultiColumn?: boolean;
+}> = ({ items, isActive, onLinkClick, onFavorite, useMultiColumn = false }) => {
     return (
-        <div className="flex flex-col gap-0 flex-1 min-w-0">
+        <div
+            className={useMultiColumn ? "gap-0" : "flex flex-col gap-0 flex-1 min-w-0"}
+            style={useMultiColumn ? {
+                columnCount: 2,
+                columnGap: '24px',
+                columnFill: 'balance'
+            } : undefined}
+        >
             {items.map((category, catIndex) => (
                 <div key={catIndex} className="break-inside-avoid w-full">
                     {/* Logic Match: Only show Title if it is a Group (has submenu) */}
@@ -204,8 +212,46 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
         return () => clearTimeout(timer);
     }, []);
 
-    // Layout Logic: Single Column Strict
-    const containerWidthClass = 'w-[320px]';
+    // Count total submenu items and categories recursively
+    const countItemsAndCategories = (items: SubMenuItem[]): { leafCount: number; categoryCount: number } => {
+        let leafCount = 0;
+        let categoryCount = 0;
+
+        items.forEach(item => {
+            if (item.submenu && item.submenu.length > 0) {
+                // This is a category/group
+                categoryCount++;
+                const nested = countItemsAndCategories(item.submenu);
+                leafCount += nested.leafCount;
+                categoryCount += nested.categoryCount;
+            } else {
+                // This is a leaf item
+                leafCount++;
+            }
+        });
+
+        return { leafCount, categoryCount };
+    };
+
+    // Determine if we should use multi-column layout
+    const { leafCount, categoryCount } = countItemsAndCategories(item.submenu);
+    const ITEM_HEIGHT = 48; // Approximate height per item in pixels
+    const CATEGORY_HEADER_HEIGHT = 40; // Height for category headers
+    const HEADER_HEIGHT = 80; // Panel header height
+    const PADDING = 32; // Top and bottom padding
+    const FOOTER_MARGIN = 80; // Bottom margin for safety
+    const MAX_SINGLE_COLUMN_HEIGHT = window.innerHeight - HEADER_HEIGHT - PADDING - FOOTER_MARGIN;
+
+    // Calculate estimated height including category headers
+    const estimatedHeight = (leafCount * ITEM_HEIGHT) + (categoryCount * CATEGORY_HEADER_HEIGHT);
+
+    // Use 2 columns if:
+    // 1. Estimated height exceeds viewport (PRIMARY trigger)
+    // 2. OR more than 10 leaf items (SECONDARY trigger)
+    const shouldUseMultiColumn = estimatedHeight > MAX_SINGLE_COLUMN_HEIGHT || leafCount > 10;
+
+    // Layout Logic: Dynamic column based on item count
+    const containerWidthClass = shouldUseMultiColumn ? 'w-[640px]' : 'w-[320px]';
 
     return (
         <>
@@ -277,6 +323,7 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
                         isActive={isActive}
                         onLinkClick={handleLinkClick}
                         onFavorite={handleFavorite}
+                        useMultiColumn={shouldUseMultiColumn}
                     />
                 </div>
             </div>
