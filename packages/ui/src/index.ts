@@ -28,6 +28,8 @@ export * from './components/Sidebar/Sidebar';
 export * from './components/LoadingState/LoadingState';
 export * from './components/Header';
 export * from './components/Breadcrumb';
+export * from './components/ThemeSwitcher';
+export * from './components/FloatingThemePicker';
 export * from './components/Toast/Toast';
 export * from './components/EmptyState/EmptyState';
 export * from './components/NeedHelpPanel';

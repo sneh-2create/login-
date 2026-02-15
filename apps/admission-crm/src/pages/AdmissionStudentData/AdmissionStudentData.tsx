@@ -1019,11 +1019,11 @@ const AdmissionStudentData = () => {
     ];
 
     return (
-        <div className="w-full max-w-full font-sans pb-8 px-4">
+        <div className="w-full max-w-full min-w-0 p-6 bg-[var(--color-background)] min-h-screen font-sans">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Application Data</h1>
+                    <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">Application Data</h1>
                     <Breadcrumb items={breadcrumbItems} />
                 </div>
 

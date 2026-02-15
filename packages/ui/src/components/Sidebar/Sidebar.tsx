@@ -82,8 +82,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
         <>
             <aside
                 className={cn(
-                    "bg-white shadow-lg transition-all duration-300 z-[58] flex flex-col fixed left-0 top-0",
-                    "border-r border-[#eff2f5]",
+                    "bg-[var(--sidebar-bg)] shadow-lg transition-all duration-300 z-[58] flex flex-col fixed left-0 top-0",
+                    "border-r border-[var(--sidebar-border)]",
                     className
                 )}
                 style={{ width: sidebarWidth, height: '100vh' }}
@@ -91,7 +91,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
             >
                 {/* Fixed Header - Logo + Institute Name */}
                 <div className={cn(
-                    "border-b border-[#eff2f5] flex items-center justify-center transition-all duration-300",
+                    "border-b border-[var(--sidebar-border)] flex items-center justify-center transition-all duration-300",
                     collapsed ? "h-[80px] py-4" : "h-[80px] px-4 py-3"
                 )}>
                     {collapsed ? (
@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                 </div>
                             )}
                             <h2 className={cn(
-                                "font-bold text-gray-800 leading-tight flex-1",
+                                "font-bold text-[var(--color-foreground)] leading-tight flex-1",
                                 getFontSize(instituteName)
                             )}>
                                 {instituteName}
@@ -156,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                     <div
                                         className={cn(
                                             "relative flex items-center w-full px-3 py-3 cursor-pointer rounded-xl transition-all duration-200 group",
-                                            isSelected ? "bg-[var(--color-primary)] text-white" : "hover:bg-gray-50 text-gray-600",
+                                            isSelected ? "bg-[var(--color-primary)] text-white" : "hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)]",
                                             collapsed ? "justify-center flex-col gap-1" : "justify-start gap-4"
                                         )}
                                         onMouseEnter={() => handleMouseEnter(item)}
@@ -180,7 +180,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                         {!collapsed && (
                                             <span className={cn(
                                                 "text-sm font-medium tracking-wide flex-1 truncate",
-                                                isSelected ? "text-white" : "text-gray-600 group-hover:text-[var(--color-primary)]"
+                                                isSelected ? "text-white" : "text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)]"
                                             )}>
                                                 {item.title}
                                             </span>
@@ -203,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                         {collapsed && (
                                             <span className={cn(
                                                 "text-[10px] truncate max-w-full",
-                                                isSelected ? "text-white" : "text-gray-400 group-hover:text-[var(--color-primary)]"
+                                                isSelected ? "text-white" : "text-[var(--color-muted-foreground)] group-hover:text-[var(--color-primary)]"
                                             )}>
                                                 {item.title}
                                             </span>
@@ -217,7 +217,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
 
                 {/* Fixed Footer - User Details + Logout */}
                 <div className={cn(
-                    "border-t border-[#eff2f5] transition-all duration-300",
+                    "border-t border-[var(--sidebar-border)] transition-all duration-300",
                     collapsed ? "h-[70px] py-4" : "h-[80px] px-4 py-3"
                 )}>
                     {collapsed ? (
@@ -225,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                         <div className="flex items-center justify-center h-full">
                             <button
                                 onClick={handleLogout}
-                                className="p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors"
+                                className="p-2 rounded-lg hover:bg-red-50 text-[var(--color-muted-foreground)] hover:text-red-600 transition-colors"
                                 title="Logout"
                             >
                                 <LogOut size={20} />
@@ -238,12 +238,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
                                 {userInitials}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800 truncate">{userName}</p>
-                                <p className="text-xs text-gray-500 truncate capitalize">{userRole}</p>
+                                <p className="text-sm font-semibold text-[var(--color-foreground)] truncate">{userName}</p>
+                                <p className="text-xs text-[var(--color-muted-foreground)] truncate capitalize">{userRole}</p>
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="p-2 rounded-lg hover:bg-red-50 text-gray-600 hover:text-red-600 transition-colors flex-shrink-0"
+                                className="p-2 rounded-lg hover:bg-red-50 text-[var(--color-muted-foreground)] hover:text-red-600 transition-colors flex-shrink-0"
                                 title="Logout"
                             >
                                 <LogOut size={18} />

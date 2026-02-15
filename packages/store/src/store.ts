@@ -5,8 +5,8 @@ import authReducer from './slices/authSlice';
 import sessionReducer from './slices/sessionSlice';
 import uiReducer from './slices/uiSlice';
 import configReducer from './slices/configSlice';
-
 import dashboardReducer from './slices/dashboardSlice';
+import { themeMiddleware } from './middleware/themeMiddleware';
 
 const rootReducer = combineReducers({
     auth: authReducer,
@@ -32,7 +32,7 @@ export const store = configureStore({
             serializableCheck: {
                 ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
             },
-        }),
+        }).concat(themeMiddleware),
 });
 
 export const persistor = persistStore(store);

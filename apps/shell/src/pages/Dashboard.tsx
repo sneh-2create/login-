@@ -17,9 +17,9 @@ import {
     LibrarySection,
     ProfileSection,
     MessSection
-} from '../components/dashboard/sections/Placeholders';
-import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
-import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
+} from '../components/Dashboard/Sections/Placeholders';
+import { CalendarSection } from '../components/Dashboard/Sections/CalendarSection';
+import { QuickLinksSection } from '../components/Dashboard/Sections/QuickLinksSection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';

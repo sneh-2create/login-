@@ -9,14 +9,17 @@
     },
     "dependencies": {
         "@od-erp/types": "workspace:*",
-        "date-fns": "^4.1.0",
-        "xlsx": "^0.18.5"
+        "@od-erp/constants": "workspace:*",
+        "js-cookie": "^3.0.5"
     },
     "peerDependencies": {
         "react": "^18.0.0"
     },
     "devDependencies": {
+        "@types/js-cookie": "^3.0.6",
         "typescript": "^5.3.3",
-        "@types/react": "^18.0.0"
+        "@types/react": "^18.0.0",
+        "date-fns": "^4.1.0",
+        "xlsx": "^0.18.5"
     }
 }

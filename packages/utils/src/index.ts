@@ -10,5 +10,6 @@ export const formatCurrency = (amount: number, currency: string = 'USD'): string
 };
 
 export * from './reports';
+export * from './themeUtils';
 export * from './hooks/useDebounce';
 
