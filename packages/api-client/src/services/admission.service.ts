@@ -66,6 +66,17 @@ export const admissionService = {
         return response.data;
     },
 
+    getAdmissionDashboard: async (entityId: string, session: string, admissionSession: string) => {
+        // Angular: URLAddress('/getAdmissionDashboard/dashboard?entity=...&session=...&admissionSession=...')
+        const response = await apiClient.get(`/getAdmissionDashboard/dashboard?entity=${entityId}&session=${session}&admissionSession=${admissionSession}`);
+        return response.data;
+    },
+
+    getAdmissionStageCount: async (entityId: string, admissionSession: string) => {
+        // Angular: URLAddress('/getCountByStages/admissionStudentData?entity=...&admissionSession=...')
+        const response = await apiClient.get(`/getCountByStages/admissionStudentData?entity=${entityId}&admissionSession=${admissionSession}`);
+        return response.data;
+    }
     getStreamList: async (entityId: string, course: string) => {
         const response = await apiClient.get(`/list/stream?entity=${entityId}&course=${course}`);
         return response.data;

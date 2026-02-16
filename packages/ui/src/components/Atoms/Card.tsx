@@ -1,17 +1,16 @@
 import React from 'react';
 
-export interface CardProps {
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
     noPadding?: boolean;
-    onClick?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
     children,
     className = '',
     noPadding = false,
-    onClick
+    ...props
 }) => {
     return (
         <div

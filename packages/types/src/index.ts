@@ -15,6 +15,7 @@ export interface User {
     role: string;
     userType: string;
     employeeId?: string;
+    employee_id?: string; // Legacy support
     myOperatorId?: string;
     mobile?: string;
     permissions?: string[];
@@ -84,8 +85,19 @@ export interface SubSubMenuItem {
 export * from './dashboard';
 export * from './admission';
 export * from './table';
+export * from './library';
+
 export * from './badge';
+export * from './hod';
+export * from './communication';
+export * from './analytics';
+export * from './calendar';
+export * from './profile';
+export * from './examination';
+export * from './mess';
+export * from './login';
+export * from './attendance';
+export * from './employee';
 export * from './theme.types';
 export * from './excelTemplate';
 export * from './feeMaster';
-export * from './login';
