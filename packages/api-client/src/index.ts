@@ -23,4 +23,9 @@ export { admissionNoteService } from './services/AdmissionCrmServices/admissionN
 export { sessionService } from './services/session.service';
 export { hrmService } from './services/hrm.service';
 export { otherService } from './services/other.service';
+export { excelTemplateService } from './services/excelTemplate.service';
+export { feeMasterService } from './services/feeMaster.service';
+export { pdfTemplateService } from './services/pdfTemplate.service';
+export { faqService } from './services/faq.service';
 export { default as apiClient } from './client';
+export { communicationService } from './services/communication.service';

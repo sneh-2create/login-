@@ -5,12 +5,14 @@ export const counselorProductivityReportService = {
         entityId: string,
         session: string,
         stageType: 'lead' | 'application',
-        startDate: number,
-        endDate: number,
+        startDate?: number,
+        endDate?: number,
         counselorId?: string
     ) => {
-        let queryParams = `entity=${entityId}&session=${session}&stageType=${stageType}&startDate=${startDate}&endDate=${endDate}`;
-        if (counselorId) queryParams += `&counselor=${counselorId}`;
+        let queryParams = `entity=${entityId}&session=${session}&stageType=${stageType}`;
+        if (startDate) queryParams += `&startDate=${startDate}`;
+        if (endDate) queryParams += `&endDate=${endDate}`;
+        if (counselorId) queryParams += `&counselorId=${counselorId}`; // Fixed param name to match Angular analysis: 'counselorId'
 
         const response = await apiClient.get(`/counselorProductivity/admissionReports?${queryParams}`);
         return response.data;

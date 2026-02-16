@@ -19,6 +19,7 @@ import { ExaminationSection } from '../components/dashboard/sections/Examination
 import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
 import { StudentOverviewSection } from '../components/dashboard/sections/StudentOverviewSection';
 import { LibrarySection } from '../components/dashboard/sections/LibrarySection';
+import { QuickLinksSection } from '../components/Dashboard/Sections/QuickLinksSection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';

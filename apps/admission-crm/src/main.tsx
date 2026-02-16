@@ -4,12 +4,17 @@ import { Provider } from 'react-redux'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { Sidebar, Header } from '@od-erp/ui';
 import { BreadcrumbProvider } from '@od-erp/context';
-import { store, useAppDispatch, useAppSelector, setMenuConfig } from '@od-erp/store';
+import { store, useAppDispatch, useAppSelector, setMenuConfig, setPrimaryColor } from '@od-erp/store';
 import { menuConfig } from '@od-erp/constants'
 import { AuthGuard } from './components/AuthGuard'
 import App from './App'
 import '@od-erp/theme/index.css';
 import './index.css'
+import { initializeTheme, mapHexToThemeColor } from '@od-erp/utils';
+
+// Initialize theme before React renders
+const savedTheme = initializeTheme();
+store.dispatch({ type: 'ui/setThemeConfig', payload: savedTheme });
 
 // Standalone wrapper to initialize config and layout
 const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
@@ -23,44 +28,33 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
         }
     }, [dispatch]);
 
-    // Dynamic Theming
+    // Sync backend primary color with theme system
     useEffect(() => {
         if (entityDetails?.primaryColour) {
-            document.documentElement.style.setProperty('--color-primary', entityDetails.primaryColour);
-            document.documentElement.style.setProperty('--color-brand', entityDetails.primaryColour); // Ensure compatibility
-        } else {
-            // Fallback to CSS default (remove override)
-            document.documentElement.style.removeProperty('--color-primary');
-            document.documentElement.style.removeProperty('--color-brand');
+            const themeColor = mapHexToThemeColor(entityDetails.primaryColour);
+            dispatch(setPrimaryColor(themeColor));
         }
-
-        if (entityDetails?.secondaryColour) {
-            document.documentElement.style.setProperty('--color-secondary', entityDetails.secondaryColour);
-        } else {
-            // Fallback to CSS default
-            document.documentElement.style.removeProperty('--color-secondary');
-        }
-    }, [entityDetails]);
+    }, [entityDetails?.primaryColour, dispatch]);
 
     const location = useLocation();
     const isPrint = location.pathname.includes('/print/');
 
     if (isPrint) {
         return (
-            <div className="min-h-screen bg-white">
+            <div className="min-h-screen" style={{ background: 'var(--color-background)' }}>
                 {children}
             </div>
         );
     }
 
-    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
     const toggleSidebar = () => {
         setIsSidebarExpanded(!isSidebarExpanded);
     };
 
     return (
-        <div className="flex h-screen overflow-hidden bg-gray-50">
+        <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-muted)' }}>
             {/* Sidebar (Fixed Left, Full Height) */}
             <Sidebar collapsed={!isSidebarExpanded} />
 
@@ -76,7 +70,7 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
                 />
 
                 {/* Page Content */}
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6 bg-white">
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6" style={{ background: 'var(--color-background)' }}>
                     {children}
                 </main>
             </div>

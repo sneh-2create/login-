@@ -30,6 +30,16 @@ export const useEditAdmissionTransaction = () => {
     });
 };
 
+export const useCancelAdmissionTransaction = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionTransactionService.cancelAdmissionReceipt,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionTransactions'] });
+        },
+    });
+};
+
 export const useDeleteAdmissionTransaction = () => {
     const queryClient = useQueryClient();
     return useMutation({

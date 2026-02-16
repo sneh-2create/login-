@@ -16,7 +16,10 @@ export interface User {
     userType: string;
     employeeId?: string;
     employee_id?: string; // Legacy support
+    myOperatorId?: string;
+    mobile?: string;
     permissions?: string[];
+    entityGroup?: string[];
 }
 
 export interface EntityDetails {
@@ -95,3 +98,6 @@ export * from './mess';
 export * from './login';
 export * from './attendance';
 export * from './employee';
+export * from './theme.types';
+export * from './excelTemplate';
+export * from './feeMaster';

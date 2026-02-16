@@ -29,6 +29,15 @@ export * from './useProfile';
 export * from './useExaminationDashboard';
 export * from './useAppliedLeaves';
 export * from './useLibraryDashboard';
+export * from './excelTemplate';
+export * from './feeMaster';
+export * from './useCommunication';
+export * from './faq';
+export * from './common';
+export * from './hooks/admission/useAdmissionTemplates';
+export * from './hooks/admission/useAdmissionStudentData';
+
+
 
 
 

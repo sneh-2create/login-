@@ -1,100 +1,213 @@
 import { useState, useMemo } from 'react';
-import { Title, Card, DataTable, Button, Input, Select } from '@od-erp/ui';
-import { useAdmissionFollowUp, useAdmissionFollowUpStats, useCounselors } from '@od-erp/query';
+import { Button, DataTable, Breadcrumb, useToast, EmptyState, ActionMenu } from '@od-erp/ui';
+import { useAdmissionFollowUp, useCounselors, useAdmissionFollowUpStats } from '@od-erp/query';
 import { AdmissionFollowUp, AdmissionFollowUpPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Eye, Trash2 } from 'lucide-react';
-import { admissionFollowUpService } from '@od-erp/api-client';
+import { SlidersHorizontal, RefreshCw, Download, Search, Pencil, Trash2 } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
+import { FilterCard } from './components/FilterCard';
+import { EditFollowUpDialog } from './components/EditFollowUpDialog';
+import { useDebounce } from '@od-erp/utils';
+import * as XLSX from 'xlsx';
 
 const AdmissionFollowUps = () => {
-    const [selectedCounselor, setSelectedCounselor] = useState<string>('');
-    const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
-    const [status, setStatus] = useState<string>('');
-    // "All", "todaysFollowUp", "upcomingFollowUp", "overdueFollowUp", "completedFollowUp"
-    const [activeTab, setActiveTab] = useState('All');
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-
+    const { showToast } = useToast();
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
-    const permission = localStorage.getItem('permissions') || '';
-    const isAdmissionAdmin = permission.includes('isAdmissionAdmin');
+    const entityPreferences = useAppSelector((state) => state.config.entityPreferences) || null;
+    const permissions = useAppSelector((state) => state.auth.permissions) || [];
+
+    // Permissions
+    const isAdmissionAdmin = permissions.includes('isAdmissionAdmin');
+    const hasEditPermission = permissions.includes('editAdmissionStudentData');
+    const hasDeletePermission = permissions.includes('deleteAdmissionStudentData');
+    const hasViewPhoneNumberPermission = permissions.includes('viewAdmissionPhoneNumber');
     const loggedInCounselorId = localStorage.getItem('employee') || '';
 
+    // State
+    const [pageNumber, setPageNumber] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearch = useDebounce(searchTerm, 500);
+    const [showFilter, setShowFilter] = useState(false);
+    const [activeTab, setActiveTab] = useState('All');
+
+    // Dialog State
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [selectedFollowUp, setSelectedFollowUp] = useState<AdmissionFollowUp | null>(null);
+
+    // Filter State
+    const [startDate, setStartDate] = useState<number>(0);
+    const [endDate, setEndDate] = useState<number>(0);
+    const [statusFilter, setStatusFilter] = useState('');
+    const [counselorFilter, setCounselorFilter] = useState('');
+
+    // Applied Filters (for API)
+    const [appliedFilters, setAppliedFilters] = useState({
+        startDate: 0,
+        endDate: 0,
+        status: '',
+        counselorId: isAdmissionAdmin ? '' : loggedInCounselorId
+    });
+
+    // Queries
     const { data: counselors } = useCounselors(entityId, 'counselor');
+    
+    // Stats Query
+    const { data: stats } = useAdmissionFollowUpStats({ 
+        entity: entityId, 
+        session, 
+        counselorId: appliedFilters.counselorId 
+    });
 
-    // Logic to determine payload based on Active Tab
-    const payload: AdmissionFollowUpPayload = useMemo(() => {
-        const basePayload: AdmissionFollowUpPayload = {
-            entity: entityId,
-            session,
-            pageSize: pagination.pageSize,
-            pageNumber: pagination.pageIndex + 1,
-            counselorId: isAdmissionAdmin ? selectedCounselor : loggedInCounselorId,
-        };
-
+    // Tab Logic - Preset Filters
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
-        if (activeTab === 'todaysFollowUp') {
-            basePayload.startDate = today.getTime();
-            basePayload.endDate = todayEnd.getTime();
-        } else if (activeTab === 'upcomingFollowUp') {
+        let newFilters = { ...appliedFilters, startDate: 0, endDate: 0, status: '' };
+
+        if (tab === 'todaysFollowUp') {
+            newFilters.startDate = today.getTime();
+            newFilters.endDate = todayEnd.getTime();
+        } else if (tab === 'upcomingFollowUp') {
             const nextWeek = new Date(today);
             nextWeek.setDate(today.getDate() + 7);
-            basePayload.startDate = today.getTime();
-            basePayload.endDate = nextWeek.getTime(); // Logic from Angular: endDate = +7 days
-            basePayload.status = 'pending';
-        } else if (activeTab === 'overdueFollowUp') {
+            newFilters.startDate = today.getTime();
+            newFilters.endDate = nextWeek.getTime();
+            newFilters.status = 'pending';
+        } else if (tab === 'overdueFollowUp') {
             const lastMonth = new Date(today);
             lastMonth.setDate(today.getDate() - 30);
-            basePayload.startDate = lastMonth.getTime(); // Logic from Angular: startDate = -30 days
-            basePayload.endDate = today.getTime(); // Logic from Angular: endDate = today 00:00
-            basePayload.status = 'pending';
-        } else if (activeTab === 'completedFollowUp') {
-            basePayload.status = 'completed';
-        } else {
-            // All - check manual filters
-            if (dateRange.start) basePayload.startDate = new Date(dateRange.start).getTime();
-            if (dateRange.end) basePayload.endDate = new Date(dateRange.end).getTime();
-            if (status) basePayload.status = status;
+            newFilters.startDate = lastMonth.getTime();
+            newFilters.endDate = today.getTime();
+            newFilters.status = 'pending';
+        } else if (tab === 'completedFollowUp') {
+            newFilters.status = 'completed';
         }
 
-        return basePayload;
-    }, [entityId, session, pagination, activeTab, selectedCounselor, dateRange, status, isAdmissionAdmin, loggedInCounselorId]);
+        setAppliedFilters(newFilters);
+        // Sync local filter state
+        setStartDate(newFilters.startDate);
+        setEndDate(newFilters.endDate);
+        setStatusFilter(newFilters.status);
+    };
 
-    const { data, isLoading, refetch } = useAdmissionFollowUp(payload);
-    const { data: stats } = useAdmissionFollowUpStats({ entity: entityId, session, counselorId: isAdmissionAdmin ? selectedCounselor : loggedInCounselorId });
+    // Payload
+    const payload: AdmissionFollowUpPayload = useMemo(() => ({
+        entity: entityId,
+        session,
+        pageSize,
+        pageNumber,
+        counselorId: appliedFilters.counselorId,
+        startDate: appliedFilters.startDate || undefined,
+        endDate: appliedFilters.endDate || undefined,
+        status: appliedFilters.status || undefined,
+    }), [entityId, session, pageSize, pageNumber, appliedFilters]);
+
+    const { data: followUps, isLoading, refetch } = useAdmissionFollowUp(payload);
+
+    // Client-side Search
+    const filteredData = useMemo(() => {
+        if (!followUps) return [];
+        if (!debouncedSearch) return followUps;
+        
+        const searchLower = debouncedSearch.toLowerCase();
+        return followUps.filter(row => 
+            row.applicationNumber?.toLowerCase().includes(searchLower) ||
+            row.studentData?.name?.toLowerCase().includes(searchLower) ||
+            row.studentData?.phone?.includes(searchLower)
+        );
+    }, [followUps, debouncedSearch]);
+
+
+    // Handlers
+    const handleEdit = (row: AdmissionFollowUp) => {
+        setSelectedFollowUp(row);
+        setEditDialogOpen(true);
+    };
 
     const handleDelete = async (id: string) => {
         if (window.confirm('Are you sure you want to delete?')) {
             try {
+                const { admissionFollowUpService } = await import('@od-erp/api-client');
                 await admissionFollowUpService.deleteAdmissionFollowUp(id);
+                showToast('success', 'Follow-up deleted successfully');
                 refetch();
             } catch (error) {
-                console.error("Delete failed", error);
-                alert("Failed to delete");
+                showToast('error', 'Failed to delete follow-up');
             }
         }
     };
 
-    const columns = useMemo<ColumnDef<AdmissionFollowUp>[]>(
-        () => [
+    const handleExportExcel = () => {
+        if (!filteredData.length) {
+            showToast('warning', 'No data to export');
+            return;
+        }
+
+        try {
+            const wb = XLSX.utils.book_new();
+            const ws: XLSX.WorkSheet = {};
+
+            // Headers
+            XLSX.utils.sheet_add_aoa(ws, [['Admission Follow Ups']], { origin: "A1" });
+            XLSX.utils.sheet_add_aoa(ws, [[`Generated At: ${new Date().toLocaleString()}`]], { origin: "A2" });
+            XLSX.utils.sheet_add_aoa(ws, [[]], { origin: "A3" });
+
+            // Column Headers
+            const headers = ['S.No', 'Application', 'Name', 'Phone', 'Class', 'Stream', 'Counselor', 'Created At', 'Query', 'FollowUp Date', 'Status', 'Completion Remark'];
+            XLSX.utils.sheet_add_aoa(ws, [headers], { origin: "A4" });
+
+            // Data
+            const dataRows = filteredData.map((row, index) => [
+                index + 1,
+                row.applicationNumber || '-',
+                row.studentData?.name || '-',
+                hasViewPhoneNumberPermission ? (row.studentData?.phone || '-') : (row.studentData?.phone ? row.studentData.phone.replace(/.(?=.{4})/g, '*') : '-'),
+                row.studentData?.course || '-',
+                row.studentData?.stream || '-',
+                row.counselorName || '-',
+                row.createdAt ? format(new Date(row.createdAt), 'dd/MMM/yyyy') : '-',
+                row.followUpQuery || '-',
+                row.followUpDate ? format(new Date(row.followUpDate), 'dd/MMM/yyyy HH:mm') : '-',
+                row.status?.toUpperCase() || '-',
+                row.completionRemark || '-'
+            ]);
+
+            XLSX.utils.sheet_add_aoa(ws, dataRows, { origin: "A5" });
+
+            XLSX.utils.book_append_sheet(wb, ws, 'Follow Ups');
+            XLSX.writeFile(wb, `FollowUps_${format(new Date(), 'yyyyMMdd_HHmmss')}.xlsx`);
+            showToast('success', 'Excel exported successfully');
+        } catch (error) {
+            console.error(error);
+            showToast('error', 'Export failed');
+        }
+    };
+
+    // Columns
+    const columns = useMemo<ColumnDef<AdmissionFollowUp>[]>(() => {
+        const displayNames = (entityPreferences as any)?.displayNames || [];
+        const courseLabel = Array.isArray(displayNames) ? displayNames.find((d: any) => d.value === 'course')?.name || 'Class' : 'Class';
+
+        return [
             {
                 header: 'S.No',
-                cell: (info) => (pagination.pageIndex * pagination.pageSize) + info.row.index + 1,
+                cell: (info) => (pageNumber - 1) * pageSize + info.row.index + 1,
                 size: 60,
             },
             {
                 header: 'Application',
                 accessorFn: (row) => row.applicationNumber,
                 cell: (info) => (
-                    <div className="flex flex-col text-sm">
+                    <div className="flex flex-col text-xs">
                         <span>App No: <strong>{info.row.original.applicationNumber || '-'}</strong></span>
-                        <span>App Date: <strong>{info.row.original.studentData?.date ? format(info.row.original.studentData.date, 'dd/MMM/yyyy') : '-'}</strong></span>
+                        <span>Date: <strong>{info.row.original.studentData?.date ? format(new Date(info.row.original.studentData.date), 'dd/MMM/yyyy') : '-'}</strong></span>
                     </div>
                 )
             },
@@ -102,9 +215,9 @@ const AdmissionFollowUps = () => {
                 header: 'Name',
                 accessorFn: (row) => row.studentData?.name,
                 cell: (info) => (
-                    <div className="flex flex-col text-sm">
+                    <div className="flex flex-col text-xs">
                         <span>Name: <strong>{info.row.original.studentData?.name || '-'}</strong></span>
-                        <span>Phone: <strong>{info.row.original.studentData?.phone || '-'}</strong></span>
+                        <span>Phone: <strong>{hasViewPhoneNumberPermission ? (info.row.original.studentData?.phone || '-') : (info.row.original.studentData?.phone ? info.row.original.studentData.phone.replace(/.(?=.{4})/g, '*') : '-')}</strong></span>
                     </div>
                 )
             },
@@ -112,35 +225,41 @@ const AdmissionFollowUps = () => {
                 header: 'Class',
                 accessorFn: (row) => row.studentData?.course,
                 cell: (info) => (
-                    <div className="flex flex-col text-sm">
-                        <span>Class: <strong>{info.row.original.studentData?.course || '-'}</strong></span>
+                    <div className="flex flex-col text-xs">
+                        <span>{courseLabel}: <strong>{info.row.original.studentData?.course || '-'}</strong></span>
                         <span>Stream: <strong>{info.row.original.studentData?.stream || '-'}</strong></span>
                     </div>
                 )
             },
             {
-                header: 'Counselor Name',
+                header: 'Counselor',
                 accessorKey: 'counselorName',
+                cell: info => <span className="text-xs">{info.getValue() as string}</span>
             },
             {
                 header: 'Created At',
                 accessorKey: 'createdAt',
-                cell: (info) => info.getValue() ? format(info.getValue() as number, 'dd/MMM/yyyy') : '-',
+                cell: (info) => <span className="text-xs">{info.getValue() ? format(new Date(info.getValue() as number), 'dd/MMM/yyyy') : '-'}</span>,
             },
             {
                 header: 'FollowUp Query',
                 accessorKey: 'followUpQuery',
+                cell: info => <span className="text-xs">{info.getValue() as string}</span>
             },
             {
                 header: 'FollowUp Date',
                 accessorKey: 'followUpDate',
-                cell: (info) => info.getValue() ? format(info.getValue() as number, 'dd/MMM/yyyy HH:mm') : '-',
+                cell: (info) => <span className="text-xs">{info.getValue() ? format(new Date(info.getValue() as number), 'dd/MMM/yyyy HH:mm') : '-'}</span>,
             },
             {
                 header: 'Status',
                 accessorKey: 'status',
                 cell: (info) => (
-                    <span className={`px-2 py-1 rounded text-xs font-semibold text-white ${info.getValue() === 'pending' ? 'bg-red-500' : 'bg-green-500'}`}>
+                    <span className={`px-2 py-1 rounded text-[10px] font-bold ${
+                        info.getValue() === 'completed' 
+                            ? 'bg-green-100 text-green-700 border border-green-200' 
+                            : 'bg-red-100 text-red-700 border border-red-200'
+                    }`}>
                         {(info.getValue() as string)?.toUpperCase()}
                     </span>
                 )
@@ -148,107 +267,129 @@ const AdmissionFollowUps = () => {
             {
                 header: 'Completion Remark',
                 accessorKey: 'completionRemark',
+                cell: info => <span className="text-xs">{info.getValue() as string}</span>
             },
             {
                 header: 'Action',
                 id: 'actions',
                 cell: (info) => (
-                    <div className="flex space-x-2">
-                        <Button variant="ghost" size="sm" onClick={() => console.log("View", info.row.original)}>
-                            <Eye className="w-4 h-4 text-blue-500" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(info.row.original._id)}>
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                    </div>
+                    <ActionMenu
+                        items={[
+                            {
+                                label: 'Edit',
+                                icon: <Pencil className="w-4 h-4" />,
+                                onClick: () => handleEdit(info.row.original),
+                                hidden: !hasEditPermission,
+                            },
+                            {
+                                label: 'Delete',
+                                icon: <Trash2 className="w-4 h-4 text-red-500" />,
+                                onClick: () => handleDelete(info.row.original._id),
+                                hidden: !hasDeletePermission,
+                                className: 'text-red-500 hover:text-red-700 hover:bg-red-50',
+                            },
+                        ]}
+                    />
                 ),
-            },
-        ],
-        [pagination]
-    );
+            }
+        ];
+    }, [pageNumber, pageSize, hasViewPhoneNumberPermission, hasEditPermission, hasDeletePermission, entityPreferences]);
+
+    const breadcrumbItems = [
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: 'Admission Reports', href: '#' },
+        { label: 'Follow Ups', href: '#' }
+    ];
+
+    const statsData = Array.isArray(stats) && stats.length > 0 ? stats[0] : (stats || {});
+
+    // Filter Logic for Counselors
+    // If Admission Admin: Show all counselors
+    // If not Admin but Team Lead (need logic, for now show logged in user or team members if implemented)
+    const filteredCounselors = useMemo(() => {
+        if (!counselors) return [];
+        return counselors; 
+    }, [counselors]);
 
     return (
-        <div className="w-full max-w-full min-w-0 p-6 space-y-6 bg-gray-50 min-h-screen font-sans">
-            <div className="flex justify-between items-center">
+        <div className="w-full max-w-full font-sans pb-8 px-4">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <Title variant="pageTitle">Follow Ups</Title>
-                    <div className="text-sm text-gray-500 cursor-pointer">
-                        Dashboard &gt; Admission Reports &gt; <span className="text-primary font-semibold">Follow Ups</span>
-                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Follow Ups</h1>
+                    <Breadcrumb items={breadcrumbItems} />
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Button 
+                        variant="outline" 
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setShowFilter(!showFilter)}
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                        onClick={() => refetch()}
+                        title="Refresh"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-green-500 hover:bg-green-50 hover:text-green-600"
+                        onClick={handleExportExcel}
+                        title="Export to Excel"
+                    >
+                        <Download className="h-4 w-4" />
+                    </Button>
                 </div>
             </div>
 
-            {/* Filters */}
-            <Card className="p-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                    {isAdmissionAdmin && (
-                        <div>
-                            <Select
-                                label="Counselor"
-                                placeholder="Select Counselor"
-                                options={counselors?.map(c => ({ label: c.name, value: c._id })) || []}
-                                value={selectedCounselor}
-                                onChange={(e) => setSelectedCounselor(e.target.value)}
-                            />
-                        </div>
-                    )}
-
-                    <div>
-                        <Input
-                            type="date"
-                            label="Start Date"
-                            value={dateRange.start}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                            disabled={activeTab !== 'All'}
-                        />
-                    </div>
-                    <div>
-                        <Input
-                            type="date"
-                            label="End Date"
-                            value={dateRange.end}
-                            min={dateRange.start}
-                            onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                            disabled={activeTab !== 'All'}
-                        />
-                    </div>
-
-                    <div>
-                        <Select
-                            label="Status"
-                            placeholder="Status"
-                            options={[{ label: 'PENDING', value: 'pending' }, { label: 'COMPLETED', value: 'completed' }]}
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            disabled={activeTab !== 'All'}
-                        />
-                    </div>
-                    {activeTab === 'All' && (
-                        <div>
-                            <Button onClick={() => refetch()} className="mb-1 w-full">Go</Button>
-                        </div>
-                    )}
-                </div>
-            </Card>
+            {/* Filter Card */}
+            {showFilter && (
+                <FilterCard
+                    startDate={startDate}
+                    endDate={endDate}
+                    status={statusFilter}
+                    counselorId={counselorFilter}
+                    counselors={filteredCounselors}
+                    isAdmissionAdmin={isAdmissionAdmin}
+                    onApply={(filters) => {
+                        setAppliedFilters(prev => ({ 
+                            ...prev, 
+                            startDate: filters.startDate, 
+                            endDate: filters.endDate, 
+                            status: filters.status,
+                            counselorId: filters.counselorId || (isAdmissionAdmin ? '' : loggedInCounselorId)
+                        }));
+                        setShowFilter(false);
+                    }}
+                    setStartDate={setStartDate}
+                    setEndDate={setEndDate}
+                    setStatus={setStatusFilter}
+                    setCounselorId={setCounselorFilter}
+                />
+            )}
 
             {/* Tabs */}
-            <div className="flex space-x-2 overflow-x-auto border-b">
-                {['All', 'todaysFollowUp', 'upcomingFollowUp', 'overdueFollowUp', 'completedFollowUp'].map(tab => {
-                    const statsData = Array.isArray(stats) && stats.length > 0 ? stats[0] : (stats || {});
-                    return (
-                        <button
-                            key={tab}
-                            onClick={() => { setActiveTab(tab); setPagination(p => ({ ...p, pageIndex: 0 })); }}
-                            className={`py-2 px-4 whitespace-nowrap border-b-2 transition-colors ${activeTab === tab
-                                ? 'border-primary text-primary font-semibold'
-                                : 'border-transparent text-gray-500 hover:text-gray-700'
-                                }`}
-                        >
-                            {tab === 'All' ? 'All' :
-                                tab === 'todaysFollowUp' ? "Today's Follow Up" :
-                                    tab === 'upcomingFollowUp' ? "Upcoming Follow Up" :
-                                        tab === 'overdueFollowUp' ? "Overdue Follow Up" : "Completed"
-                            }
+            <div className="flex space-x-2 overflow-x-auto border-b mb-4">
+                {['All', 'todaysFollowUp', 'upcomingFollowUp', 'overdueFollowUp', 'completedFollowUp'].map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => handleTabChange(tab)}
+                        className={`py-2 px-4 whitespace-nowrap border-b-2 transition-colors text-sm ${activeTab === tab
+                            ? 'border-primary text-primary font-semibold'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        {tab === 'All' ? 'All' :
+                            tab === 'todaysFollowUp' ? "Today's Follow Up" :
+                                tab === 'upcomingFollowUp' ? "Upcoming Follow Up" :
+                                    tab === 'overdueFollowUp' ? "Overdue Follow Up" : "Completed"
+                        }
+                        <span className="ml-1 text-xs text-gray-400">
                             ({
                                 tab === 'All' ? statsData.total || 0 :
                                     tab === 'todaysFollowUp' ? statsData.todayFollowUps || 0 :
@@ -256,45 +397,67 @@ const AdmissionFollowUps = () => {
                                             tab === 'overdueFollowUp' ? statsData.overdueFollowUps || 0 :
                                                 statsData.completedFollowUps || 0
                             })
-                        </button>
-                    );
-                })}
+                        </span>
+                    </button>
+                ))}
             </div>
 
-            <Card className="overflow-hidden">
-                <div className="w-full max-w-full overflow-x-auto">
+            {/* Data Table */}
+            <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
+                 <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-4">
+                    <h3 className="font-semibold text-gray-700 whitespace-nowrap">Follow Up List</h3>
+                    <div className="relative w-64">
+                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-4 w-4 text-gray-400" />
+                         </div>
+                         <div className="flex items-center"> 
+                             <input
+                                type="text"
+                                placeholder="Search..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 h-9 w-full text-sm border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                             />
+                         </div>
+                    </div>
+                 </div>
+
+                 <div className="w-full max-w-full overflow-x-auto">
                     <DataTable
-                        data={data || []}
+                        data={filteredData}
                         columns={columns}
                         isLoading={isLoading}
+                        showSearch={false}
+                        showPagination={true} 
+                        manualPagination={true} 
+                        rowCount={statsData.total || 0}
+                        onPaginationChange={(newPagination: any) => {
+                            if (newPagination?.pageIndex !== undefined && (newPagination.pageIndex + 1) !== pageNumber) {
+                                setPageNumber(newPagination.pageIndex + 1);
+                            }
+                            if (newPagination?.pageSize !== undefined && newPagination.pageSize !== pageSize) {
+                                setPageSize(newPagination.pageSize);
+                            }
+                        }}
                     />
-                </div>
-            </Card>
-
-            <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-gray-500">
-                    Showing {data?.length || 0} records
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => setPagination(p => ({ ...p, pageIndex: Math.max(0, p.pageIndex - 1) }))}
-                        disabled={pagination.pageIndex === 0}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={() => setPagination(p => ({ ...p, pageIndex: p.pageIndex + 1 }))}
-                        disabled={!data || data.length < pagination.pageSize}
-                    >
-                        Next
-                    </Button>
-                </div>
+                 </div>
             </div>
+
+             {/* Empty State */}
+             {!isLoading && filteredData.length === 0 && (
+                <EmptyState message="No Follow Ups Found" />
+            )}
+
+            {/* Edit Dialog */}
+            <EditFollowUpDialog
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+                data={selectedFollowUp}
+                onSuccess={refetch}
+                hasViewPhoneNumberPermission={hasViewPhoneNumberPermission}
+            />
         </div>
     );
 };
-
 
 export default AdmissionFollowUps;

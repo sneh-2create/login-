@@ -10,5 +10,14 @@ export const admissionSummaryReportService = {
     viewAdmissionSummaryReport: async (formData: AdmissionSummaryReportParams) => {
         const response = await apiClient.post(`/admissionSummary/admissionReports`, formData);
         return response.data;
+    },
+
+    getCourseList: async (entityId: string, session: string, isLEET: boolean = false) => {
+        let queryParams = `entity=${entityId}&session=${session}`;
+        if (isLEET) {
+            queryParams += `&isLEET=${isLEET}`;
+        }
+        const response = await apiClient.get(`/list/course?${queryParams}`);
+        return response.data;
     }
 };

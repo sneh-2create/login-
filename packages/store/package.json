@@ -11,7 +11,9 @@
         "@reduxjs/toolkit": "^2.11.2",
         "react-redux": "^9.2.0",
         "redux-persist": "^6.0.0",
-        "@od-erp/types": "workspace:*"
+        "@od-erp/types": "workspace:*",
+        "@od-erp/constants": "workspace:*",
+        "@od-erp/utils": "workspace:*"
     },
     "peerDependencies": {
         "react": "^18.2.0"

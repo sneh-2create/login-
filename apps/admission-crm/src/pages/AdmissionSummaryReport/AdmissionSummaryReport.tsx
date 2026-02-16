@@ -1,45 +1,44 @@
-import { useEffect, useState } from 'react';
-// import { useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useMemo } from 'react';
 import * as xlsx from 'xlsx';
 import { admissionSummaryReportService } from '@od-erp/api-client';
-import { Button, Select, Title, Card, Input } from '@od-erp/ui';
+import { Button, Dropdown, Checkbox, Breadcrumb, DatePicker } from '@od-erp/ui';
 import { DataTable } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Search, Printer } from 'lucide-react';
+import { Download, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import { AdmissionSummaryTableRow } from '@od-erp/types';
-import { processAdmissionSummaryData, transformAdmissionSummaryForExport } from '@od-erp/utils';
+import { processAdmissionSummaryData, addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
+import { format } from 'date-fns';
 
 const admissionSummaryReport = () => {
-    // const [searchParams] = useSearchParams(); // Unused
     const [loading, setLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<AdmissionSummaryTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
     const [sessionList, setSessionList] = useState<any[]>([]);
 
-    // Filters
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedSession, setSelectedSession] = useState<string[]>([]);
-    const [excludeUnpaid, setExcludeUnpaid] = useState(false);
-    const [searchText, setSearchText] = useState('');
-
-
-
+    // Redux Selectors
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id);
+    const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
+    const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences) || {};
+    // const session = useAppSelector((state) => state.session.academicSession); // Not directly used in API payload but good for context if needed
 
-    const entityPreferences = JSON.parse(localStorage.getItem('entityPreferences') || '{}');
-
-    // Display names from preferences
-    const displayNames = {
+    // Display Names
+    const displayNames = useMemo(() => ({
         course: entityPreferences.displayNames?.find((item: any) => item.value === 'course')?.name || 'Class',
         stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
-    };
+        batch: entityPreferences.displayNames?.find((item: any) => item.value === 'batch')?.name || 'Batch',
+    }), [entityPreferences]);
+
+    // Filters
+    const [startDate, setStartDate] = useState<number>(new Date().setHours(0, 0, 0, 0));
+    const [endDate, setEndDate] = useState<number>(new Date().setHours(23, 59, 59, 999));
+    const [selectedSession, setSelectedSession] = useState<string[]>([]);
+    const [excludeUnpaid, setExcludeUnpaid] = useState(false);
 
     useEffect(() => {
         loadSessions();
-    }, []);
+    }, [entityId]);
 
     const loadSessions = async () => {
         try {
@@ -52,7 +51,6 @@ const admissionSummaryReport = () => {
     };
 
     const handleSearch = async () => {
-        console.log(entityId);
         if (!entityId) return;
         setLoading(true);
 
@@ -65,9 +63,12 @@ const admissionSummaryReport = () => {
             const payload: any = {
                 entity: entityId,
                 startDate: start.getTime(),
-                endDate: end.getTime(),
-                excludeUnpaid
+                endDate: end.getTime()
             };
+
+            if (excludeUnpaid) {
+                payload.excludeUnpaid = true;
+            }
 
             if (selectedSession.length > 0) {
                 payload.session = selectedSession;
@@ -85,12 +86,29 @@ const admissionSummaryReport = () => {
 
             // Define Table Columns
             const tableCols: ColumnDef<AdmissionSummaryTableRow>[] = [
-                { accessorKey: 'position', header: 'S.No', cell: info => info.getValue() || '' },
-                { accessorKey: 'course', header: displayNames.course },
+                {
+                    accessorKey: 'position', header: 'S.No', cell: info => {
+                        const row = info.row.original as any;
+                        if (row.course === 'Total') return '';
+                        return info.row.index + 1;
+                    }
+                },
+                {
+                    accessorKey: 'course', header: displayNames.course, cell: info => {
+                        const row = info.row.original as any;
+                        const val = info.getValue() as string;
+                        return row.course === 'Total' ? <span className="font-bold">{val}</span> : val;
+                    }
+                },
                 { accessorKey: 'stream', header: displayNames.stream },
             ];
 
-            // Add dynamic columns
+            // Conditional Batch Column
+            if (entityPreferences.showBatch) {
+                tableCols.push({ accessorKey: 'batch', header: displayNames.batch });
+            }
+
+            // Dynamic columns
             dynamicColumns.forEach((col: string) => {
                 tableCols.push({ accessorKey: col, header: col });
             });
@@ -103,23 +121,52 @@ const admissionSummaryReport = () => {
 
         } catch (err) {
             console.error(err);
-            setData([]); // Clear data on error
+            setData([]);
         } finally {
             setLoading(false);
         }
     };
 
 
+
     const handleExport = () => {
         setExportLoading(true);
         try {
-            // Transform data for export
-            const exportData = transformAdmissionSummaryForExport(data, columns);
-
-            const ws = xlsx.utils.json_to_sheet(exportData);
             const wb = xlsx.utils.book_new();
-            xlsx.utils.book_append_sheet(wb, ws, "Sheet1");
-            xlsx.writeFile(wb, "Admission_Summary_Report.xlsx");
+            const ws: xlsx.WorkSheet = {};
+
+            // Common Header
+            const tableStartRow = addExcelReportHeader(ws, entityName, 'Admission Summary Report');
+
+            // Table Headers
+            const tableHeaders = columns.map(c => (c as any).header);
+            xlsx.utils.sheet_add_aoa(ws, [tableHeaders], { origin: { r: tableStartRow, c: 0 } });
+
+            // Data
+            const dataRows = data.map((row, index) => {
+                const isTotalRow = row.course === 'Total' || row.position === 0 || row.course?.toString().includes('Total');
+
+                return columns.map((col, colIdx) => {
+                    const key = (col as any).accessorKey;
+                    const header = (col as any).header;
+
+                    if (header === 'S.No' || key === 'position' || colIdx === 0) {
+                        if (isTotalRow) return '';
+                        return index + 1;
+                    }
+
+                    return row[key] || (row[key] === 0 ? 0 : '');
+                });
+            });
+
+            xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
+
+            // Common Footer
+            const footerStartRow = tableStartRow + 1 + dataRows.length + 2;
+            addExcelReportFooter(ws, footerStartRow);
+
+            xlsx.utils.book_append_sheet(wb, ws, "Admission Summary");
+            xlsx.writeFile(wb, `Admission_Summary_Report_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
         } catch (e) {
             console.error("Export failed", e);
         } finally {
@@ -127,119 +174,127 @@ const admissionSummaryReport = () => {
         }
     };
 
-    // Client-side filtering
-    const filteredData = data.filter(row => {
-        if (!searchText) return true;
-        const searchLower = searchText.toLowerCase();
-        return (
-            row.course?.toLowerCase().includes(searchLower) ||
-            row.stream?.toLowerCase().includes(searchLower)
-        );
-    });
-
-    const handlePrint = () => {
-        // Serialize columns to just keeping headers and keys for reproduction
-        // We can't serialize functions, so we extract the config
-        const serializableColumns = columns.map(col => ({
-            accessorKey: (col as any).accessorKey,
-            header: (col as any).header ? String((col as any).header) : '',
-            // If we have custom cells, they are lost, but for print usually text is fine
-        }));
-
-        localStorage.setItem('admissionSummaryData', JSON.stringify(data));
-        localStorage.setItem('admissionSummaryColumns', JSON.stringify(serializableColumns));
-        window.open('/admission/print/admissionSummaryReport', '_blank');
-    };
+    const [showFilter, setShowFilter] = useState(false);
 
     return (
-        <div className="w-full max-w-full min-w-0 flex flex-col h-full bg-white gap-6">
-            <div className="flex justify-between items-center">
+        <div className="w-full max-w-full font-sans pb-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <div className="text-xs text-gray-500 mb-1 cursor-pointer">
-                        Dashboard &gt; Admission &gt; <b>Admission Summary Report</b>
-                    </div>
-                    <Title variant="pageTitle">Admission Summary Report</Title>
-                </div>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={handlePrint}
-                        leftIcon={<Printer size={16} />}
-                    >
-                        Print
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleExport}
-                        isLoading={exportLoading}
-                        leftIcon={<Download size={16} />}
-                    >
-                        Excel
-                    </Button>
-                </div>
-            </div>
-
-            <Card className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
-                        <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
-                        <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Exclude Unpaid</label>
-                        <div className="flex items-center h-10">
-                            <input
-                                type="checkbox"
-                                checked={excludeUnpaid}
-                                onChange={(e) => setExcludeUnpaid(e.target.checked)}
-                                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">Yes</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Session</label>
-                        <Select
-                            value={selectedSession[0] || ''}
-                            onChange={(e) => setSelectedSession([e.target.value])}
-                            options={[
-                                { value: '', label: 'Select Session' },
-                                ...sessionList.map(s => ({ value: s.name, label: s.name }))
-                            ]}
-                        />
-                    </div>
-                </div>
-                <div className="flex justify-end mt-4">
-                    <Button onClick={handleSearch} isLoading={loading}>Go</Button>
-                </div>
-            </Card>
-
-            <div className="flex justify-end">
-                <div className="relative w-64">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <Input
-                        placeholder="Search..."
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                        className="pl-10"
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Summary Report</h1>
+                    <Breadcrumb
+                        items={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission', href: '/admission' },
+                            { label: 'Admission Summary Report' } // Current page
+                        ]}
                     />
                 </div>
+                <div className="flex items-center space-x-2">
+                    {/* Filter Toggle */}
+                    <Button
+                        variant="outline"
+                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                        onClick={() => setShowFilter(!showFilter)}
+                        title="Filter"
+                    >
+                        <SlidersHorizontal className="h-4 w-4" />
+                    </Button>
+
+                    {/* Refresh / Go */}
+                    <Button
+                        variant="outline"
+                        className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                        onClick={handleSearch}
+                        title="Refresh/Go"
+                    >
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
+
+                    {/* Excel Export */}
+                    {data.length > 0 && (
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleExport}
+                            isLoading={exportLoading}
+                            title="Export to Excel"
+                        >
+                            <Download className="h-4 w-4" />
+                        </Button>
+                    )}
+
+
+                </div>
             </div>
 
-            <div className="w-full max-w-full overflow-x-auto">
-                <DataTable
-                    columns={columns}
-                    data={filteredData}
-                    isLoading={loading}
-                    showSearch={false}
-                />
-            </div>
+            {/* Collapsible Filter Card */}
+            {showFilter && (
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
+                            <DatePicker
+                                value={new Date(startDate)}
+                                onChange={(date) => date && setStartDate(date.getTime())}
+                                maxDate={new Date(endDate)}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
+                            <DatePicker
+                                value={new Date(endDate)}
+                                onChange={(date) => date && setEndDate(date.getTime())}
+                                minDate={new Date(startDate)}
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Exclude Unpaid</label>
+                            <Checkbox
+                                label="Yes"
+                                checked={excludeUnpaid}
+                                onChange={(e) => setExcludeUnpaid(e.target.checked)}
+                            />
+                        </div>
+                        <div className="w-full">
+                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Session</label>
+                            <Dropdown
+                                value={selectedSession[0] || ''}
+                                onChange={(val) => setSelectedSession([val as string])}
+                                options={[
+                                    { value: '', label: 'Select Session' },
+                                    ...sessionList.map(s => ({ value: s.name, label: s.name }))
+                                ]}
+                                placeholder="Select Session"
+                                className="w-full"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                        <Button variant="primary" onClick={() => { handleSearch(); setShowFilter(false); }} isLoading={loading}>Apply Filters</Button>
+                    </div>
+                </div>
+            )}
+
+            {/* Table */}
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
+                </div>
+            )}
+
+            {/* Empty State / Prompt */}
+            {!loading && data.length === 0 && (
+                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
+                </div>
+            )}
         </div>
     );
 };
