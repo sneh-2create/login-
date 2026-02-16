@@ -121,8 +121,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Fixed Header - Logo + Institute Name */}
                 <div className={cn(
                     "border-b border-[var(--sidebar-border)] flex items-center transition-all duration-300 relative",
-                    isExpandedView ? "h-[80px] px-4 py-3 justify-between" : "h-[80px] py-4 justify-center",
-                    isMobile ? "h-[70px] px-2" : "h-[80px]",
+                    isExpandedView ? "h-[80px] px-2 py-3 justify-between" : "h-[80px] py-4 justify-center",
+                    isMobile ? "h-[70px]" : "h-[80px]",
                 )}>
                     {!isExpandedView ? (
                         // Collapsed: Show logo only (centered)
@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 )}
                                 <h2 className={cn(
                                     "font-bold text-[var(--color-foreground)] leading-tight",
-                                    isMobile ? "line-clamp-2 max-w-[150px]" : "truncate flex-1",
+                                    isMobile ? "line-clamp-3 max-w-[150px]" : "flex-1",
                                     getFontSize(instituteName)
                                 )}>
                                     {instituteName}
@@ -261,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {/* Fixed Footer - User Details + Logout */}
                 <div className={cn(
                     "border-t border-[var(--sidebar-border)] transition-all duration-300",
-                    !isExpandedView ? "h-[70px] py-4" : "h-[80px] px-4 py-3",
+                    !isExpandedView ? "h-[70px] py-4" : "h-[80px] px-2 py-3",
                     isMobile ? "h-[70px] px-2" : "h-[80px]",
                 )}>
                     {!isExpandedView ? (

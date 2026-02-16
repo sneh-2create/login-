@@ -223,7 +223,7 @@ export function DataTable<TData, TValue>({
                                 />
                             </div>
                         )}
-                        
+
                         {/* Search Input */}
                         <div className="flex-1 h-10 relative flex items-center gap-0">
                             <input
@@ -343,7 +343,7 @@ export function DataTable<TData, TValue>({
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <span className="font-sans text-sm text-gray-600">
+                            <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
                                 {startItem} – {endItem} of {totalRows}
                             </span>
                             <div className="flex gap-2">
@@ -352,14 +352,14 @@ export function DataTable<TData, TValue>({
                                     onClick={handlePrevPage}
                                     disabled={!table.getCanPreviousPage()}
                                 >
-                                    <ChevronLeft className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
+                                    <ChevronLeft className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
                                 </button>
                                 <button
                                     className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     onClick={handleNextPage}
                                     disabled={!table.getCanNextPage()}
                                 >
-                                    <ChevronRight className="w-4 h-4 text-gray-500" strokeWidth={1.5} />
+                                    <ChevronRight className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
                                 </button>
                             </div>
                         </div>

@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
                 {onToggleSidebar && (
                     <button
                         onClick={onToggleSidebar}
-                        className="p-2 rounded-md hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)] transition-colors"
+                        className={isMobile ? "p-1 rounded-md hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)] transition-colors" : "p-2 rounded-md hover:bg-[var(--color-muted)] text-[var(--color-muted-foreground)] transition-colors"}
                     >
                         {isSidebarExpanded ? <ChevronLeft size={isMobile ? 22 : 24} /> : <Menu size={isMobile ? 22 : 24} />}
                     </button>
@@ -92,7 +92,7 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
                                 {instituteName.substring(0, 2).toUpperCase()}
                             </div>
                         )}
-                        <span className="font-bold text-sm text-[var(--color-foreground)] leading-tight max-w-[200px] line-clamp-2">
+                        <span className="font-bold text-xs md:text-sm text-[var(--color-foreground)] leading-tight max-w-[200px] line-clamp-3">
                             {instituteName}
                         </span>
                     </div>

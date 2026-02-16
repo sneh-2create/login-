@@ -74,6 +74,7 @@ export const Layout: React.FC = () => {
         
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+    // const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
     const toggleSidebar = () => {
         if (isMobile) {

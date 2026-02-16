@@ -2,7 +2,7 @@
 export type ThemeMode = 'light' | 'dark';
 
 // Primary Color Options
-export type PrimaryColor = 'orange' | 'blue' | 'green' | 'purple' | 'red' | 'teal';
+export type PrimaryColor = 'orange' | 'purple' | 'rose' | 'pink' | 'green' | 'amber' | 'blue';
 
 // Theme Configuration
 export interface ThemeConfig {
