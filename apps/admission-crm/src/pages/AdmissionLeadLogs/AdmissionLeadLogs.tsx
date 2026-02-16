@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmissionLeadLog, useExcelTemplates, useDefaultExcelTemplates } from '@od-erp/query';
-import { Button, Breadcrumb, Card, DataTable, Dropdown, DatePicker, Toggle, HorizontalTabs } from '@od-erp/ui';
+import { Button, Breadcrumb, Card, DataTable, Dropdown, DatePicker, Toggle, HorizontalTabs, Tooltip } from '@od-erp/ui';
 import { AdmissionLeadLog, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { Phone, Eye, Trash2, SlidersHorizontal, RefreshCw, X, PhoneIncoming, PhoneMissed } from 'lucide-react';
@@ -875,23 +875,25 @@ const AdmissionLeadLogs = () => {
         </div>
         <div className="flex items-center space-x-2">
 
-          <Button
-            variant="outline"
-            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setShowFilter(!showFilter)}
-            title="Filter"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
+          <Tooltip content="Filter" placement="bottom">
+            <Button
+              variant="outline"
+              className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => setShowFilter(!showFilter)}
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </Tooltip>
 
-          <Button
-            variant="outline"
-            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-            onClick={() => { handleRefresh(); handleSearch(); }}
-            title="Refresh/Go"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
+          <Tooltip content="Refresh" placement="bottom">
+            <Button
+              variant="outline"
+              className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+              onClick={() => { handleRefresh(); handleSearch(); }}
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </Tooltip>
         </div>
       </div>
 

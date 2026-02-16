@@ -4,7 +4,7 @@ import { AdmissionLead } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
 import { Printer, XCircle, FileText } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTable } from '@od-erp/ui';
+import { DataTable, Tooltip } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import CancelTransactionDialog from '../../AdmissionStudentData/components/CancelTransactionDialog';
 
@@ -141,16 +141,17 @@ const TransactionsView = ({ student }: TransactionsViewProps) => {
                 cell: info => (
                     <div className="flex justify-center">
                         {info.row.original.partialPaymentDoc && (
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewDocument(info.row.original.partialPaymentDoc);
-                                }}
-                                className="p-1 rounded hover:bg-primary/10 transition-colors text-primary"
-                                title="View Partial Payment Document"
-                            >
-                                <FileText size={20} />
-                            </button>
+                            <Tooltip content="View Partial Payment Document" placement="top">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleViewDocument(info.row.original.partialPaymentDoc);
+                                    }}
+                                    className="p-1 rounded hover:bg-primary/10 transition-colors text-primary"
+                                >
+                                    <FileText size={20} />
+                                </button>
+                            </Tooltip>
                         )}
                     </div>
                 )
@@ -164,28 +165,30 @@ const TransactionsView = ({ student }: TransactionsViewProps) => {
             cell: info => (
                 <div className="flex gap-2">
                     {checkPermission('viewTransaction') && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handlePrintReceipt(info.row.original);
-                            }}
-                            className="p-1 rounded hover:bg-primary/10 transition-colors text-primary"
-                            title="Print Receipt"
-                        >
-                            <Printer size={16} />
-                        </button>
+                        <Tooltip content="Print Receipt" placement="top">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePrintReceipt(info.row.original);
+                                }}
+                                className="p-1 rounded hover:bg-primary/10 transition-colors text-primary"
+                            >
+                                <Printer size={16} />
+                            </button>
+                        </Tooltip>
                     )}
                     {checkPermission('cancelReceipt') && info.row.original.status !== 'cancelled' && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleCancelReceipt(info.row.original);
-                            }}
-                            className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
-                            title="Cancel Receipt"
-                        >
-                            <XCircle size={16} />
-                        </button>
+                        <Tooltip content="Cancel Receipt" placement="top">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancelReceipt(info.row.original);
+                                }}
+                                className="p-1 rounded hover:bg-red-50 text-red-500 transition-colors"
+                            >
+                                <XCircle size={16} />
+                            </button>
+                        </Tooltip>
                     )}
                 </div>
             )

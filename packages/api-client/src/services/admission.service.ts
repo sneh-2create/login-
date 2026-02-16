@@ -76,7 +76,7 @@ export const admissionService = {
         // Angular: URLAddress('/getCountByStages/admissionStudentData?entity=...&admissionSession=...')
         const response = await apiClient.get(`/getCountByStages/admissionStudentData?entity=${entityId}&admissionSession=${admissionSession}`);
         return response.data;
-    }
+    },
     getStreamList: async (entityId: string, course: string) => {
         const response = await apiClient.get(`/list/stream?entity=${entityId}&course=${course}`);
         return response.data;

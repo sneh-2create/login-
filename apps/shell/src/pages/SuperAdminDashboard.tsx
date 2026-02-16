@@ -22,7 +22,7 @@ import {
     communicationColumns,
     moduleCountColumns,
     locationCountColumns
-} from '../components/Dashboard/SuperAdmin/columns';
+} from '../components/Dashboard/superadmin/columns';
 
 export const SuperAdminDashboard: React.FC = () => {
     const { user } = useAppSelector(state => state.auth);

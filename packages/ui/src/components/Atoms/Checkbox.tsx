@@ -1,47 +1,77 @@
-import React from 'react';
-import { Check } from 'lucide-react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import React, { useState, useEffect } from 'react';
+import type { CheckboxProps } from '@od-erp/types';
+import { cn } from '../../utils';
 
-export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
-    error?: string;
-    containerClassName?: string;
-}
+/**
+ * Checkbox (Figma 659-6578) – all variants for use across the app.
+ * States: default (unchecked), checked, hover (when not disabled), disabled (unchecked & checked), focus-visible.
+ */
+export const Checkbox: React.FC<CheckboxProps> = ({
+    label,
+    checked: checkedProp,
+    defaultChecked = false,
+    onChange,
+    containerClassName = '',
+    className = '',
+    disabled = false,
+    id,
+    ...rest
+}) => {
+    const inputId = id ?? `checkbox-${Math.random().toString(36).slice(2, 9)}`;
+    const [internalChecked, setInternalChecked] = useState(defaultChecked);
+    const controlled = checkedProp !== undefined;
+    const checked = controlled ? checkedProp : internalChecked;
 
-export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-    ({ label, error, containerClassName, id, ...props }, ref) => {
-        const checkboxId = id || props.name || Math.random().toString(36).substr(2, 9);
+    useEffect(() => {
+        if (controlled && checkedProp !== undefined) setInternalChecked(checkedProp);
+    }, [controlled, checkedProp]);
 
-        return (
-            <div className={twMerge('flex flex-col gap-1', containerClassName)}>
-                <div className="flex items-center gap-2">
-                    <div className="relative flex items-center">
-                        <input
-                            type="checkbox"
-                            id={checkboxId}
-                            ref={ref}
-                            className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-gray-300 bg-white transition-all checked:border-primary checked:bg-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            {...props}
-                        />
-                        <Check className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100" />
-                    </div>
-                    {label && (
-                        <label
-                            htmlFor={checkboxId}
-                            className={clsx(
-                                "text-sm font-medium text-gray-700 cursor-pointer select-none",
-                                props.disabled && "cursor-not-allowed opacity-50"
-                            )}
-                        >
-                            {label}
-                        </label>
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const next = e.target.checked;
+        if (!controlled) setInternalChecked(next);
+        onChange?.(next);
+    };
+
+    return (
+        <div className={cn('flex items-center gap-2 min-w-0', containerClassName)}>
+            <label
+                htmlFor={inputId}
+                className={cn(
+                    'group inline-flex items-center gap-2 cursor-pointer select-none',
+                    disabled && 'is-disabled opacity-[var(--control-disabled-opacity)] cursor-not-allowed',
+                    className
+                )}
+            >
+                <input
+                    type="checkbox"
+                    id={inputId}
+                    {...(controlled ? { checked } : { defaultChecked })}
+                    onChange={handleChange}
+                    disabled={disabled}
+                    className="sr-only peer"
+                    aria-label={typeof label === 'string' ? label : undefined}
+                    {...rest}
+                />
+                <span
+                    className={cn(
+                        'w-[var(--control-size)] h-[var(--control-size)] shrink-0 rounded-[var(--border-radius-sm)] border-2 flex items-center justify-center transition-colors duration-150',
+                        checked
+                            ? 'bg-[var(--control-checked-bg)] border-[var(--control-checked-border)]'
+                            : 'bg-[var(--control-bg)] border-[var(--control-border)]',
+                        !disabled && 'group-hover:border-[var(--control-hover-border)]',
+                        disabled && 'bg-[var(--control-disabled-bg)] border-[var(--control-disabled-border)]',
+                        disabled && 'group-hover:border-[var(--control-disabled-border)]',
+                        'peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-primary)] peer-focus-visible:ring-opacity-40 peer-focus-visible:ring-offset-1'
                     )}
-                </div>
-                {error && <span className="text-xs text-red-500">{error}</span>}
-            </div>
-        );
-    }
-);
-
-Checkbox.displayName = 'Checkbox';
+                >
+                    {checked && (
+                        <svg className="w-2.5 h-2.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    )}
+                </span>
+                {label != null && <span className="text-sm text-[var(--color-dark)]">{label}</span>}
+            </label>
+        </div>
+    );
+};
