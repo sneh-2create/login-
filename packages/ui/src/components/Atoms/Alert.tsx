@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { AlertProps as AlertPropsType, AlertVariant } from '@od-erp/types';
 import { cn } from '../../utils';
-import { NOTIFICATION_TYPE_CONFIG } from '../Config/NotificationTypeConfig';
-import type { NotificationVariant } from '../Config/NotificationTypeConfig';
+import { NOTIFICATION_TYPE_CONFIG } from '../config/NotificationTypeConfig';
+import type { NotificationVariant } from '../config/NotificationTypeConfig';
 import { ALERT_LIGHT_THEME_VAR_NAMES, ALERT_DARK_THEME_VAR_NAMES } from '@od-erp/constants';
 
 type AlertVars = { bg: string; border: string; borderHover: string; text: string; accent?: string };

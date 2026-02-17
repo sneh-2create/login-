@@ -1,8 +1,8 @@
 import React from 'react';
 
 export interface DateRangeValue {
-    start: string;
-    end: string;
+    start: string | Date | null;
+    end: string | Date | null;
 }
 
 export interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
@@ -13,8 +13,8 @@ export interface DateRangePickerProps extends Omit<React.HTMLAttributes<HTMLDivE
     label?: string;
     startPlaceholder?: string;
     endPlaceholder?: string;
-    min?: string;
-    max?: string;
+    min?: string | Date | null;
+    max?: string | Date | null;
     error?: string;
     containerClassName?: string;
     id?: string;

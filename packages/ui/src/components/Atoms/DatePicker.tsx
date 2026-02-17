@@ -9,8 +9,9 @@ function getWeekdayNames(): string[] {
 }
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-function toDate(s: string | undefined): Date | null {
+function toDate(s: string | Date | null | undefined): Date | null {
     if (!s) return null;
+    if (s instanceof Date) return Number.isNaN(s.getTime()) ? null : s;
     const d = new Date(s);
     return Number.isNaN(d.getTime()) ? null : d;
 }
@@ -29,11 +30,14 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     onChange,
     min,
     max,
+    minDate: minDateProp,
+    maxDate: maxDateProp,
     error,
     placeholder = 'Select date',
     containerClassName = '',
     id,
     disabled = false,
+    className,
     ...rest
 }) => {
     const [open, setOpen] = useState(false);
@@ -48,8 +52,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const valueDate = toDate(displayValue);
     const [viewDate, setViewDate] = useState<Date>(() => valueDate ?? new Date());
     const weekdays = React.useMemo(() => getWeekdayNames(), []);
-    const minDate = toDate(min);
-    const maxDate = toDate(max);
+    const minDate = minDateProp ?? toDate(min);
+    const maxDate = maxDateProp ?? toDate(max);
 
     useEffect(() => {
         if (controlled && value !== undefined) setInternalValue(value);
@@ -75,8 +79,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         };
     }, [open]);
 
+    const [view, setView] = useState<'day' | 'month' | 'year'>('day');
+
     useEffect(() => {
         if (!open) {
+            setView('day'); // Reset view when closed
             setTriggerWidth(null);
             return;
         }
@@ -106,24 +113,72 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         return false;
     };
 
+    const isMonthDisabled = (m: number) => {
+        const firstDay = new Date(year, m, 1);
+        const lastDay = new Date(year, m + 1, 0);
+        if (minDate && lastDay < minDate) return true;
+        if (maxDate && firstDay > maxDate) return true;
+        return false;
+    };
+
+    const isYearDisabled = (y: number) => {
+        const firstDay = new Date(y, 0, 1);
+        const lastDay = new Date(y, 11, 31);
+        if (minDate && lastDay < minDate) return true;
+        if (maxDate && firstDay > maxDate) return true;
+        return false;
+    };
+
     const handleSelect = (day: number) => {
         const d = new Date(year, month, day);
-        const next = toYYYYMMDD(d);
-        if (!controlled) setInternalValue(next);
-        onChange?.(next);
+        if (!controlled) setInternalValue(d);
+        onChange?.(d);
         setOpen(false);
+    };
+
+    const handleMonthSelect = (m: number) => {
+        setViewDate(new Date(year, m, 1));
+        setView('day');
+    };
+
+    const handleYearSelect = (y: number) => {
+        setViewDate(new Date(y, month, 1));
+        setView('month');
     };
 
     const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
     const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
 
+    const prevYear = () => setViewDate(new Date(year - 1, month, 1));
+    const nextYear = () => setViewDate(new Date(year + 1, month, 1));
+
+    const prevDecade = () => setViewDate(new Date(year - 12, month, 1));
+    const nextDecade = () => setViewDate(new Date(year + 12, month, 1));
+
+    const handlePrev = () => {
+        if (view === 'day') prevMonth();
+        else if (view === 'month') prevYear();
+        else prevDecade();
+    };
+
+    const handleNext = () => {
+        if (view === 'day') nextMonth();
+        else if (view === 'month') nextYear();
+        else nextDecade();
+    };
+
+    // Generate years for year view (current year +/- 6 to show 12 years grid likely)
+    // Let's show a grid of 12 years (3x4 or 4x3) for consistent UI size with months (3x4)
+    const yearGridStart = year - 6;
+    const years = Array.from({ length: 15 }, (_, i) => yearGridStart + i);
+
     return (
-        <div ref={containerRef} className={cn('relative flex flex-col min-w-0 w-full', containerClassName)} {...rest}>
+        <div ref={containerRef} className={cn('relative flex flex-col gap-1.5 min-w-0 w-full', containerClassName, className)} {...rest}>
             {label && (
                 <label
                     htmlFor={pickerId}
                     className={cn(
-                        'block mb-1.5 text-sm font-medium text-[var(--color-dark)]',
+                        'block text-sm font-medium text-gray-700',
                         disabled && 'opacity-60'
                     )}
                 >
@@ -139,79 +194,134 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 aria-haspopup="dialog"
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
-                    'flex items-center gap-1.5 sm:gap-2 w-full min-w-0 min-w-[11rem] sm:min-w-[12rem] box-border border pl-2 sm:pl-2.5 pr-2 py-1.5 sm:py-2 text-[var(--font-size-sm)]',
-                    'rounded-[var(--border-radius-md)] transition-colors duration-150 text-left',
-                    'bg-[var(--color-white)] border-[var(--border-color)] text-[var(--color-dark)]',
-                    'hover:border-[var(--ui-gray-400)] outline-none focus:!outline-none focus:ring-0 focus-visible:!outline-none focus-visible:ring-0 focus:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
-                    'disabled:bg-[var(--color-grey-1)] disabled:border-[var(--ui-gray-300)] disabled:text-[var(--color-secondary)] disabled:cursor-not-allowed',
-                    open && '!border-[var(--color-primary)] ring-2 ring-[var(--color-primary)] ring-opacity-40',
-                    error && !open && '!border-[var(--color-error)]'
+                    "relative w-full cursor-pointer rounded-md border border-gray-300 bg-white py-2 px-3 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] flex items-center gap-2",
+                    disabled && "cursor-not-allowed opacity-50 bg-gray-50",
+                    error && "border-red-500 focus:ring-red-500",
+                    open && "ring-1 ring-primary border-primary",
+                    className
                 )}
             >
-                <Calendar className="w-4 h-4 shrink-0 text-[var(--color-secondary)]" aria-hidden />
-                <span className={cn('flex-1 min-w-0', !displayValue && 'text-[var(--ui-placeholder-color)]')}>
-                    {displayValue || placeholder}
+                <Calendar className="w-4 h-4 shrink-0 text-gray-400" aria-hidden />
+                <span className={cn('flex-1 min-w-0 truncate', !displayValue && 'text-gray-400')}>
+                    {valueDate ? toYYYYMMDD(valueDate) : (typeof displayValue === 'string' ? displayValue : '') || placeholder}
                 </span>
-                <ChevronDown className="w-4 h-4 shrink-0 text-[var(--color-secondary)]" aria-hidden />
+                <ChevronDown className={cn("w-4 h-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} aria-hidden />
             </button>
             {open && !disabled && triggerWidth != null && (
                 <div
                     className="absolute top-full left-0 z-50 mt-1 overflow-hidden rounded-[var(--border-radius-md)] border border-[var(--border-color)] bg-[var(--color-white)] shadow-lg"
                     style={{ width: triggerWidth, maxWidth: triggerWidth, boxSizing: 'border-box' }}
                 >
-                    <div className="min-w-0 overflow-auto p-3" style={{ maxHeight: '280px' }}>
+                    <div className="min-w-0 overflow-auto p-3" style={{ maxHeight: '300px' }}>
                     <div className="flex items-center justify-between mb-3">
                         <button
                             type="button"
-                            onClick={prevMonth}
+                            onClick={handlePrev}
                             className="p-1 rounded hover:bg-[var(--color-grey-1)] text-[var(--color-dark)] outline-none focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40"
-                            aria-label="Previous month"
+                            aria-label="Previous"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
-                        <span className="text-sm font-medium text-[var(--color-dark)]">
-                            {MONTHS[month]} {year}
-                        </span>
                         <button
                             type="button"
-                            onClick={nextMonth}
+                            onClick={() => setView(view === 'year' ? 'day' : 'year')}
+                            className={cn(
+                                "px-1 py-0.5 rounded text-sm font-semibold text-[var(--color-dark)] hover:bg-[var(--color-grey-1)]",
+                                view !== 'day' && "bg-[var(--color-grey-1)]"
+                            )}
+                        >
+                            {MONTHS[month]} {year}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleNext}
                             className="p-1 rounded hover:bg-[var(--color-grey-1)] text-[var(--color-dark)] outline-none focus:outline-none focus:ring-0 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40"
-                            aria-label="Next month"
+                            aria-label="Next"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
                     </div>
-                    <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-[var(--color-secondary)] mb-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
-                        {weekdays.map((w) => (
-                            <span key={w} className="min-w-0 overflow-hidden text-ellipsis" title={w}>{w}</span>
-                        ))}
-                    </div>
-                    <div className="grid gap-px min-w-0" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
-                        {days.map((day, i) =>
-                            day === null ? (
-                                <div key={i} />
-                            ) : (
+
+                    {view === 'day' && (
+                        <>
+                            <div className="grid grid-cols-7 gap-px text-center text-xs font-medium text-[var(--color-secondary)] mb-1" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                                {weekdays.map((w) => (
+                                    <span key={w} className="min-w-0 overflow-hidden text-ellipsis" title={w}>{w}</span>
+                                ))}
+                            </div>
+                            <div className="grid gap-px min-w-0" style={{ gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
+                                {days.map((day, i) =>
+                                    day === null ? (
+                                        <div key={i} />
+                                    ) : (
+                                        <button
+                                            key={i}
+                                            type="button"
+                                            disabled={isDisabled(day)}
+                                            onClick={() => handleSelect(day)}
+                                            className={cn(
+                                                'py-1.5 text-sm rounded outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
+                                                valueDate &&
+                                                    valueDate.getFullYear() === year &&
+                                                    valueDate.getMonth() === month &&
+                                                    valueDate.getDate() === day
+                                                    ? 'bg-[var(--color-primary)] text-white'
+                                                    : 'text-[var(--color-dark)] hover:bg-[var(--color-grey-1)]',
+                                                isDisabled(day) && 'opacity-40 cursor-not-allowed'
+                                            )}
+                                        >
+                                            {day}
+                                        </button>
+                                    )
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {view === 'month' && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {MONTHS.map((m, i) => (
                                 <button
-                                    key={i}
+                                    key={m}
                                     type="button"
-                                    disabled={isDisabled(day)}
-                                    onClick={() => handleSelect(day)}
+                                    disabled={isMonthDisabled(i)}
+                                    onClick={() => handleMonthSelect(i)}
                                     className={cn(
-                                        'py-1.5 text-sm rounded outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
-                                        valueDate &&
-                                            valueDate.getFullYear() === year &&
-                                            valueDate.getMonth() === month &&
-                                            valueDate.getDate() === day
+                                        'py-2 text-sm rounded outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
+                                        i === month
                                             ? 'bg-[var(--color-primary)] text-white'
                                             : 'text-[var(--color-dark)] hover:bg-[var(--color-grey-1)]',
-                                        isDisabled(day) && 'opacity-40 cursor-not-allowed'
+                                        isMonthDisabled(i) && 'opacity-40 cursor-not-allowed'
                                     )}
                                 >
-                                    {day}
+                                    {m}
                                 </button>
-                            )
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {view === 'year' && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {years.map((y) => (
+                                <button
+                                    key={y}
+                                    type="button"
+                                    disabled={isYearDisabled(y)}
+                                    onClick={() => handleYearSelect(y)}
+                                    className={cn(
+                                        'py-2 text-sm rounded outline-none focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
+                                        y === year
+                                            ? 'bg-[var(--color-primary)] text-white'
+                                            : 'text-[var(--color-dark)] hover:bg-[var(--color-grey-1)]',
+                                        isYearDisabled(y) && 'opacity-40 cursor-not-allowed'
+                                    )}
+                                >
+                                    {y}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     </div>
                 </div>
             )}

@@ -29,13 +29,13 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
     const range = controlled ? value! : internal;
     const pickerId = id ?? `date-range-picker-${Math.random().toString(36).slice(2, 9)}`;
 
-    const handleStartChange = (start: string) => {
+    const handleStartChange = (start: Date | null) => {
         const next = { ...range, start };
         if (!controlled) setInternal(next);
         onChange?.(next);
     };
 
-    const handleEndChange = (end: string) => {
+    const handleEndChange = (end: Date | null) => {
         const next = { ...range, end };
         if (!controlled) setInternal(next);
         onChange?.(next);

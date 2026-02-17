@@ -65,7 +65,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
     };
 
     return (
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2">
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
             
             {/* Section 1: Date and Status */}
             <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>

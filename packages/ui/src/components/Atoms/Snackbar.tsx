@@ -2,7 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { SnackbarItemProps, SnackbarVariant } from '@od-erp/types';
 import { cn } from '../../utils';
-import { NOTIFICATION_TYPE_CONFIG } from '../Config/NotificationTypeConfig';
+import { NOTIFICATION_TYPE_CONFIG } from '../config/NotificationTypeConfig';
 
 const SNACKBAR_ICON_CTA: Record<SnackbarVariant, string> = {
     success: 'text-emerald-600',

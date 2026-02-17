@@ -1354,7 +1354,7 @@ const AddApplicationDataPanel = ({
                                         <Checkbox
                                             label="Same as Permanent Address"
                                             checked={copyCorrespondenceAddress}
-                                            onChange={(e) => setCopyCorrespondenceAddress(e.target.checked)}
+                                            onChange={(checked) => setCopyCorrespondenceAddress(checked)}
                                             containerClassName="mt-4"
                                         />
                                     )}

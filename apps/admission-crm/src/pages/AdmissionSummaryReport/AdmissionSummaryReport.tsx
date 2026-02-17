@@ -257,7 +257,7 @@ const admissionSummaryReport = () => {
                             <Checkbox
                                 label="Yes"
                                 checked={excludeUnpaid}
-                                onChange={(e) => setExcludeUnpaid(e.target.checked)}
+                                onChange={(checked) => setExcludeUnpaid(checked)}
                             />
                         </div>
                         <div className="w-full">
