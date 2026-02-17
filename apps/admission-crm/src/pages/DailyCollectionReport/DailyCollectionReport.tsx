@@ -415,7 +415,7 @@ const DailyCollectionReportPage = () => {
                 title="Daily Collection Report"
                 breadcrumbs={[
                     { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admissions Reports', href: '/admissions' },
+                    { label: 'Admission Reports', href: '/admissions' },
                     { label: 'Daily Collection Report' }
                 ]}
                 actionButtons={actionButtons}

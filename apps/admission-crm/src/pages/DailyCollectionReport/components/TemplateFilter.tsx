@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button, SelectSingle, MultiSelect, DatePicker } from '@od-erp/ui';
 import { useSessions, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { ArrowRight } from 'lucide-react';
 
 interface TemplateFilterProps {
     startDate: number;
@@ -149,7 +148,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     onClick={handleApply}
                     className="px-8 h-10 font-medium"
                 >
-                    Go <ArrowRight className="w-4 h-4 ml-2" />
+                    Apply Filters
                 </Button>
             </div>
         </div>

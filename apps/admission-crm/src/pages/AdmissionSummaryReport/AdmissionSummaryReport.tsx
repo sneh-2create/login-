@@ -1,8 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import * as xlsx from 'xlsx';
 import { admissionSummaryReportService } from '@od-erp/api-client';
-import { Button, Dropdown, Checkbox, Breadcrumb, DatePicker, Tooltip } from '@od-erp/ui';
-import { DataTable } from '@od-erp/ui';
+import { Button, SelectSingle, Checkbox, DatePicker, DataTable, PageHeader, PageToolbar, ActionButton, EmptyState } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import { AdmissionSummaryTableRow } from '@od-erp/types';
@@ -12,7 +11,6 @@ import { format } from 'date-fns';
 
 const admissionSummaryReport = () => {
     const [loading, setLoading] = useState(false);
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<AdmissionSummaryTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<AdmissionSummaryTableRow>[]>([]);
     const [sessionList, setSessionList] = useState<any[]>([]);
@@ -130,7 +128,6 @@ const admissionSummaryReport = () => {
 
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
@@ -169,66 +166,57 @@ const admissionSummaryReport = () => {
             xlsx.writeFile(wb, `Admission_Summary_Report_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
         } catch (e) {
             console.error("Export failed", e);
-        } finally {
-            setExportLoading(false);
         }
     };
 
     const [showFilter, setShowFilter] = useState(false);
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleSearch,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: loading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Summary Report</h1>
-                    <Breadcrumb
-                        items={[
-                            { label: 'Dashboard', href: '/dashboard' },
-                            { label: 'Admission', href: '/admission' },
-                            { label: 'Admission Summary Report' } // Current page
-                        ]}
-                    />
-                </div>
-                <div className="flex items-center space-x-2">
-                    {/* Filter Toggle */}
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setShowFilter(!showFilter)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
+            <PageHeader
+                title="Admission Summary Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission' },
+                    { label: 'Admission Summary Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    {/* Refresh / Go */}
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={handleSearch}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
-
-                    {/* Excel Export */}
-                    {data.length > 0 && (
-                        <Tooltip content="Export to Excel" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handleExport}
-                                isLoading={exportLoading}
-                            >
-                                <Download className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-
-                </div>
-            </div>
+            <PageToolbar
+                tabs={[]}
+                activeTab=""
+                onTabChange={() => {}}
+                actions={actionButtons}
+            />
 
             {/* Collapsible Filter Card */}
             {showFilter && (
@@ -261,16 +249,16 @@ const admissionSummaryReport = () => {
                             />
                         </div>
                         <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Session</label>
-                            <Dropdown
+                            <SelectSingle
+                                label="Select Session"
                                 value={selectedSession[0] || ''}
                                 onChange={(val) => setSelectedSession([val as string])}
                                 options={[
-                                    { value: '', label: 'Select Session' },
+                                    { value: '', label: 'All Sessions' },
                                     ...sessionList.map(s => ({ value: s.name, label: s.name }))
                                 ]}
                                 placeholder="Select Session"
-                                className="w-full"
+                                containerClassName="w-full"
                             />
                         </div>
                     </div>
@@ -292,11 +280,9 @@ const admissionSummaryReport = () => {
                 </div>
             )}
 
-            {/* Empty State / Prompt */}
+            {/* Empty State */}
             {!loading && data.length === 0 && (
-                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                </div>
+                <EmptyState message="No Records Found" />
             )}
         </div>
     );
