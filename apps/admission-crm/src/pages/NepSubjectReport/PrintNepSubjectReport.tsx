@@ -9,8 +9,7 @@ const PrintNepSubjectReport = () => {
         displayNames: {
             course: 'Course',
             stream: 'Stream',
-            batch: 'Batch',
-            subjectCombination: 'Subject Combination'
+            batch: 'Batch'
         }
     });
 
@@ -35,7 +34,7 @@ const PrintNepSubjectReport = () => {
     const { showBatch, displayNames } = config;
 
     return (
-        <PrintLayout reportName={`${displayNames.subjectCombination} Report`}>
+        <PrintLayout reportName={`NEP Subject Report`}>
             <table className="w-full border-collapse border border-gray-300 text-sm">
                 <thead>
                     <tr className="bg-gray-100">

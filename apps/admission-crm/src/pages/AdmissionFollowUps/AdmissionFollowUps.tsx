@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button, DataTable, Breadcrumb, useToast, EmptyState, ActionMenu, Tooltip } from '@od-erp/ui';
 import { useAdmissionFollowUp, useCounselors, useAdmissionFollowUpStats } from '@od-erp/query';
 import { AdmissionFollowUp, AdmissionFollowUpPayload } from '@od-erp/types';
@@ -50,6 +50,63 @@ const AdmissionFollowUps = () => {
         status: '',
         counselorId: isAdmissionAdmin ? '' : loggedInCounselorId
     });
+
+    // Read drill-down filter parameters from localStorage (from CounselorProductivityReport)
+    useEffect(() => {
+        const filterObjectData = localStorage.getItem('filterObjectData');
+        if (filterObjectData) {
+            try {
+                const filters = JSON.parse(filterObjectData);
+                
+                // Build new filter object
+                const newFilters: any = { ...appliedFilters };
+                
+                // Apply counselor filter
+                if (filters.counselorId) {
+                    newFilters.counselorId = filters.counselorId;
+                    setCounselorFilter(filters.counselorId);
+                }
+                
+                // Apply date range filters
+                if (filters.startDate) {
+                    newFilters.startDate = filters.startDate;
+                    setStartDate(filters.startDate);
+                }
+                
+                if (filters.endDate) {
+                    newFilters.endDate = filters.endDate;
+                    setEndDate(filters.endDate);
+                }
+                
+                // Handle selectedItem to determine which tab to show
+                if (filters.selectedItem) {
+                    if (filters.selectedItem === 'All') {
+                        setActiveTab('All');
+                    } else if (filters.selectedItem === 'overdueFollowUp') {
+                        setActiveTab('overdueFollowUp');
+                        // Apply overdue filters
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const lastMonth = new Date(today);
+                        lastMonth.setDate(today.getDate() - 30);
+                        newFilters.startDate = lastMonth.getTime();
+                        newFilters.endDate = today.getTime();
+                        newFilters.status = 'pending';
+                    }
+                }
+                
+                // Apply filters to state
+                setAppliedFilters(newFilters);
+                
+                // Clean up localStorage
+                localStorage.removeItem('filterObjectData');
+                
+            } catch (error) {
+                console.error('Error parsing filterObjectData:', error);
+                localStorage.removeItem('filterObjectData');
+            }
+        }
+    }, []); // Run only on mount
 
     // Queries
     const { data: counselors } = useCounselors(entityId, 'counselor');

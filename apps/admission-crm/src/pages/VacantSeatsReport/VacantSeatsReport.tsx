@@ -342,7 +342,6 @@ const VacantSeatsReport = () => {
             )}
 
             {data.length > 0 && (
-
                 <div className="w-full max-w-full overflow-x-auto">
                     <DataTable
                         columns={columns}

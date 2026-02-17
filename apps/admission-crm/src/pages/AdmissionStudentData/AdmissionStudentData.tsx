@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
 import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal, Tooltip } from '@od-erp/ui';
@@ -139,6 +139,48 @@ const AdmissionStudentData = () => {
             setSelectedTemplate(templates[0].viewName);
         }
     }, [templates, selectedTemplate]);
+
+    // Read drill-down filter parameters from localStorage (from CounselorProductivityReport)
+    useEffect(() => {
+        const filterObjectData = localStorage.getItem('filterObjectData');
+        if (filterObjectData) {
+            try {
+                const filters = JSON.parse(filterObjectData);
+                
+                // Build new filter object
+                const newFilters: Partial<AdmissionStudentDataPayload> = {};
+                
+                // Apply engagement status filter
+                if (filters.engagementStatus) {
+                    newFilters.engagementStatus = [filters.engagementStatus];
+                }
+                
+                // Apply counselor filter
+                if (filters.counselorId) {
+                    newFilters.counselorId = filters.counselorId;
+                }
+                
+                // Apply date range filters
+                if (filters.startDate) {
+                    newFilters.startDate = filters.startDate;
+                }
+                
+                if (filters.endDate) {
+                    newFilters.endDate = filters.endDate;
+                }
+                
+                // Apply filters to state
+                setCurrentFilters(newFilters);
+                
+                // Clean up localStorage
+                localStorage.removeItem('filterObjectData');
+                
+            } catch (error) {
+                console.error('Error parsing filterObjectData:', error);
+                localStorage.removeItem('filterObjectData');
+            }
+        }
+    }, []); // Run only on mount
 
     // Row selection handlers
     const handleSelectAll = (checked: boolean) => {

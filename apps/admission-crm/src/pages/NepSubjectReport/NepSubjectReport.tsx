@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, ReactNode } from 'react';
 import { admissionService } from '@od-erp/api-client';
 import { useNepSubjectReport } from '@od-erp/query';
 import { processNepSubjectReportData, addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
-import { Button, Dropdown, Breadcrumb, DataTable, Tooltip } from '@od-erp/ui';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, SelectSingle } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer, SlidersHorizontal, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
@@ -11,9 +11,8 @@ import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
 
 const NepSubjectReport = () => {
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<NepSubjectReportTableRow[]>([]);
-    const [showFilter, setShowFilter] = useState(true);
+    const [showFilter, setShowFilter] = useState(false);
 
     // Dropdown Data
     const [courses, setCourses] = useState<any[]>([]);
@@ -37,18 +36,17 @@ const NepSubjectReport = () => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
     const session = useAppSelector((state) => state.session.academicSession) || '';
-    const preferences = useAppSelector((state) => state.auth.preferences);
-    const showBatch = preferences?.entityPreferences?.showBatch;
+    const preferences = useAppSelector((state) => state.config.entityPreferences) || null;
+    const showBatch = preferences?.showBatch;
     
     // Display Names
     const displayNames = useMemo(() => {
-        const prefNames = preferences?.entityPreferences?.displayNames || [];
+        const prefNames = preferences?.displayNames || [];
         const get = (key: string, defaultVal: string) => prefNames.find((n: any) => n.value === key)?.name || defaultVal;
         return {
             course: get('course', 'Course'),
             stream: get('stream', 'Stream'),
-            batch: get('batch', 'Batch'),
-            subjectCombination: get('subjectCombination', 'Subject Combination'),
+            batch: get('batch', 'Batch')
         };
     }, [preferences]);
 
@@ -161,15 +159,15 @@ const NepSubjectReport = () => {
 
     const handleSearch = () => {
         refetch();
+        setShowFilter(false);
     };
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
 
-            const tableStartRow = addExcelReportHeader(ws, entityName, `${displayNames.subjectCombination} Report`);
+            const tableStartRow = addExcelReportHeader(ws, entityName, "NEP Subject Report");
 
             // Columns definition for export
             const exportColumns = [
@@ -217,12 +215,10 @@ const NepSubjectReport = () => {
             addExcelReportFooter(ws, footerRow);
 
             xlsx.utils.book_append_sheet(wb, ws, 'Sheet1');
-            xlsx.writeFile(wb, `${displayNames.subjectCombination}_Report_${session}_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
+            xlsx.writeFile(wb, `NEP_Subject_Report_${session}_${format(new Date(), 'dd-MM-yyyy')}.xlsx`);
 
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -301,133 +297,121 @@ const NepSubjectReport = () => {
         return cols;
     }, [showBatch, selectedBatch]);
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(reportData && reportData.length > 0),
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{displayNames.subjectCombination} Report</h1>
-                    <Breadcrumb
-                        items={[
-                            { label: 'Dashboard', href: '/dashboard' },
-                            { label: 'Admission Reports', href: '/admission/reports' },
-                            { label: `${displayNames.subjectCombination} Report` }
-                        ]}
-                    />
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setShowFilter(!showFilter)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
+            <PageHeader
+                title={"NEP Subject Report"}
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: "NEP Subject Report" }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={handleSearch}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
+            <PageToolbar
+                tabs={[]}
+                activeTab=""
+                onTabChange={() => {}}
+                actions={actionButtons}
+            />
 
-                    {data.length > 0 && (
-                        <>
-                            <Tooltip content="Print" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handlePrint}
-                                >
-                                    <Printer className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                            <Tooltip content="Export to Excel" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handleExport}
-                                    isLoading={exportLoading}
-                                >
-                                    <Download className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                        </>
-                    )}
-                </div>
-            </div>
-
+            {/* Collapsible Filter Card */}
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-                        <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.course}</label>
-                            <Dropdown
-                                value={selectedCourse}
-                                onChange={(val) => setSelectedCourse(val as string)}
-                                options={[
-                                    { value: '', label: 'Select Course' },
-                                    ...courses.map(c => ({ value: c.name, label: c.displayName || c.name }))
-                                ]}
-                                placeholder={`Select ${displayNames.course}`}
-                                className="w-full"
-                            />
-                        </div>
-                        <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.stream}</label>
-                            <Dropdown
-                                value={selectedStream}
-                                onChange={(val) => setSelectedStream(val as string)}
-                                options={[
-                                    { value: '', label: `Select ${displayNames.stream}` },
-                                    ...streams.map(s => ({ value: s, label: s }))
-                                ]}
-                                placeholder={`Select ${displayNames.stream}`}
-                                className="w-full"
-                            />
-                        </div>
+                        <SelectSingle
+                            label={displayNames.course}
+                            value={selectedCourse}
+                            onChange={(val) => setSelectedCourse(val as string)}
+                            options={[
+                                { value: '', label: 'Select Course' },
+                                ...courses.map(c => ({ value: c.name, label: c.displayName || c.name }))
+                            ]}
+                            placeholder={`Select ${displayNames.course}`}
+                        />
+                        <SelectSingle
+                            label={displayNames.stream}
+                            value={selectedStream}
+                            onChange={(val) => setSelectedStream(val as string)}
+                            options={[
+                                { value: '', label: `Select ${displayNames.stream}` },
+                                ...streams.map(s => ({ value: s, label: s }))
+                            ]}
+                            placeholder={`Select ${displayNames.stream}`}
+                        />
                         {showBatch && (
-                            <div className="w-full">
-                                <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.batch}</label>
-                                <Dropdown
-                                    value={selectedBatch}
-                                    onChange={(val) => setSelectedBatch(val as string)}
-                                    options={[
-                                        { value: '', label: `Select ${displayNames.batch}` },
-                                        ...batches.map(b => ({ value: b, label: b }))
-                                    ]}
-                                    placeholder={`Select ${displayNames.batch}`}
-                                    className="w-full"
-                                />
-                            </div>
-                        )}
-                        <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.subjectCombination} Type</label>
-                            <Dropdown
-                                value={selectedGroup.value}
-                                onChange={(val) => {
-                                    const group = groupByOptions.find(g => g.value === val);
-                                    if (group) setSelectedGroup(group);
-                                }}
-                                options={groupByOptions.map(g => ({ value: g.value, label: g.name }))}
-                                placeholder="Select Group"
-                                className="w-full"
+                            <SelectSingle
+                                label={displayNames.batch}
+                                value={selectedBatch}
+                                onChange={(val) => setSelectedBatch(val as string)}
+                                options={[
+                                    { value: '', label: `Select ${displayNames.batch}` },
+                                    ...batches.map(b => ({ value: b, label: b }))
+                                ]}
+                                placeholder={`Select ${displayNames.batch}`}
                             />
-                        </div>
-
-                        <div className="w-full md:w-auto">
-                            <div className="w-full md:w-auto">
-                                <Button onClick={handleSearch} isLoading={isLoading} className="w-full">Go</Button>
-                            </div>
-                        </div>
+                        )}
+                        <SelectSingle
+                            label={`Subject Type`}
+                            value={selectedGroup.value}
+                            onChange={(val) => {
+                                const group = groupByOptions.find(g => g.value === val);
+                                if (group) setSelectedGroup(group);
+                            }}
+                            options={groupByOptions.map(g => ({ value: g.value, label: g.name }))}
+                            placeholder="Select Group"
+                        />
+                    </div>
+                    <div className="flex justify-end mt-4">
+                        <button
+                            onClick={handleSearch}
+                            disabled={isLoading}
+                            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? 'Loading...' : 'Apply Filters'}
+                        </button>
                     </div>
                 </div>
             )}
 
+            {/* Table - Conditional Rendering */}
             {data.length > 0 && (
                 <div className="w-full max-w-full overflow-x-auto">
                     <DataTable
@@ -440,9 +424,7 @@ const NepSubjectReport = () => {
             )}
 
             {!isLoading && data.length === 0 && (
-                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                </div>
+                <EmptyState message="No Records Found" />
             )}
         </div>
     );

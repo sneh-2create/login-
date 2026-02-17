@@ -2,21 +2,21 @@ import { useEffect, useState } from 'react';
 import { useCounselorProductivityReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { processCounselorProductivityReportData, addExcelReportFooter, addExcelReportHeader } from '@od-erp/utils';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, HorizontalTabs, Tooltip } from '@od-erp/ui';
+import { Button, DataTable, SelectSingle, DatePicker, PageHeader, PageToolbar, ActionButton, EmptyState } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer, RefreshCw } from 'lucide-react';
+import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { CounselorProductivityReportData } from '@od-erp/types';
 import { useNavigate } from 'react-router-dom';
 
 const CounselorProductivityReport = () => {
     const navigate = useNavigate();
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CounselorProductivityReportData[]>([]);
     const [stageType, setStageType] = useState<string>('lead');
     const [dynamicColumns, setDynamicColumns] = useState<string[]>([]);
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [showFilter, setShowFilter] = useState(false);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
@@ -81,10 +81,10 @@ const CounselorProductivityReport = () => {
         if (isAdmissionAdmin) {
             // Admin sees all
             filteredOptions = counselors.map((c: any) => ({ label: c.name, value: c._id }));
-            filteredOptions.unshift({ label: 'All Counselors', value: '' });
+            filteredOptions.unshift({ label: '', value: '' });
             defaultCounselorId = '';
         } else if (isUserLead) {
-            filteredOptions.unshift({ label: 'All Team Members', value: '' });
+            filteredOptions.unshift({ label: '', value: '' });
             defaultCounselorId = '';
         } else {
             const myProfile = counselors.find((c: any) => c._id === user._id);
@@ -143,7 +143,6 @@ const CounselorProductivityReport = () => {
     };
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
@@ -193,8 +192,6 @@ const CounselorProductivityReport = () => {
             xlsx.writeFile(wb, `Counselor_Productivity_${stageType === 'lead' ? 'Lead' : 'Application'}_Report.xlsx`);
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -335,83 +332,78 @@ const CounselorProductivityReport = () => {
         });
     });
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleSearch,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: loading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col mb-6 gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Counselor Productivity Report</h1>
-                        <Breadcrumb
-                            items={[
-                                { label: 'Dashboard', href: '/dashboard' },
-                                { label: 'Admission Reports', href: '/admission/reports' },
-                                { label: 'Counselor Productivity Report' }
-                            ]}
-                        />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Tooltip content="Refresh" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                                onClick={handleSearch}
-                            >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            </Button>
-                        </Tooltip>
+            <PageHeader
+                title="Counselor Productivity Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: 'Counselor Productivity Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                        {data.length > 0 && (
-                            <>
-                                <Tooltip content="Print" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handlePrint}
-                                    >
-                                        <Printer className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Export to Excel" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handleExport}
-                                        isLoading={exportLoading}
-                                    >
-                                        <Download className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                            </>
-                        )}
-                    </div>
-                </div>
+            <PageToolbar
+                tabs={[
+                    { label: 'Lead Summary', value: 'lead' },
+                    { label: 'Application Summary', value: 'application' }
+                ]}
+                activeTab={stageType}
+                onTabChange={setStageType}
+                actions={actionButtons}
+            />
 
-                {/* Main Content Card */}
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-3">
-
-                    {/* Tabs - HorizontalTabs */}
-                    <HorizontalTabs
-                        tabs={[
-                            { label: 'Lead Summary', value: 'lead' },
-                            { label: 'Application Summary', value: 'application' }
-                        ]}
-                        activeTab={stageType}
-                        onTabChange={setStageType}
-                        className="mb-6 px-0"
-                    />
-
-                    {/* Filters Row */}
+            {/* Collapsible Filter Section */}
+            {showFilter && (
+                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="w-full md:w-1/4">
                             {!isAdmissionAdmin && !isLead ? (
                                 <div className="flex flex-col">
-                                     <label className="text-xs font-semibold text-gray-600 mb-1 block">Name</label>
-                                     <p className="text-gray-900 font-medium py-2">{user?.name}</p>
+                                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Name</label>
+                                    <p className="text-gray-900 font-medium py-2">{user?.name}</p>
                                 </div>
                             ) : (
                                 <>
                                     <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                                    <Dropdown
+                                    <SelectSingle
                                         options={counselorOptions}
                                         value={selectedCounselor}
                                         onChange={(val) => setSelectedCounselor(val as string)}
@@ -442,33 +434,35 @@ const CounselorProductivityReport = () => {
                         <div className="w-full md:w-auto">
                             <Button
                                 variant="primary"
-                                onClick={handleSearch}
+                                onClick={() => {
+                                    handleSearch();
+                                    setShowFilter(false);
+                                }}
                                 isLoading={loading}
                                 className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white border-transparent"
                             >
-                                Go <span className="ml-1">→</span>
+                                Apply Filters
                             </Button>
                         </div>
                     </div>
                 </div>
+            )}
 
-                {data.length > 0 && (
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={data}
-                            isLoading={loading}
-                            showSearch={true}
-                        />
-                    </div>
-                )}
+            {/* Table and Summary - Conditional Rendering */}
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
+                </div>
+            )}
 
-                {!loading && data.length === 0 && (
-                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Data Found*</span>
-                    </div>
-                )}
-            </div>
+            {!loading && data.length === 0 && (
+                <EmptyState message="No Records Found" />
+            )}
         </div>
     );
 };
