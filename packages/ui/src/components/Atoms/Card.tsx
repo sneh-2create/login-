@@ -11,13 +11,13 @@ export const Card: React.FC<CardProps> = ({
     className = '',
     noPadding = false,
     onClick,
-    ...rest
+    ...props
 }) => {
     return (
         <div
             className={`bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] overflow-hidden ${noPadding ? '' : 'p-6'} ${className} ${onClick ? 'cursor-pointer' : ''}`}
             onClick={onClick}
-            {...rest}
+            {...props}
         >
             {children}
         </div>

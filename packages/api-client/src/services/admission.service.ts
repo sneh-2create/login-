@@ -77,7 +77,6 @@ export const admissionService = {
         const response = await apiClient.get(`/getCountByStages/admissionStudentData?entity=${entityId}&admissionSession=${admissionSession}`);
         return response.data;
     },
-
     getStreamList: async (entityId: string, course: string) => {
         const response = await apiClient.get(`/list/stream?entity=${entityId}&course=${course}`);
         return response.data;

@@ -4,6 +4,7 @@ import { Phone, User as UserIcon } from 'lucide-react';
 import { AdmissionLead } from '@od-erp/types';
 import { useClickToCall } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
+import { Tooltip } from '@od-erp/ui';
 
 interface StudentInfoCardProps {
     student: AdmissionLead;
@@ -166,13 +167,14 @@ const StudentInfoCard = ({ student }: StudentInfoCardProps) => {
                                 <div className="flex items-center gap-2">
                                     <div className="text-sm font-medium text-gray-900">{displayPhone}</div>
                                     {canClickToCall && student.phone && (
-                                        <button
-                                            onClick={handleClickToCall}
-                                            className="p-1.5 rounded-full bg-green-50 hover:bg-green-100 text-green-600 transition-colors"
-                                            title="Click to Call"
-                                        >
-                                            <Phone size={14} />
-                                        </button>
+                                        <Tooltip content="Click to Call" placement="top">
+                                            <button
+                                                onClick={handleClickToCall}
+                                                className="p-1.5 rounded-full bg-green-50 hover:bg-green-100 text-green-600 transition-colors"
+                                            >
+                                                <Phone size={14} />
+                                            </button>
+                                        </Tooltip>
                                     )}
                                 </div>
                             </div>

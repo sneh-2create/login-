@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
-import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal } from '@od-erp/ui';
+import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal, Tooltip } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
 
@@ -1103,82 +1103,89 @@ const AdmissionStudentData = () => {
                     />
 
                     {/* Filter Button */}
-                    <Button
-                        variant="outline"
-                        className={`!p-0 !w-9 !h-9 border-gray-300 ${isFilterModalOpen ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                        onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
-                        title="Filter"
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
+                    <Tooltip content="Filter" placement="bottom">
+                        <Button
+                            variant="outline"
+                            className={`!p-0 !w-9 !h-9 border-gray-300 ${isFilterModalOpen ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                            onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
 
                     {/* Refresh Button */}
-                    <Button
-                        variant="outline"
-                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                        onClick={handleRefresh}
-                        title="Refresh"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} />
-                    </Button>
-
-                    {/* Upload Excel Button - Show if has permission */}
-                    {checkPermission('uploadAdmissionStudentData') && (
+                    <Tooltip content="Refresh" placement="bottom">
                         <Button
                             variant="outline"
                             className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={() => setIsUploadModalOpen(true)}
-                            title="Upload Excel"
+                            onClick={handleRefresh}
                         >
-                            <Upload className="h-4 w-4" />
+                            <RefreshCw className={`h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} />
                         </Button>
+                    </Tooltip>
+
+                    {/* Upload Excel Button - Show if has permission */}
+                    {checkPermission('uploadAdmissionStudentData') && (
+                        <Tooltip content="Upload Excel" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={() => setIsUploadModalOpen(true)}
+                            >
+                                <Upload className="h-4 w-4" />
+                            </Button>
+                        </Tooltip>
                     )}
 
                     {/* Excel Export Button - Show if data exists OR has permission */}
                     {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handleExportExcel}
-                            title="Export to Excel"
-                        >
-                            <FileSpreadsheet className="h-4 w-4" />
-                        </Button>
+                        <Tooltip content="Export to Excel" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handleExportExcel}
+                            >
+                                <FileSpreadsheet className="h-4 w-4" />
+                            </Button>
+                        </Tooltip>
                     )}
 
                     {/* Print Button - Show if data exists OR has permission */}
                     {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handlePrint}
-                            title="Print"
-                        >
-                            <Printer className="h-4 w-4" />
-                        </Button>
+                        <Tooltip content="Print" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handlePrint}
+                            >
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                        </Tooltip>
                     )}
 
                     {/* Generate Report Button - Show if data exists OR has permission */}
                     {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handleGenerateReport}
-                            title="Generate Report"
-                        >
-                            <FileText className="h-4 w-4" />
-                        </Button>
+                        <Tooltip content="Generate Report" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                onClick={handleGenerateReport}
+                            >
+                                <FileText className="h-4 w-4" />
+                            </Button>
+                        </Tooltip>
                     )}
 
                     {/* Need Help Button - Always show */}
-                    <Button
-                        variant="outline"
-                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                        onClick={handleNeedHelp}
-                        title="Need Help"
-                    >
-                        <HelpCircle className="h-4 w-4" />
-                    </Button>
+                    <Tooltip content="Need Help" placement="bottom">
+                        <Button
+                            variant="outline"
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                            onClick={handleNeedHelp}
+                        >
+                            <HelpCircle className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
 
                     {/* Add Application Data Button - Show if has permission */}
                     {checkPermission('addAdmissionStudentData') && (
