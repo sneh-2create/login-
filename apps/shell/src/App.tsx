@@ -25,7 +25,6 @@ const BackOfficePage = lazy(() => import('./pages/BackOfficePage').then(module =
 const TemplatesPage = lazy(() => import('./pages/TemplatesPage').then(module => ({ default: module.TemplatesPage })));
 
 
-
 const App: React.FC = () => {
     return (
         <Provider store={store}>

@@ -1,0 +1,20 @@
+import React from 'react';
+
+export interface SelectSingleOption {
+    label: string;
+    value: string | number;
+}
+
+/** Figma 659-6670: single-select dropdown (closed and open state). */
+export interface SelectSingleProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+    label?: string;
+    options: SelectSingleOption[];
+    value?: string | number;
+    defaultValue?: string | number;
+    onChange?: (_value: string | number) => void;
+    placeholder?: string;
+    error?: string;
+    containerClassName?: string;
+    id?: string;
+    disabled?: boolean;
+}

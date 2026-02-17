@@ -5,40 +5,38 @@ import { cn } from '@od-erp/ui';
 
 // Section Placeholders - To be replaced with actual implementations or Module MFEs
 import {
-    StudentOverviewSection,
-    FeeSection,
-    AdmissionSection,
-    AttendanceSection,
-    AnalyticsSection,
-    ExaminationSection,
-    EmployeeSection,
+    // EmployeeSection,
     HODSection,
     CommunicationSection,
-    LibrarySection,
+    AnalyticsSection,
     ProfileSection,
-    MessSection
+    MessSection,
+    CalendarSection
 } from '../components/dashboard/sections/Placeholders';
-import { CalendarSection } from '../components/dashboard/sections/CalendarSection';
-import { QuickLinksSection } from '../components/dashboard/sections/QuickLinksSection';
+import { AdmissionSection } from '../components/dashboard/sections/AdmissionSection';
+import { EmployeeSection } from '../components/dashboard/sections/EmployeeSection';
+// import { ExaminationSection } from '../components/dashboard/sections/ExaminationSection';
+// import { AttendanceSection } from '../components/dashboard/sections/AttendanceSection';
+import { StudentOverviewSection } from '../components/dashboard/sections/StudentOverviewSection';
+import { LibrarySection } from '../components/dashboard/sections/LibrarySection';
 import { TabConfig } from '@od-erp/types';
 
 import { DASHBOARD_TABS_METADATA } from '@od-erp/constants';
 
 const TAB_COMPONENTS: Record<string, React.FC> = {
-    quick_links: QuickLinksSection,
     overview: StudentOverviewSection,
-    fee: FeeSection,
     admission: AdmissionSection,
-    attendance: AttendanceSection,
-    examination: ExaminationSection,
+    fee: AdmissionSection, // Placeholder
+    // attendance: AttendanceSection,
+    // examination: ExaminationSection,
     employee: EmployeeSection,
-    hod: HODSection,
-    communication: CommunicationSection,
+    hod: HODSection, // Fixed: hodDashboard -> hod
+    communication: CommunicationSection, // Fixed: communicationDashboard -> communication
     analytics: AnalyticsSection,
     library: LibrarySection,
     profile: ProfileSection,
     calendar: CalendarSection,
-    mess: MessSection,
+    mess: MessSection // Fixed: messManagement -> mess
 };
 
 const allTabs: TabConfig[] = DASHBOARD_TABS_METADATA.map(meta => ({

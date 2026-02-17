@@ -2,7 +2,8 @@ export { authService } from './services/auth.service';
 export { configService } from './services/config.service';
 export { commonService } from './services/common.service';
 export { calendarService } from './services/calendar.service';
-export { dashboardService } from './services/dashboard.service';
+export * from './services/dashboard.service';
+
 export { admissionService } from './services/admission.service';
 export { admissionSummaryReportService } from './services/AdmissionCrmServices/admissionSummaryReport.service';
 export { counselorTagReportService } from './services/AdmissionCrmServices/counselorTagReport.service';
@@ -20,6 +21,8 @@ export { dailyCollectionReportService } from './services/AdmissionCrmServices/da
 export { admissionVisitService } from './services/AdmissionCrmServices/admissionVisit.service';
 export { admissionNoteService } from './services/AdmissionCrmServices/admissionNote.service';
 export { sessionService } from './services/session.service';
+export { hrmService } from './services/hrm.service';
+export { otherService } from './services/other.service';
 export { excelTemplateService } from './services/excelTemplate.service';
 export { feeMasterService } from './services/feeMaster.service';
 export { pdfTemplateService } from './services/pdfTemplate.service';

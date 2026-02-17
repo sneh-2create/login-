@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSourceWiseReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, Tooltip } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer, RefreshCw } from 'lucide-react';
 import * as xlsx from 'xlsx';
@@ -270,34 +270,37 @@ const SourceWiseReport = () => {
                         />
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={handleSearch}
-                            title="Refresh/Go"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <Tooltip content="Refresh" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                                onClick={handleSearch}
+                            >
+                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            </Button>
+                        </Tooltip>
 
                         {data.length > 0 && (
                             <>
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handleExport}
-                                    isLoading={exportLoading}
-                                    title="Export to Excel"
-                                >
-                                    <Download className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handlePrint}
-                                    title="Print"
-                                >
-                                    <Printer className="h-4 w-4" />
-                                </Button>
+                                <Tooltip content="Export to Excel" placement="bottom">
+                                    <Button
+                                        variant="outline"
+                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                        onClick={handleExport}
+                                        isLoading={exportLoading}
+                                    >
+                                        <Download className="h-4 w-4" />
+                                    </Button>
+                                </Tooltip>
+                                <Tooltip content="Print" placement="bottom">
+                                    <Button
+                                        variant="outline"
+                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                        onClick={handlePrint}
+                                    >
+                                        <Printer className="h-4 w-4" />
+                                    </Button>
+                                </Tooltip>
                             </>
                         )}
                     </div>

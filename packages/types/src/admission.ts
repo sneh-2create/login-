@@ -132,6 +132,7 @@ export interface AdmissionLeadLogPayload {
     pageNumber: number;
     memberDetails?: boolean;
     search?: string;
+    reference?: string;
     phone?: string;
     studentData?: string;
     sourceId?: string;
@@ -394,6 +395,32 @@ export interface AdmissionNotePayload {
     studentId?: string;
     pageSize?: number;
     pageNumber?: number;
+}
+
+export interface AdmissionDashboardCounts {
+    _id: null;
+    dailyEnquiries: number;
+    dailyAdmissions: number;
+    totalAdmissions: number;
+    totalPendingEnquiries: number;
+}
+
+export interface AdmissionSourceCount {
+    source: string;
+    count: number;
+}
+
+export interface AdmissionCourseCount {
+    course: string;
+    total: number;
+    approved: number;
+}
+
+export interface AdmissionDashboardResponse {
+    admissionCounts: AdmissionDashboardCounts[];
+    enquiriesBySource: AdmissionSourceCount[];
+    enquiriesByCourse: AdmissionCourseCount[];
+    stageWiseCount: AdmissionStageCount[];
 }
 
 // --- Template Types ---

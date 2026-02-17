@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Breadcrumb, HorizontalTabs, Title } from '@od-erp/ui';
+import { DataTable, Button, Breadcrumb, HorizontalTabs, Title, Tooltip } from '@od-erp/ui';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
@@ -182,12 +182,12 @@ const DailyCollectionReportPage = () => {
             if (head.value === 'fatherName') accessor = 'studentData.fatherName';
             if (head.value === 'phone' || head.value === 'studentMobile') accessor = 'studentData.phone';
             if (head.value === 'paymentDetailsPaymentMode' || head.value === 'payMode') accessor = 'paymentDetails.paymentMode';
-            if (head.value === 'paymentDetailsRefId' || head.value === 'refNo') accessor = 'paymentDetails.transactionId'; 
-            if (head.value === 'paymentDetailsDate' || head.value === 'chequeDate') accessor = 'paymentDetails.date'; 
-            if (head.value === 'paymentDetailsBankName' || head.value === 'bankName') accessor = 'paymentDetails.bankAccount'; 
+            if (head.value === 'paymentDetailsRefId' || head.value === 'refNo') accessor = 'paymentDetails.transactionId';
+            if (head.value === 'paymentDetailsDate' || head.value === 'chequeDate') accessor = 'paymentDetails.date';
+            if (head.value === 'paymentDetailsBankName' || head.value === 'bankName') accessor = 'paymentDetails.bankAccount';
             if (head.value === 'remarks' || head.value === 'remark') accessor = 'remarks';
             if (head.value === 'studentRegNo') accessor = 'studentRegNo';
-            if (head.value === 'applicationNumber') accessor = 'applicationNumber'; 
+            if (head.value === 'applicationNumber') accessor = 'applicationNumber';
             if (head.value === 'totalPaybleAmount') accessor = 'totalPaybleAmount';
             if (head.value === 'fineRemark') accessor = 'fineRemark';
             if (head.value === 'userName') accessor = 'userName';
@@ -331,8 +331,8 @@ const DailyCollectionReportPage = () => {
         // Total Row for Summary
         const summaryTotalRow: any[] = ['Total'];
         paymentModes.forEach(mode => {
-             const sum = Object.values(userSummary).reduce((acc: number, curr: any) => acc + (curr[mode] || 0), 0);
-             summaryTotalRow.push(sum);
+            const sum = Object.values(userSummary).reduce((acc: number, curr: any) => acc + (curr[mode] || 0), 0);
+            summaryTotalRow.push(sum);
         });
         summaryTotalRow.push(grandTotal);
         summaryData.push(summaryTotalRow);
@@ -433,62 +433,115 @@ const DailyCollectionReportPage = () => {
                 <div className="flex items-center space-x-2 shrink-0">
                     {actionButtons.map((btn, index) => (
                         btn.isVisible && (
-                            <Button
-                                key={index}
-                                variant="outline"
-                                className={`!p-0 !w-9 !h-9 ${btn.className}`}
-                                onClick={btn.onClick}
-                                title={btn.title}
-                            >
-                                <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                            </Button>
+                            <Tooltip content={btn.title} placement="bottom">
+                                <Button
+                                    key={index}
+                                    variant="outline"
+                                    className={`!p-0 !w-9 !h-9 ${btn.className}`}
+                                    onClick={btn.onClick}
+                                    title={btn.title}
+                                >
+                                    <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                                </Button>
+                            </Tooltip>
                         )
                     ))}
+                    {/* <div className="flex items-center space-x-2">
+                        {/* Filter Toggle 
+                        <Tooltip content="Filter" placement="bottom">
+                            <Button
+                                variant="outline"
+                                className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                onClick={() => setShowFilter(!showFilter)}
+                            >
+                                <SlidersHorizontal className="h-4 w-4" />
+                            </Button>
+                        </Tooltip>
+
+                        {/* Refresh 
+                        {reportData && reportData.length > 0 && (
+                            <Tooltip content="Refresh" placement="bottom">
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                                    onClick={() => refetch()}
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                </Button>
+                            </Tooltip>
+                        )}
+
+                        {/* Excel Export 
+                        {reportData && reportData.length > 0 && (
+                            <Tooltip content="Export to Excel" placement="bottom">
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                    onClick={handleExportExcel}
+                                >
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                            </Tooltip>
+                        )}
+
+                        {/* Print 
+                        {reportData && reportData.length > 0 && (
+                            <Tooltip content="Print" placement="bottom">
+                                <Button
+                                    variant="outline"
+                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
+                                    onClick={handlePrint}
+                                >
+                                    <Printer className="h-4 w-4" />
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </div> */}
                 </div>
-            </div>
 
-            {/* Collapsible Filter Card */}
-            {showFilter && (
-                <TemplateFilter
-                    startDate={startDate}
-                    endDate={endDate}
-                    setStartDate={setStartDate}
-                    setEndDate={setEndDate}
-                    status={statusFilter}
-                    setStatus={setStatusFilter}
-                    paymentMode={paymentModeFilter}
-                    setPaymentMode={setPaymentModeFilter}
-                    selectedCourses={selectedCourses}
-                    setSelectedCourses={setSelectedCourses}
-                    selectedSession={selectedSessions}
-                    setSelectedSession={setSelectedSessions}
-                    paymentModeList={feeMaster?.paymentMode || []}
-                    onApply={() => {
-                        refetch();
-                        setShowFilter(false);
-                    }}
-                    session={session}
-                />
-            )}
+                {/* Collapsible Filter Card */}
+                {showFilter && (
+                    <TemplateFilter
+                        startDate={startDate}
+                        endDate={endDate}
+                        setStartDate={setStartDate}
+                        setEndDate={setEndDate}
+                        status={statusFilter}
+                        setStatus={setStatusFilter}
+                        paymentMode={paymentModeFilter}
+                        setPaymentMode={setPaymentModeFilter}
+                        selectedCourses={selectedCourses}
+                        setSelectedCourses={setSelectedCourses}
+                        selectedSession={selectedSessions}
+                        setSelectedSession={setSelectedSessions}
+                        paymentModeList={feeMaster?.paymentMode || []}
+                        onApply={() => {
+                            refetch();
+                            setShowFilter(false);
+                        }}
+                        session={session}
+                    />
+                )}
 
-            {/* Table and Summary - Conditional Rendering */}
-            {reportData && reportData.length > 0 && (
-                <>
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={processedData || []}
-                            isLoading={isLoading}
-                        />
+                {/* Table and Summary - Conditional Rendering */}
+                {reportData && reportData.length > 0 && (
+                    <>
+                        <div className="w-full max-w-full overflow-x-auto">
+                            <DataTable
+                                columns={columns}
+                                data={processedData || []}
+                                isLoading={isLoading}
+                            />
+                        </div>
+                    </>
+                )}
+
+                {!isLoading && (!reportData || reportData.length === 0) && (
+                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                     </div>
-                </>
-            )}
-
-            {!isLoading && (!reportData || reportData.length === 0) && (
-                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

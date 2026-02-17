@@ -331,7 +331,7 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                                     <Checkbox
                                         label="No Counselor"
                                         checked={filters.noCounselor || false}
-                                        onChange={(e) => handleChange('noCounselor', e.target.checked)}
+                                        onChange={(checked) => handleChange('noCounselor', checked)}
                                     />
                                 )}
                             </div>

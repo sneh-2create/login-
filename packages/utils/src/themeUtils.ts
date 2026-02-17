@@ -129,6 +129,14 @@ export const applyTheme = (config: ThemeConfig): void => {
     root.setAttribute('data-theme', config.mode);
     root.setAttribute('data-primary', config.primaryColor);
 
+    // Toggle 'dark' class for component-specific CSS variable overrides
+    // (badges, alerts, toasts, tooltips, controls, popovers, etc.)
+    if (config.mode === 'dark') {
+        root.classList.add('dark');
+    } else {
+        root.classList.remove('dark');
+    }
+
     // Generate and apply CSS variables
     const variables = generateCSSVariables(config);
     Object.entries(variables).forEach(([key, value]) => {

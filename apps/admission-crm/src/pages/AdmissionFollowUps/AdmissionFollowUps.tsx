@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Button, DataTable, Breadcrumb, useToast, EmptyState, ActionMenu } from '@od-erp/ui';
+import { Button, DataTable, Breadcrumb, useToast, EmptyState, ActionMenu, Tooltip } from '@od-erp/ui';
 import { useAdmissionFollowUp, useCounselors, useAdmissionFollowUpStats } from '@od-erp/query';
 import { AdmissionFollowUp, AdmissionFollowUpPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
@@ -320,30 +320,33 @@ const AdmissionFollowUps = () => {
                     <Breadcrumb items={breadcrumbItems} />
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button 
-                        variant="outline" 
-                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
-                        onClick={() => setShowFilter(!showFilter)}
-                        title="Filter"
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                        onClick={() => refetch()}
-                        title="Refresh"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        className="!p-0 !w-9 !h-9 border-gray-300 text-green-500 hover:bg-green-50 hover:text-green-600"
-                        onClick={handleExportExcel}
-                        title="Export to Excel"
-                    >
-                        <Download className="h-4 w-4" />
-                    </Button>
+                    <Tooltip content="Filter" placement="bottom">
+                        <Button 
+                            variant="outline" 
+                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            onClick={() => setShowFilter(!showFilter)}
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Refresh" placement="bottom">
+                        <Button 
+                            variant="outline" 
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                            onClick={() => refetch()}
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Export to Excel" placement="bottom">
+                        <Button 
+                            variant="outline" 
+                            className="!p-0 !w-9 !h-9 border-gray-300 text-green-500 hover:bg-green-50 hover:text-green-600"
+                            onClick={handleExportExcel}
+                        >
+                            <Download className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
 

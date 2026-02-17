@@ -13,7 +13,10 @@ const apiClient: AxiosInstance = axios.create({
 
 // Request interceptor to add auth token
 apiClient.interceptors.request.use((config) => {
-    const token = Cookies.get('token');
+    const cookieToken = Cookies.get('token');
+    const lsToken = localStorage.getItem('token');
+    const token = cookieToken || lsToken;
+
     if (token) {
         config.headers.Authorization = `${token}`;
     }

@@ -140,3 +140,25 @@ export const COLOR_PREVIEW: Record<PrimaryColor, string> = {
     amber: '#d97706',
     blue: '#0066ff',
 } as const;
+
+// Dark mode class for root/html; theme CSS uses it for component-specific dark overrides
+export const THEME_DARK_CLASS = 'dark' as const;
+export const THEME_LIGHT_CLASS = '' as const;
+
+export const THEME_MODES = ['light', 'dark'] as const;
+export type ThemeMode = (typeof THEME_MODES)[number];
+
+export const THEME_APPEARANCE = ['light', 'dark'] as const;
+export type ThemeAppearance = (typeof THEME_APPEARANCE)[number];
+
+export const NOTIFICATION_VARIANTS = [
+    'success',
+    'error',
+    'warning',
+    'info',
+    'permission',
+    'destructive',
+    'update'
+] as const;
+
+export type NotificationVariantConstant = (typeof NOTIFICATION_VARIANTS)[number];
