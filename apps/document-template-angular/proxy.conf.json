@@ -1,0 +1,7 @@
+{
+    "/api": {
+        "target": "https://staging.odpay.in",
+        "secure": true,
+        "changeOrigin": true
+    }
+}

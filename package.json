@@ -33,6 +33,7 @@
         "dev:back-office": "pnpm --filter back-office dev",
         "dev:templates": "pnpm --filter document-template-angular dev",
         "preview": "pnpm --filter shell --filter admission-crm --parallel preview",
+        "preview:templates": "pnpm --filter document-template-angular preview",
         "prepare": "husky"
     },
     "lint-staged": {

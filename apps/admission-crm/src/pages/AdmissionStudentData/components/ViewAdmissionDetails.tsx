@@ -19,6 +19,8 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
     const { data: student, isLoading } = useViewAdmissionStudentData(studentId || '');
 
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityDetails = useAppSelector((state) => state.auth.entityDetails);
+    const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences);
     const session = student?.session || '24-25'; // Default session if missing
 
     // --- TIMELINE DATA FETCHING (Matched with TimelineModal) ---
@@ -452,9 +454,39 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                                             className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
                                             onClick={() => {
                                                 if (studentId) {
-                                                    // Data passed via localStorage (print_student_data)
-                                                    const url = `/admission/print/open/admissionForm`;
-                                                    window.open(url, '_blank');
+                                                    const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
+
+                                                    const printWindow = window.open(
+                                                        `${angularAppUrl}/print/open/printAdmissionForm`,
+                                                        '_blank'
+                                                    );
+
+                                                    if (printWindow) {
+                                                        const sendData = () => {
+                                                            printWindow.postMessage(
+                                                                {
+                                                                    type: 'PRINT_ADMISSION_FORM',
+                                                                    data: {
+                                                                        studentId: studentId,
+                                                                        entityId: entityId,
+                                                                        session: session,
+                                                                        entity: {
+                                                                            _id: entityId,
+                                                                            displayName: entityDetails?.displayName,
+                                                                            logo: entityDetails?.logo,
+                                                                        },
+                                                                        entityPreferences: entityPreferences,
+                                                                        entityType: 'school'
+                                                                    }
+                                                                },
+                                                                angularAppUrl
+                                                            );
+                                                        };
+
+                                                        setTimeout(sendData, 500);
+                                                        setTimeout(sendData, 1000);
+                                                        setTimeout(sendData, 2000);
+                                                    }
                                                 }
                                                 setShowPrintMenu(false);
                                             }}
