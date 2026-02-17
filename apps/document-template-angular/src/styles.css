@@ -1,0 +1,57 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #fff;
+}
+
+/* Custom classes for admission form template */
+.mt10 {
+    margin-top: 10px;
+}
+
+.mt20p {
+    margin-top: 20px;
+    padding-top: 20px;
+}
+
+.textCenter {
+    text-align: center;
+}
+
+.card {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.img-rounded {
+    border-radius: 4px;
+}
+
+/* Print-specific global styles */
+@media print {
+    body {
+        background-color: white;
+    }
+
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    .card {
+        border: 1px solid #000;
+        box-shadow: none;
+    }
+}

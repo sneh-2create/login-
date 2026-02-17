@@ -32,7 +32,7 @@ export const menuConfig = {
                 title: 'Dashboard',
                 root: true,
                 icon: 'flaticon3-house',
-                page: '/entity/dashboard',
+                page: '/',
                 bullet: 'dot',
                 entPermission: 'viewEntityDashboard'
             },

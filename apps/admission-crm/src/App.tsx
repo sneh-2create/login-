@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClientProvider, queryClient } from '@od-erp/query';
 import { LoadingState } from '@od-erp/ui';
 import { ToastProvider } from '@od-erp/ui';
+import { QueryClientProvider, queryClient } from '@od-erp/query';
 
 const AdmissionSummaryReport = lazy(() => import('./pages/AdmissionSummaryReport/AdmissionSummaryReport'));
 
