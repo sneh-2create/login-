@@ -5,12 +5,11 @@ import * as xlsx from 'xlsx';
 import { VacantSeatsReportTableRow } from '@od-erp/types';
 import { processVacantSeatsReportData, addExcelReportHeader, addExcelReportFooter, transformVacantSeatsForExport } from '@od-erp/utils';
 import { useAppSelector } from '@od-erp/store';
-import { Button, Dropdown, Breadcrumb, DataTable, Tooltip } from '@od-erp/ui';
+import { Button, SelectSingle, DataTable, PageHeader, PageToolbar, EmptyState, ActionButton } from '@od-erp/ui';
 import { Download, Printer, SlidersHorizontal, RefreshCw } from 'lucide-react';
 
 const VacantSeatsReport = () => {
     const [loading, setLoading] = useState(false);
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<VacantSeatsReportTableRow[]>([]);
     const [columns, setColumns] = useState<ColumnDef<VacantSeatsReportTableRow>[]>([]);
 
@@ -135,8 +134,9 @@ const VacantSeatsReport = () => {
 
         if (course) {
             const courseStreams = course.stream || [];
+            const courseBatches = course.batch || [];
             setStreams(courseStreams);
-            setBatches(course.batch || []);
+            setBatches(courseBatches);
             
             // Auto Select 1st Stream
             if (courseStreams.length > 0) {
@@ -145,10 +145,17 @@ const VacantSeatsReport = () => {
                  setSelectedStream('');
             }
            
-            setSelectedBatch('');
+            // Auto Select 1st Batch
+            if (courseBatches.length > 0) {
+                setSelectedBatch(courseBatches[0]);
+            } else {
+                setSelectedBatch('');
+            }
         } else {
             setStreams([]);
             setBatches([]);
+            setSelectedStream('');
+            setSelectedBatch('');
         }
     };
 
@@ -184,7 +191,6 @@ const VacantSeatsReport = () => {
     };
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
@@ -211,8 +217,6 @@ const VacantSeatsReport = () => {
             xlsx.writeFile(wb, 'Subject_Combination_Reports.xlsx');
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -229,72 +233,67 @@ const VacantSeatsReport = () => {
         window.open('/admission/print/vacantSeats', '_blank');
     };
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleSearch,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: loading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{displayNames.subjectCombination} Report</h1>
-                    <Breadcrumb
-                        items={[
-                            { label: 'Dashboard', href: '/dashboard' },
-                            { label: 'Admission Reports', href: '/admission/reports' },
-                            { label: `${displayNames.subjectCombination} Report` }
-                        ]}
-                    />
-                </div>
-                <div className="flex items-center space-x-2">
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setShowFilter(!showFilter)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
+            <PageHeader
+                title={`${displayNames.subjectCombination} Report`}
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: `${displayNames.subjectCombination} Report` }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={handleSearch}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
-
-                    {data.length > 0 && (
-                        <>
-                            <Tooltip content="Export to Excel" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handleExport}
-                                    isLoading={exportLoading}
-                                >
-                                    <Download className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                            <Tooltip content="Print" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handlePrint}
-                                >
-                                    <Printer className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                        </>
-                    )}
-                </div>
-            </div>
+            <PageToolbar
+                tabs={[]}
+                activeTab=""
+                onTabChange={() => {}}
+                actions={actionButtons}
+            />
 
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
                         <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.course}</label>
-                            <Dropdown
+                            <SelectSingle
+                                label={`Select ${displayNames.course}`}
                                 value={selectedCourse}
                                 onChange={(val) => handleCourseChange(val as string)}
                                 options={[
@@ -302,12 +301,12 @@ const VacantSeatsReport = () => {
                                     ...courses.map(c => ({ value: c.name, label: c.name }))
                                 ]}
                                 placeholder={`Select ${displayNames.course}`}
-                                className="w-full"
+                                containerClassName="w-full"
                             />
                         </div>
                         <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.stream}</label>
-                            <Dropdown
+                            <SelectSingle
+                                label={`Select ${displayNames.stream}`}
                                 value={selectedStream}
                                 onChange={(val) => setSelectedStream(val as string)}
                                 options={[
@@ -315,13 +314,13 @@ const VacantSeatsReport = () => {
                                     ...streams.map(s => ({ value: s, label: s }))
                                 ]}
                                 placeholder={`Select ${displayNames.stream}`}
-                                className="w-full"
+                                containerClassName="w-full"
                             />
                         </div>
                         {showBatch && (
                             <div className="w-full">
-                                <label className="text-xs font-semibold text-gray-500 mb-1 block">Select {displayNames.batch}</label>
-                                <Dropdown
+                                <SelectSingle
+                                    label={`Select ${displayNames.batch}`}
                                     value={selectedBatch}
                                     onChange={(val) => setSelectedBatch(val as string)}
                                     options={[
@@ -329,13 +328,13 @@ const VacantSeatsReport = () => {
                                         ...batches.map(b => ({ value: b, label: b }))
                                     ]}
                                     placeholder={`Select ${displayNames.batch}`}
-                                    className="w-full"
+                                    containerClassName="w-full"
                                 />
                             </div>
                         )}
                         <div className="w-full md:w-auto">
                             <Button variant="primary" onClick={handleSearch} isLoading={loading} className="w-full md:w-auto">
-                                Go
+                                Apply Filters
                             </Button>
                         </div>
                     </div>
@@ -355,9 +354,7 @@ const VacantSeatsReport = () => {
             )}
 
             {!loading && data.length === 0 && (
-                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                </div>
+                <EmptyState message="No Records Found" />
             )}
         </div>
     );
