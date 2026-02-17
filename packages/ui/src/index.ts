@@ -57,7 +57,10 @@ export * from './components/SelectInput/SelectInput';
 // Layout
 export * from './components/Sidebar/Sidebar';
 export * from './components/LoadingState/LoadingState';
+export * from './components/LoadingState/LoadingState';
 export * from './components/Header';
+export * from './components/PageHeader/PageHeader';
+export * from './components/PageToolbar/PageToolbar';
 export * from './components/Breadcrumb';
 export * from './components/ThemeSwitcher';
 export * from './components/FloatingThemePicker';

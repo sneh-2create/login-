@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Breadcrumb, HorizontalTabs, Title, Tooltip } from '@od-erp/ui';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState } from '@od-erp/ui';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
@@ -373,175 +373,101 @@ const DailyCollectionReportPage = () => {
         window.open('/admission/print/dailyCollectionReport', '_blank');
     };
 
-    const actionButtons = [
+    const actionButtons: ActionButton[] = [
         {
             icon: SlidersHorizontal,
             onClick: () => setShowFilter(!showFilter),
             title: 'Filter',
             className: 'text-primary hover:bg-primary/10 hover:text-primary',
             isVisible: true,
+            variant: 'outline'
         },
         {
             icon: RefreshCw,
             onClick: () => refetch(),
             title: 'Refresh',
             className: 'text-primary hover:bg-primary/10 hover:text-primary',
-            isVisible: reportData && reportData.length > 0,
-            iconClass: isLoading ? 'animate-spin' : ''
+            isVisible: !!(reportData && reportData.length > 0),
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
         },
         {
             icon: Download,
             onClick: handleExportExcel,
             title: 'Export to Excel',
             className: 'text-primary hover:bg-primary/10 hover:text-primary',
-            isVisible: reportData && reportData.length > 0,
+            isVisible: !!(reportData && reportData.length > 0),
+            variant: 'outline'
         },
         {
             icon: Printer,
             onClick: handlePrint,
             title: 'Print',
             className: 'text-primary hover:bg-primary/10 hover:text-primary',
-            isVisible: reportData && reportData.length > 0,
+            isVisible: !!(reportData && reportData.length > 0),
+            variant: 'outline'
         }
     ];
 
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="mb-3">
-                <Title as='h1' variant="pageTitleNoMargin">Daily Collection Report</Title>
-                <Breadcrumb
-                    items={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admissions', href: '/admissions' },
-                        { label: 'Reports', href: '/admissions/reports' },
-                        { label: 'Daily Collection Report' }
-                    ]}
+            <PageHeader
+                title="Daily Collection Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admissions Reports', href: '/admissions' },
+                    { label: 'Daily Collection Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
+
+            <PageToolbar
+                tabs={templates && templates.length > 0 ? templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
+                activeTab={selectedTemplate}
+                onTabChange={setSelectedTemplate}
+                actions={actionButtons}
+            />
+
+            {/* Collapsible Filter Card */}
+            {showFilter && (
+                <TemplateFilter
+                    startDate={startDate}
+                    endDate={endDate}
+                    setStartDate={setStartDate}
+                    setEndDate={setEndDate}
+                    status={statusFilter}
+                    setStatus={setStatusFilter}
+                    paymentMode={paymentModeFilter}
+                    setPaymentMode={setPaymentModeFilter}
+                    selectedCourses={selectedCourses}
+                    setSelectedCourses={setSelectedCourses}
+                    selectedSession={selectedSessions}
+                    setSelectedSession={setSelectedSessions}
+                    paymentModeList={feeMaster?.paymentMode || []}
+                    onApply={() => {
+                        refetch();
+                        setShowFilter(false);
+                    }}
+                    session={session}
                 />
-            </div>
+            )}
 
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4">
-                <div className="flex-1 w-full md:w-auto overflow-x-auto">
-                    {reportData && reportData.length > 0 && templates && templates.length > 0 && (
-                        <HorizontalTabs
-                            tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-                            activeTab={selectedTemplate}
-                            onTabChange={setSelectedTemplate}
-                            className="px-0 mb-0"
+            {/* Table and Summary - Conditional Rendering */}
+            {reportData && reportData.length > 0 && (
+                <>
+                    <div className="w-full max-w-full overflow-x-auto">
+                        <DataTable
+                            columns={columns}
+                            data={processedData || []}
+                            isLoading={isLoading}
                         />
-                    )}
-                </div>
-                <div className="flex items-center space-x-2 shrink-0">
-                    {actionButtons.map((btn, index) => (
-                        btn.isVisible && (
-                            <Tooltip content={btn.title} placement="bottom">
-                                <Button
-                                    key={index}
-                                    variant="outline"
-                                    className={`!p-0 !w-9 !h-9 ${btn.className}`}
-                                    onClick={btn.onClick}
-                                    title={btn.title}
-                                >
-                                    <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                </Button>
-                            </Tooltip>
-                        )
-                    ))}
-                    {/* <div className="flex items-center space-x-2">
-                        {/* Filter Toggle 
-                        <Tooltip content="Filter" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                                onClick={() => setShowFilter(!showFilter)}
-                            >
-                                <SlidersHorizontal className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-
-                        {/* Refresh 
-                        {reportData && reportData.length > 0 && (
-                            <Tooltip content="Refresh" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                                    onClick={() => refetch()}
-                                >
-                                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                                </Button>
-                            </Tooltip>
-                        )}
-
-                        {/* Excel Export 
-                        {reportData && reportData.length > 0 && (
-                            <Tooltip content="Export to Excel" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handleExportExcel}
-                                >
-                                    <Download className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                        )}
-
-                        {/* Print 
-                        {reportData && reportData.length > 0 && (
-                            <Tooltip content="Print" placement="bottom">
-                                <Button
-                                    variant="outline"
-                                    className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                    onClick={handlePrint}
-                                >
-                                    <Printer className="h-4 w-4" />
-                                </Button>
-                            </Tooltip>
-                        )}
-                    </div> */}
-                </div>
-
-                {/* Collapsible Filter Card */}
-                {showFilter && (
-                    <TemplateFilter
-                        startDate={startDate}
-                        endDate={endDate}
-                        setStartDate={setStartDate}
-                        setEndDate={setEndDate}
-                        status={statusFilter}
-                        setStatus={setStatusFilter}
-                        paymentMode={paymentModeFilter}
-                        setPaymentMode={setPaymentModeFilter}
-                        selectedCourses={selectedCourses}
-                        setSelectedCourses={setSelectedCourses}
-                        selectedSession={selectedSessions}
-                        setSelectedSession={setSelectedSessions}
-                        paymentModeList={feeMaster?.paymentMode || []}
-                        onApply={() => {
-                            refetch();
-                            setShowFilter(false);
-                        }}
-                        session={session}
-                    />
-                )}
-
-                {/* Table and Summary - Conditional Rendering */}
-                {reportData && reportData.length > 0 && (
-                    <>
-                        <div className="w-full max-w-full overflow-x-auto">
-                            <DataTable
-                                columns={columns}
-                                data={processedData || []}
-                                isLoading={isLoading}
-                            />
-                        </div>
-                    </>
-                )}
-
-                {!isLoading && (!reportData || reportData.length === 0) && (
-                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
                     </div>
-                )}
-            </div>
+                </>
+            )}
+
+            {!isLoading && (!reportData || reportData.length === 0) && (
+                <EmptyState message="No Records Found" />
+            )}
         </div>
     );
 };

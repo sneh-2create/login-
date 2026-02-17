@@ -70,7 +70,7 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
                 />
 
                 {/* Page Content */}
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6" style={{ background: 'var(--color-background)' }}>
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-2 md:p-6" style={{ background: 'var(--color-background)' }}>
                     {children}
                 </main>
             </div>

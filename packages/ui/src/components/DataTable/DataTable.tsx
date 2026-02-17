@@ -317,7 +317,7 @@ export function DataTable<TData, TValue>({
 
                 {/* Pagination Section */}
                 {showPagination && (
-                    <div className="w-full h-[65px] px-6 py-3 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)]">
+                    <div className="w-full px-3 py-2 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)]">
                         <div className="flex items-center gap-2">
                             <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
                                 Items per page:
@@ -350,14 +350,14 @@ export function DataTable<TData, TValue>({
                                 <button
                                     className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     onClick={handlePrevPage}
-                                    disabled={!table.getCanPreviousPage()}
+                                    disabled={currentPageIndex === 0}
                                 >
                                     <ChevronLeft className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
                                 </button>
                                 <button
                                     className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     onClick={handleNextPage}
-                                    disabled={!table.getCanNextPage()}
+                                    disabled={endItem >= totalRows}
                                 >
                                     <ChevronRight className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
                                 </button>

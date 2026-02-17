@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, MultiSelect, DatePicker } from '@od-erp/ui';
 import { useSessions, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { ArrowRight } from 'lucide-react';
@@ -89,21 +89,21 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Payment Mode</label>
-                    <Dropdown
+                    <SelectSingle
+                        label="Select Payment Mode"
                         value={localPaymentMode}
                         onChange={(val) => setLocalPaymentMode(val as string)}
                         options={[
                             { label: 'All Payment Modes', value: '' },
                             ...props.paymentModeList.map(mode => ({ label: mode, value: mode }))
                         ]}
-                        className="w-full"
+                        containerClassName="w-full"
                         placeholder="Select Payment Mode"
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Status</label>
-                    <Dropdown
+                    <SelectSingle
+                        label="Select Status"
                         value={localStatus}
                         onChange={(val) => setLocalStatus(val as string)}
                         options={[
@@ -111,7 +111,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                             { label: 'Confirmed', value: 'confirmed' },
                             { label: 'Cancelled', value: 'cancelled' }
                         ]}
-                        className="w-full"
+                        containerClassName="w-full"
                         placeholder="Select Status"
                     />
                 </div>
@@ -121,25 +121,23 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">{displayNames.course} Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select {displayNames.course}</label>
-                    <Dropdown
-                        multiple
+                    <MultiSelect
+                        label={`Select ${displayNames.course}`}
                         value={localCourses}
                         onChange={(val) => setLocalCourses(val as string[])}
                         options={courses?.map(c => ({ label: c.name, value: c.name })) || []}
                         placeholder={`All ${displayNames.course}`}
-                        className="w-full"
+                        containerClassName="w-full"
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Session</label>
-                    <Dropdown
-                        multiple
+                    <MultiSelect
+                        label="Select Session"
                         value={localSessions}
                         onChange={(val) => setLocalSessions(val as string[])}
                         options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
                         placeholder="Select Sessions"
-                        className="w-full"
+                        containerClassName="w-full"
                     />
                 </div>
             </div>
