@@ -8,19 +8,19 @@ import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { 
-    FileSpreadsheet, 
-    Printer, 
-    SlidersHorizontal, 
-    RefreshCw, 
-    Plus, 
+import {
+    FileSpreadsheet,
+    Printer,
+    SlidersHorizontal,
+    RefreshCw,
+    Plus,
     Upload,
     HelpCircle,
-    Clock, 
-    FileText, 
-    Landmark, 
-    Receipt, 
-    MessageSquare, 
+    Clock,
+    FileText,
+    Landmark,
+    Receipt,
+    MessageSquare,
     User,
     Trash2,
     ArrowRight,
@@ -69,6 +69,8 @@ const AdmissionStudentData = () => {
 
     // State
     const session = useAppSelector((state) => state.session.academicSession) || '';
+    const entityDetails = useAppSelector((state) => state.auth.entityDetails);
+    const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences);
     const [selectedStage, setSelectedStage] = useState('Total');
     const [searchTerm, setSearchTerm] = useState('');
     const [pageNumber, setPageNumber] = useState(1);
@@ -113,7 +115,7 @@ const AdmissionStudentData = () => {
 
     // Queries
     const { data: sessions } = useSessions(entityId);
-    const { data: counselors } = useCounselors(entityId || '', 'counselor');
+    const { data: _counselors } = useCounselors(entityId || '', 'counselor');
 
     // Get entityType and QAC from Redux (consistent with other pages)
     const entityType = useAppSelector((state) => state.session.entityType) || '';
@@ -123,12 +125,12 @@ const AdmissionStudentData = () => {
     const { data: templates } = useAdmissionTemplates(entityId);
     const { data: defaultTemplateData } = useDefaultAdmissionTemplate(entityId, entityType);
     const [selectedTemplate, setSelectedTemplate] = useState<string>(''); // viewName of selected template
-    
+
     // Find the template object by viewName
     const selectedTemplateObj = useMemo(() => {
         return templates?.find(t => t.viewName === selectedTemplate);
     }, [templates, selectedTemplate]);
-    
+
     const { data: selectedTemplateData } = useAdmissionTemplate(selectedTemplateObj?._id || null, !!selectedTemplateObj?._id);
 
     // Auto-select first template when templates load
@@ -162,7 +164,7 @@ const AdmissionStudentData = () => {
     const navigateToAdmissionDetails = (id: string) => {
         // Store current filters in localStorage for restoration
         const filterObjectData: any = {};
-        
+
         if (selectedStage && selectedStage !== 'Total') {
             filterObjectData.stage = selectedStage;
         }
@@ -202,9 +204,9 @@ const AdmissionStudentData = () => {
         if (currentFilters.noCounselor !== undefined) {
             filterObjectData.noCounselor = currentFilters.noCounselor;
         }
-        
+
         localStorage.setItem('filterInDetailsPage', JSON.stringify(filterObjectData));
-        
+
         // Navigate with state
         navigate(`/admission/student-data/${id}`, {
             state: { from: 'studentData' }
@@ -217,23 +219,50 @@ const AdmissionStudentData = () => {
     const handlePrintForm = (student: AdmissionLead) => {
         if (!student) return;
 
-        // Inject Counselor Name logic (same as ViewAdmissionDetails)
-        const counselor = counselors?.find((c: any) => c._id === student.counselorId);
-        const studentWithCounselor = {
-            ...student,
-            counselorName: counselor?.name || '-'
-        };
+        const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
 
-        localStorage.setItem('print_student_data', JSON.stringify(studentWithCounselor));
-        window.open('/admission/print/open/admissionForm', '_blank');
+        // Open Angular app
+        const printWindow = window.open(
+            `${angularAppUrl}/print/open/printAdmissionForm`,
+            '_blank'
+        );
+
+        // Send data via postMessage
+        if (printWindow) {
+            const sendData = () => {
+                printWindow.postMessage(
+                    {
+                        type: 'PRINT_ADMISSION_FORM',
+                        data: {
+                            studentId: student._id,
+                            entityId: entityId,
+                            session: session,
+                            entity: {
+                                _id: entityId,
+                                displayName: entityDetails?.displayName,
+                                logo: entityDetails?.logo,
+                            },
+                            entityPreferences: entityPreferences,
+                            entityType: 'school',
+                            // Include complete student data for template
+                            studentData: student
+                        }
+                    },
+                    angularAppUrl
+                );
+            };
+
+            // Send data after a delay to ensure Angular app is loaded
+            setTimeout(sendData, 1000);
+        }
     };
 
     const handleDeleteAdmission = async (id: string) => {
         if (!id) return;
-        
+
         const confirmed = window.confirm('Are you sure you want to delete this Student Admission Data? This action cannot be undone.');
         if (!confirmed) return;
-        
+
         try {
             await deleteStudentMutation.mutateAsync(id);
             alert('Student Admission deleted successfully');
@@ -259,7 +288,7 @@ const AdmissionStudentData = () => {
 
     const handleClickToCall = async (student: AdmissionLead) => {
         if (!student) return;
-        
+
         const formData = {
             entity: entityId,
             session: session,
@@ -267,7 +296,7 @@ const AdmissionStudentData = () => {
             applicationNumber: student.applicationNumber,
             myOperatorId: myOperatorId
         };
-        
+
         try {
             const result = await clickToCallMutation.mutateAsync(formData);
             alert(result.message || 'Call initiated successfully');
@@ -326,7 +355,7 @@ const AdmissionStudentData = () => {
 
         // Header
         const tableStartRow = addExcelReportHeader(ws, entityName, selectedTemplate || 'Student Admission', filterSummary);
-        
+
         // Table Headers (from tableHeads + Current Stage)
         const tableHeader = [...tableHeads.map(h => h.name), 'Current Stage'];
         XLSX.utils.sheet_add_aoa(ws, [tableHeader], { origin: { r: tableStartRow, c: 0 } });
@@ -334,14 +363,14 @@ const AdmissionStudentData = () => {
         // Data Rows
         const dataRows = data.data.map((item: AdmissionLead) => {
             const row: any[] = [];
-            
+
             // Map each column from tableHeads
             tableHeads.forEach((head: TableHead) => {
                 if (head.value === 'tag' || head.value === 'selectedTags') {
                     row.push(item.tags?.map(t => typeof t === 'string' ? t : t.tag).join(', ') || '');
                 } else {
                     let value = item[head.value];
-                    
+
                     // Format dates (check if field name contains 'date' or 'Date' and value is a valid date string)
                     if (value && (head.value.toLowerCase().includes('date') || head.name.toLowerCase().includes('date'))) {
                         try {
@@ -353,14 +382,14 @@ const AdmissionStudentData = () => {
                             // Keep original value if date parsing fails
                         }
                     }
-                    
+
                     row.push(value || '');
                 }
             });
-            
+
             // Add Current Stage column (hardcoded, not from template)
             row.push(item.currentStage || '');
-            
+
             // Add Bank Details columns (matching Angular implementation)
             if (item.bankDetails) {
                 // Handle legacy array format
@@ -374,7 +403,7 @@ const AdmissionStudentData = () => {
                 // Empty columns if no bank details
                 row.push('', '', '', '', '');
             }
-            
+
             return row;
         });
 
@@ -427,7 +456,7 @@ const AdmissionStudentData = () => {
         try {
             // Prepare filter values array
             const filterValues: any[] = [];
-            
+
             // Add stage filter
             if (selectedStage && selectedStage !== 'Total') {
                 filterValues.push({
@@ -435,7 +464,7 @@ const AdmissionStudentData = () => {
                     value: selectedStage
                 });
             }
-            
+
             // Add filters from currentFilters
             if (currentFilters.course && currentFilters.course.length > 0) {
                 filterValues.push({
@@ -443,28 +472,28 @@ const AdmissionStudentData = () => {
                     value: currentFilters.course
                 });
             }
-            
+
             if (currentFilters.stream && currentFilters.stream.length > 0) {
                 filterValues.push({
                     filter: 'stream',
                     value: currentFilters.stream
                 });
             }
-            
+
             if (currentFilters.batch && currentFilters.batch.length > 0) {
                 filterValues.push({
                     filter: 'batch',
                     value: currentFilters.batch
                 });
             }
-            
+
             // Date range filter
             if (currentFilters.startDate) {
                 const startDate = new Date(currentFilters.startDate).getTime();
-                const endDate = currentFilters.endDate 
-                    ? new Date(currentFilters.endDate).getTime() 
+                const endDate = currentFilters.endDate
+                    ? new Date(currentFilters.endDate).getTime()
                     : undefined;
-                
+
                 filterValues.push({
                     filter: 'date',
                     type: 'date',
@@ -473,14 +502,14 @@ const AdmissionStudentData = () => {
                     endDate
                 });
             }
-            
+
             // Updated At date range filter
             if (currentFilters.updatedAtStartDate) {
                 const updatedAtStartDate = new Date(currentFilters.updatedAtStartDate).getTime();
-                const updatedAtEndDate = currentFilters.updatedAtEndDate 
-                    ? new Date(currentFilters.updatedAtEndDate).getTime() 
+                const updatedAtEndDate = currentFilters.updatedAtEndDate
+                    ? new Date(currentFilters.updatedAtEndDate).getTime()
                     : undefined;
-                
+
                 filterValues.push({
                     filter: 'updatedAt',
                     type: 'date',
@@ -489,7 +518,7 @@ const AdmissionStudentData = () => {
                     endDate: updatedAtEndDate
                 });
             }
-            
+
             // Counselor filter
             if (currentFilters.counselorId) {
                 filterValues.push({
@@ -497,7 +526,7 @@ const AdmissionStudentData = () => {
                     value: currentFilters.counselorId
                 });
             }
-            
+
             // Tag filter
             if (currentFilters.tag && currentFilters.tag.length > 0) {
                 filterValues.push({
@@ -505,7 +534,7 @@ const AdmissionStudentData = () => {
                     value: currentFilters.tag
                 });
             }
-            
+
             // Source filter
             if (currentFilters.source && currentFilters.source.length > 0) {
                 filterValues.push({
@@ -513,7 +542,7 @@ const AdmissionStudentData = () => {
                     value: currentFilters.source
                 });
             }
-            
+
             // Engagement status filter
             if (currentFilters.engagementStatus && currentFilters.engagementStatus.length > 0) {
                 filterValues.push({
@@ -521,7 +550,7 @@ const AdmissionStudentData = () => {
                     value: currentFilters.engagementStatus
                 });
             }
-            
+
             // No counselor filter
             if (currentFilters.noCounselor !== undefined) {
                 filterValues.push({
@@ -529,7 +558,7 @@ const AdmissionStudentData = () => {
                     value: currentFilters.noCounselor
                 });
             }
-            
+
             // Prepare report data
             const reportData = {
                 reportType: 'AdmissionStudentData',
@@ -539,10 +568,10 @@ const AdmissionStudentData = () => {
                 entity: entityId,
                 qac: qac
             };
-            
+
             // Call API
             await addReportFileMutation.mutateAsync(reportData);
-            
+
             // Show success message
             alert('Report template saved successfully!');
         } catch (error) {
@@ -563,23 +592,23 @@ const AdmissionStudentData = () => {
     const handleSessionChange = (value: string | number | (string | number)[]) => {
         // Handle single value (session dropdown is not multi-select)
         const sessionValue = Array.isArray(value) ? value[0] : value;
-        
+
         // Update Redux state
         dispatch(setAcademicSession(sessionValue as string));
-        
+
         // Reset all filters
         setCurrentFilters({});
-        
+
         // Reset pagination
         setPageNumber(1);
         setPageSize(10);
-        
+
         // Reset stage selection
         setSelectedStage('Total');
-        
+
         // Clear row selections
         setSelectedRows(new Set());
-        
+
         // Refetch data (will happen automatically via useEffect dependencies)
         refetch();
         refetchStages();
@@ -644,13 +673,48 @@ const AdmissionStudentData = () => {
 
     const handlePrintSelectedForms = () => {
         if (selectedRows.size === 0) {
-            alert('Please select at least one student to print the forms');
+            alert('Please select at least one student');
             return;
         }
-        const studentIdArray = Array.from(selectedRows);
-        localStorage.setItem('studentAdmissionData', JSON.stringify(studentIdArray));
-        window.open('/admission/print/open/admissionForm', '_blank');
-        // Note: Selection is NOT cleared for print operation
+
+        const studentIds = Array.from(selectedRows);
+        const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
+
+        studentIds.forEach((studentId, index) => {
+            setTimeout(() => {
+                const printWindow = window.open(
+                    `${angularAppUrl}/print/open/printAdmissionForm`,
+                    '_blank'
+                );
+
+                if (printWindow) {
+                    const sendData = () => {
+                        printWindow.postMessage(
+                            {
+                                type: 'PRINT_ADMISSION_FORM',
+                                data: {
+                                    studentId: studentId,
+                                    entityId: entityId,
+                                    session: session,
+                                    entity: {
+                                        _id: entityId,
+                                        displayName: entityDetails?.displayName,
+                                        logo: entityDetails?.logo,
+                                    },
+                                    entityPreferences: entityPreferences,
+                                    entityType: 'school'
+                                }
+                            },
+                            angularAppUrl
+                        );
+                    };
+
+                    setTimeout(sendData, 500);
+                    setTimeout(sendData, 1000);
+                    setTimeout(sendData, 2000);
+                }
+            }, index * 1000);
+        });
     };
 
     const handleBulkUpdateCounselor = () => {
@@ -739,8 +803,8 @@ const AdmissionStudentData = () => {
             baseColumn.cell = (info) => {
                 const val = info.getValue() as string;
                 return (
-                    <span 
-                        className="text-primary cursor-pointer hover:underline" 
+                    <span
+                        className="text-primary cursor-pointer hover:underline"
                         title="Click to view application details"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -759,8 +823,8 @@ const AdmissionStudentData = () => {
             baseColumn.cell = (info) => {
                 const val = info.getValue() as string;
                 return (
-                    <span 
-                        className="text-primary cursor-pointer hover:underline" 
+                    <span
+                        className="text-primary cursor-pointer hover:underline"
                         title="Click to view application details"
                         onClick={(e) => {
                             e.stopPropagation();
@@ -864,85 +928,85 @@ const AdmissionStudentData = () => {
                         <ActionMenu
                             items={[
                                 // 1. View Admission - Always visible
-                                { 
-                                    label: 'View Admission', 
-                                    onClick: () => handleViewAdmission(student._id), 
-                                    icon: <User size={14} className="text-blue-500" /> 
+                                {
+                                    label: 'View Admission',
+                                    onClick: () => handleViewAdmission(student._id),
+                                    icon: <User size={14} className="text-blue-500" />
                                 },
                                 // 2. View Transactions - Always visible
-                                { 
-                                    label: 'View Transactions', 
-                                    onClick: () => handleViewTransactions(student), 
-                                    icon: <Receipt size={14} className="text-orange-500" /> 
+                                {
+                                    label: 'View Transactions',
+                                    onClick: () => handleViewTransactions(student),
+                                    icon: <Receipt size={14} className="text-orange-500" />
                                 },
                                 // 3. View Timeline - Always visible
-                                { 
-                                    label: 'View Timeline', 
-                                    onClick: () => handleViewTimeline(student), 
-                                    icon: <Clock size={14} className="text-blue-500" /> 
+                                {
+                                    label: 'View Timeline',
+                                    onClick: () => handleViewTimeline(student),
+                                    icon: <Clock size={14} className="text-blue-500" />
                                 },
                                 // 4. View Documents - Always visible
-                                { 
-                                    label: 'View Documents', 
-                                    onClick: () => handleViewDocuments(student), 
-                                    icon: <FileText size={14} className="text-green-500" /> 
+                                {
+                                    label: 'View Documents',
+                                    onClick: () => handleViewDocuments(student),
+                                    icon: <FileText size={14} className="text-green-500" />
                                 },
                                 // 5. Verify Documents - Always visible
-                                { 
-                                    label: 'Verify Documents', 
-                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_self'), 
-                                    icon: <FileText size={14} className="text-blue-600" /> 
+                                {
+                                    label: 'Verify Documents',
+                                    onClick: () => window.open(`/admission/verify-documents/${student._id}`, '_self'),
+                                    icon: <FileText size={14} className="text-blue-600" />
                                 },
                                 // 6. Delete Admission - Permission-based, disabled if has transactions
-                                { 
-                                    label: 'Delete Admission', 
-                                    onClick: () => handleDeleteAdmission(student._id), 
+                                {
+                                    label: 'Delete Admission',
+                                    onClick: () => handleDeleteAdmission(student._id),
                                     icon: <Trash2 size={14} className="text-red-500" />,
                                     hidden: !checkPermission('deleteAdmissionStudentData'),
                                     disabled: (student.transactions?.length || 0) > 0,
                                     className: 'text-red-600 hover:text-red-700'
                                 },
                                 // 7. View Follow Up - Permission-based
-                                { 
-                                    label: 'View Follow Up', 
-                                    onClick: () => handleViewFollowUp(student), 
+                                {
+                                    label: 'View Follow Up',
+                                    onClick: () => handleViewFollowUp(student),
                                     icon: <MessageSquare size={14} className="text-blue-500" />,
                                     hidden: !checkPermission('viewAdmissionStudentData')
                                 },
                                 // 8. View Bank Details - Always visible
-                                { 
-                                    label: 'View Bank Details', 
-                                    onClick: () => handleViewBankDetails(student), 
-                                    icon: <Landmark size={14} className="text-purple-500" /> 
+                                {
+                                    label: 'View Bank Details',
+                                    onClick: () => handleViewBankDetails(student),
+                                    icon: <Landmark size={14} className="text-purple-500" />
                                 },
                                 // 9. Move Application - Permission-based, hidden for Approved, disabled for Moved
-                                { 
-                                    label: 'Move Application', 
-                                    onClick: () => handleMoveApplication(student), 
+                                {
+                                    label: 'Move Application',
+                                    onClick: () => handleMoveApplication(student),
                                     icon: <ArrowRight size={14} className="text-blue-500" />,
                                     hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage === 'Approved',
                                     disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
                                 },
                                 // 10. Move Student - Permission-based, hidden for non-Approved, disabled for Moved
-                                { 
-                                    label: 'Move Student', 
-                                    onClick: () => handleMoveStudent(student), 
+                                {
+                                    label: 'Move Student',
+                                    onClick: () => handleMoveStudent(student),
                                     icon: <ArrowRight size={14} className="text-green-500" />,
                                     hidden: !checkPermission('moveAdmissionStudentDataToEntity') || student.currentStage !== 'Approved',
                                     disabled: student.tags?.some((t: any) => (typeof t === 'string' ? t : t.tag) === 'Moved to Other')
                                 },
                                 // 11. Click to Call - Permission-based
-                                { 
-                                    label: 'Click to Call', 
-                                    onClick: () => handleClickToCall(student), 
+                                {
+                                    label: 'Click to Call',
+                                    onClick: () => handleClickToCall(student),
                                     icon: <Phone size={14} className="text-green-500" />,
                                     hidden: !checkPermission('peerToPeerCallForAdmission')
                                 },
                                 // 12. Print Form - Always visible
-                                { 
-                                    label: 'Print Form', 
-                                    onClick: () => handlePrintForm(student), 
-                                    icon: <Printer size={14} className="text-gray-500" /> 
+                                {
+                                    label: 'Print Form',
+                                    onClick: () => handlePrintForm(student),
+                                    icon: <Printer size={14} className="text-gray-500" />
                                 },
                             ]}
                         />

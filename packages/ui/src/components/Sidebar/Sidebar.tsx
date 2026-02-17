@@ -47,12 +47,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, collapsed = false }
     };
 
     const handleItemClick = (item: any) => {
+        // If item has submenu, toggle the expansion panel (don't navigate)
         if (item.submenu && item.submenu.length > 0) {
             if (activePanelItem === item) {
                 setActivePanelItem(null);
             } else {
                 setActivePanelItem(item);
             }
+        } else if (item.page) {
+            // If item has no submenu but has a page, navigate to it
+            navigate(item.page);
         }
     };
 

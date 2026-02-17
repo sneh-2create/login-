@@ -3,11 +3,13 @@
     "version": "0.0.0",
     "scripts": {
         "ng": "ng",
-        "start": "ng serve --port 4200",
-        "build": "ng build",
-        "test": "ng test",
-        "lint": "ng lint",
-        "e2e": "ng e2e"
+        "start": "NODE_OPTIONS=--openssl-legacy-provider pnpm exec ng serve --port 4200 --proxy-config proxy.conf.json",
+        "build": "NODE_OPTIONS=--openssl-legacy-provider pnpm exec ng build",
+        "build:prod": "NODE_OPTIONS=--openssl-legacy-provider pnpm exec ng build --prod",
+        "preview": "pnpm exec http-server dist/document-template-angular -p 4200 -c-1",
+        "test": "pnpm exec ng test",
+        "lint": "pnpm exec ng lint",
+        "e2e": "pnpm exec ng e2e"
     },
     "private": true,
     "dependencies": {
@@ -19,6 +21,8 @@
         "@angular/platform-browser": "~8.2.14",
         "@angular/platform-browser-dynamic": "~8.2.14",
         "@angular/router": "~8.2.14",
+        "@fortawesome/fontawesome-free": "^5.15.4",
+        "bootstrap": "^4.5.2",
         "rxjs": "~6.4.0",
         "tslib": "^1.10.0",
         "zone.js": "~0.9.1"
@@ -28,10 +32,11 @@
         "@angular/cli": "~8.3.29",
         "@angular/compiler-cli": "~8.2.14",
         "@angular/language-service": "~8.2.14",
-        "@types/node": "~8.9.4",
         "@types/jasmine": "~3.3.8",
         "@types/jasminewd2": "~2.0.3",
+        "@types/node": "~8.9.4",
         "codelyzer": "^5.0.0",
+        "http-server": "^14.1.1",
         "jasmine-core": "~3.4.0",
         "jasmine-spec-reporter": "~4.2.1",
         "karma": "~4.1.0",

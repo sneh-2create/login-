@@ -15,7 +15,7 @@ export default defineConfig({
             // Modules to expose
 
             exposes: {
-                './App': './src/app.tsx',
+                './App': './src/App.tsx',
             },
             shared: ['react', 'react-dom', 'react-router-dom', 'react-redux']
         })

@@ -68,6 +68,7 @@ const AddApplicationDataPanel = ({
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const entityPreferences = useAppSelector((state) => state.auth.entityDetails?.entityPreferences);
+    const entityDetails = useAppSelector((state) => state.auth.entityDetails);
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
 
     // Display Names
@@ -174,7 +175,7 @@ const AddApplicationDataPanel = ({
 
     const isFirstStage = currentStageIndex === 0;
     const isFinalStage = currentStageIndex === (stageSetup?.length || 1) - 1;
-    
+
     const currentStageConfig = useMemo(() => {
         if (!stageSetup || currentStageIndex < 0) return null;
         return stageSetup[currentStageIndex];
@@ -216,25 +217,25 @@ const AddApplicationDataPanel = ({
     // Calculate age in detailed format (Angular parity)
     const calculateAge = (dob: string, referenceDate?: string): string => {
         if (!dob) return '';
-        
+
         const birthDate = new Date(dob);
         const refDate = referenceDate ? new Date(referenceDate) : new Date();
-        
+
         let years = refDate.getFullYear() - birthDate.getFullYear();
         let months = refDate.getMonth() - birthDate.getMonth();
         let days = refDate.getDate() - birthDate.getDate();
-        
+
         if (days < 0) {
             months--;
             const lastMonth = new Date(refDate.getFullYear(), refDate.getMonth(), 0);
             days += lastMonth.getDate();
         }
-        
+
         if (months < 0) {
             years--;
             months += 12;
         }
-        
+
         return `${years} years, ${months} months, and ${days} days old.`;
     };
 
@@ -260,7 +261,7 @@ const AddApplicationDataPanel = ({
                 followUpDate: studentData.followUpDate
                     ? new Date(studentData.followUpDate).toISOString().split('T')[0]
                     : '',
-                tags: Array.isArray(studentData.tags) 
+                tags: Array.isArray(studentData.tags)
                     ? studentData.tags.map((t: any) => typeof t === 'string' ? t : t.tag)
                     : [],
                 // Ensure required fields have defaults
@@ -283,14 +284,14 @@ const AddApplicationDataPanel = ({
     useEffect(() => {
         const fetchStageCounselor = async () => {
             const currentStageConfig = stageSetup?.find((s: any) => s.stage === formData.currentStage);
-            
+
             if (currentStageConfig?.stageCounselor && currentStageConfig.stageCounselor.length > 0) {
                 try {
                     const counselorData = await admissionStudentDataService.getStageCounselor({
                         entity: entityId,
                         stageCounselor: currentStageConfig.stageCounselor
                     });
-                    
+
                     setFormData(prev => ({
                         ...prev,
                         stageCounselorId: counselorData.id,
@@ -303,7 +304,7 @@ const AddApplicationDataPanel = ({
                 }
             }
         };
-        
+
         if (mode === 'edit' && formData.currentStage && stageSetup) {
             fetchStageCounselor();
         }
@@ -344,7 +345,7 @@ const AddApplicationDataPanel = ({
                     pageNumber: 1,
                     pageSize: 10
                 });
-                
+
                 if (response.data && response.data.length > 0) {
                     setDuplicateStudents(response.data);
                     setShowDuplicateModal(true);
@@ -359,7 +360,7 @@ const AddApplicationDataPanel = ({
     const handleChange = (field: string, value: any) => {
         // Find field configuration for validation
         const fieldConfig = ALL_STUDENT_FIELDS.find(f => f.value === field);
-        
+
         // Validate field if configuration exists
         if (fieldConfig && typeof value === 'string') {
             const error = validateField(fieldConfig, value);
@@ -423,16 +424,16 @@ const AddApplicationDataPanel = ({
         alphaNumeric: (value: string) => {
             return /^[a-zA-Z0-9\s]*$/.test(value) ? null : 'Only letters and numbers allowed';
         },
-        
+
         numericOnly: (value: string) => {
             return /^\d*$/.test(value) ? null : 'Only numbers allowed';
         },
-        
+
         minLength: (min: number) => (value: string) => {
             if (!value) return null;
             return value.length >= min ? null : `Minimum ${min} characters required`;
         },
-        
+
         maxLength: (max: number) => (value: string) => {
             if (!value) return null;
             return value.length <= max ? null : `Maximum ${max} characters allowed`;
@@ -445,24 +446,24 @@ const AddApplicationDataPanel = ({
             const error = validators.minLength(field.minLength)(value);
             if (error) return error;
         }
-        
+
         // Max length
         if (field.maxLength && value) {
             const error = validators.maxLength(field.maxLength)(value);
             if (error) return error;
         }
-        
+
         // Pattern validation
         if (field.pattern === 'alphaNumeric' && value) {
             const error = validators.alphaNumeric(value);
             if (error) return error;
         }
-        
+
         if (field.pattern === 'numeric' && value) {
             const error = validators.numericOnly(value);
             if (error) return error;
         }
-        
+
         return null;
     };
 
@@ -496,7 +497,7 @@ const AddApplicationDataPanel = ({
     // Stage Navigation
     const handlePreviousStage = async () => {
         if (isFirstStage || !stageSetup) return;
-        
+
         setIsProcessing(true);
         try {
             const prevStage = stageSetup[currentStageIndex - 1];
@@ -533,7 +534,7 @@ const AddApplicationDataPanel = ({
             // For now, we'll assume seats are available
             // In production, you'd fetch seat configuration and compare
             // const filledSeats = (response as any)?.data?.count || 0;
-            
+
             return true; // Placeholder - implement actual seat checking
         } catch (error) {
             console.error('Failed to check seat availability:', error);
@@ -559,7 +560,7 @@ const AddApplicationDataPanel = ({
 
         // Check if next stage requires seat validation
         const checkSeatsFlag = (nextStageConfig as any).checkSeats;
-        
+
         if (checkSeatsFlag) {
             // Validate required fields for seat check
             if (!formData.course || !formData.stream || !formData.category || !formData.oldNew) {
@@ -590,7 +591,7 @@ const AddApplicationDataPanel = ({
             };
 
             await editMutation.mutateAsync(updatedData);
-            
+
             // Update local state
             setFormData(prev => ({
                 ...prev,
@@ -608,7 +609,7 @@ const AddApplicationDataPanel = ({
                         entity: entityId,
                         stageCounselor: nextStageConfig.stageCounselor
                     });
-                    
+
                     setFormData(prev => ({
                         ...prev,
                         stageCounselorId: counselorData.id,
@@ -745,9 +746,49 @@ const AddApplicationDataPanel = ({
     // Print Handlers
     const handlePrintAdmissionForm = () => {
         setShowPrintMenu(false);
-        // TODO: Implement print admission form logic
-        console.log('Print Admission Form for student:', formData._id);
-        alert('Print Admission Form functionality will be implemented');
+
+        if (!formData._id) {
+            alert('Please save the student data first before printing');
+            return;
+        }
+
+        const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
+
+        // Open Angular app
+        const printWindow = window.open(
+            `${angularAppUrl}/print/open/printAdmissionForm`,
+            '_blank'
+        );
+
+        // Wait for window to load, then send data via postMessage
+        if (printWindow) {
+            const sendData = () => {
+                printWindow.postMessage(
+                    {
+                        type: 'PRINT_ADMISSION_FORM',
+                        data: {
+                            studentId: formData._id,
+                            entityId: entityId,
+                            session: session,
+                            entity: {
+                                _id: entityId,
+                                displayName: entityDetails?.displayName,
+                                logo: entityDetails?.logo,
+                                // Note: Other properties will be fetched from API when backend is ready
+                            },
+                            entityPreferences: entityPreferences,
+                            entityType: 'school',
+                            // Include all student data for template
+                            studentData: formData
+                        }
+                    },
+                    angularAppUrl
+                );
+            };
+
+            // Send data after a delay to ensure Angular app is loaded
+            setTimeout(sendData, 1000);
+        }
     };
 
     const handlePrintTimeline = () => {
@@ -831,7 +872,7 @@ const AddApplicationDataPanel = ({
             alert('Please enter follow-up date and remark');
             return;
         }
-        
+
         try {
             await admissionStudentDataService.addAdmissionFollowUp({
                 studentData: formData._id,
@@ -840,7 +881,7 @@ const AddApplicationDataPanel = ({
                 entity: entityId,
                 session: session
             });
-            
+
             setShowFollowUpModal(false);
             setFollowUpDate('');
             setFollowUpRemark('');
@@ -856,7 +897,7 @@ const AddApplicationDataPanel = ({
             alert('Please enter a remark');
             return;
         }
-        
+
         setFormData(prev => ({ ...prev, negativeTagRemark: negativeTagRemark }));
         setShowNegativeTagModal(false);
         setNegativeTagRemark('');
@@ -867,9 +908,9 @@ const AddApplicationDataPanel = ({
         // Convert to string since tags are always strings
         const tagString = String(tagValue);
         const tag = admissionMaster?.tags?.find((t: any) => t.tag === tagString);
-        
+
         setFormData(prev => ({ ...prev, tags: [tagString] }));
-        
+
         // Show modal based on tag type
         if (tag?.type === 'positive') {
             setShowFollowUpModal(true);
@@ -915,7 +956,7 @@ const AddApplicationDataPanel = ({
     const groupedFields = useMemo(() => {
         const currentStageConfig = stageSetup?.find((s: any) => s.stage === formData.currentStage);
         const stageFields = currentStageConfig?.fields || [];
-        
+
         // Fallback: show ALL fields if no config (matching View form)
         if (!stageFields.length) {
             const groups: { [key: string]: any[] } = {};
@@ -927,10 +968,10 @@ const AddApplicationDataPanel = ({
             });
             return groups;
         }
-        
+
         const allowedFieldKeys = new Set(stageFields.map((f: any) => f.key));
         const visible = ALL_STUDENT_FIELDS.filter(f => allowedFieldKeys.has(f.value));
-        
+
         const groups: { [key: string]: any[] } = {};
         visible.forEach(field => {
             if (!groups[field.groupBy]) {
@@ -938,7 +979,7 @@ const AddApplicationDataPanel = ({
             }
             groups[field.groupBy].push(field);
         });
-        
+
         return groups;
     }, [formData.currentStage, stageSetup]);
 
@@ -951,17 +992,15 @@ const AddApplicationDataPanel = ({
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${
-                    isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
-                }`}
+                className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+                    }`}
                 onClick={handleClose}
             />
 
             {/* Sliding Panel */}
             <div
-                className={`fixed inset-y-0 right-0 z-50 w-full max-w-5xl bg-white shadow-2xl transform transition-transform duration-300 ${
-                    isOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}
+                className={`fixed inset-y-0 right-0 z-50 w-full max-w-5xl bg-white shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                    }`}
             >
                 <div className="h-full flex flex-col">
                     {/* Header */}
@@ -1001,7 +1040,7 @@ const AddApplicationDataPanel = ({
                                         <Printer size={18} />
                                         <span>Print</span>
                                     </button>
-                                    
+
                                     {showPrintMenu && (
                                         <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                                             <div className="py-1">
@@ -1022,7 +1061,7 @@ const AddApplicationDataPanel = ({
                                     )}
                                 </div>
                             )}
-                            
+
                             <button
                                 onClick={handleClose}
                                 className="p-2 hover:bg-gray-200 rounded-full transition-colors"
@@ -1070,11 +1109,10 @@ const AddApplicationDataPanel = ({
                                         {/* Registration Analytics */}
                                         <button
                                             onClick={() => toggleAnalytics('registration')}
-                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                                                formData.registrationAnalytics
-                                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                    : 'border-gray-300 bg-white text-gray-600 hover:border-blue-300'
-                                            }`}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.registrationAnalytics
+                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                : 'border-gray-300 bg-white text-gray-600 hover:border-blue-300'
+                                                }`}
                                         >
                                             <Flag size={20} className={formData.registrationAnalytics ? 'fill-blue-500' : ''} />
                                             <span className="font-medium">Registration</span>
@@ -1084,11 +1122,10 @@ const AddApplicationDataPanel = ({
                                         {formData.currentStage === 'Approved' && (
                                             <button
                                                 onClick={() => toggleAnalytics('admission')}
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                                                    formData.admissionAnalytics
-                                                        ? 'border-green-500 bg-green-50 text-green-700'
-                                                        : 'border-gray-300 bg-white text-gray-600 hover:border-green-300'
-                                                }`}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.admissionAnalytics
+                                                    ? 'border-green-500 bg-green-50 text-green-700'
+                                                    : 'border-gray-300 bg-white text-gray-600 hover:border-green-300'
+                                                    }`}
                                             >
                                                 <Flag size={20} className={formData.admissionAnalytics ? 'fill-green-500' : ''} />
                                                 <span className="font-medium">Admission</span>
@@ -1099,11 +1136,10 @@ const AddApplicationDataPanel = ({
                                         {formData.currentStage === 'Withdrawn' && (
                                             <button
                                                 onClick={() => toggleAnalytics('withdrawal')}
-                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${
-                                                    formData.withdrawalAnalytics
-                                                        ? 'border-red-500 bg-red-50 text-red-700'
-                                                        : 'border-gray-300 bg-white text-gray-600 hover:border-red-300'
-                                                }`}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.withdrawalAnalytics
+                                                    ? 'border-red-500 bg-red-50 text-red-700'
+                                                    : 'border-gray-300 bg-white text-gray-600 hover:border-red-300'
+                                                    }`}
                                             >
                                                 <Flag size={20} className={formData.withdrawalAnalytics ? 'fill-red-500' : ''} />
                                                 <span className="font-medium">Withdrawal</span>
@@ -1125,12 +1161,12 @@ const AddApplicationDataPanel = ({
                                             const selectedDate = new Date(e.target.value);
                                             const today = new Date();
                                             today.setHours(0, 0, 0, 0);
-                                            
+
                                             if (entityPreferences?.disableBackDateAdmission && selectedDate < today) {
                                                 alert('Back-dated admission is not allowed');
                                                 return;
                                             }
-                                            
+
                                             handleChange('date', e.target.value);
                                         }}
                                         min={entityPreferences?.disableBackDateAdmission ? new Date().toISOString().split('T')[0] : undefined}
@@ -1224,21 +1260,21 @@ const AddApplicationDataPanel = ({
                                         placeholder={`Select ${displayNames.oldNew}`}
                                     />
 
-                                    
-                                        <Dropdown
-                                            label="Source *"
-                                            options={
-                                                admissionMaster?.source?.map((s: any) => ({
-                                                    label: s.name || s,
-                                                    value: s.name || s,
-                                                })) || []
-                                            }
-                                            value={formData.source}
-                                            onChange={(value) => handleChange('source', value)}
-                                            error={errors.source}
-                                            placeholder="Select Source"
-                                            searchable
-                                        />
+
+                                    <Dropdown
+                                        label="Source *"
+                                        options={
+                                            admissionMaster?.source?.map((s: any) => ({
+                                                label: s.name || s,
+                                                value: s.name || s,
+                                            })) || []
+                                        }
+                                        value={formData.source}
+                                        onChange={(value) => handleChange('source', value)}
+                                        error={errors.source}
+                                        placeholder="Select Source"
+                                        searchable
+                                    />
 
 
                                     {showListPartnerInstitute && (
@@ -1250,83 +1286,83 @@ const AddApplicationDataPanel = ({
                                         />
                                     )}
 
-                                        {subjectCombinations && subjectCombinations.length > 0 && (
-                                            <Dropdown
-                                                label="Subject Combination"
-                                                options={
-                                                    subjectCombinations?.map((sc: any) => ({
-                                                        label: sc.name || sc,
-                                                        value: sc.name || sc,
-                                                    })) || []
-                                                }
-                                                value={formData.subjectCombination}
-                                                onChange={(value) => handleChange('subjectCombination', value)}
-                                                error={errors.subjectCombination}
-                                                placeholder="Select Subject Combination"
-                                                searchable
-                                            />
-                                        )}
+                                    {subjectCombinations && subjectCombinations.length > 0 && (
+                                        <Dropdown
+                                            label="Subject Combination"
+                                            options={
+                                                subjectCombinations?.map((sc: any) => ({
+                                                    label: sc.name || sc,
+                                                    value: sc.name || sc,
+                                                })) || []
+                                            }
+                                            value={formData.subjectCombination}
+                                            onChange={(value) => handleChange('subjectCombination', value)}
+                                            error={errors.subjectCombination}
+                                            placeholder="Select Subject Combination"
+                                            searchable
+                                        />
+                                    )}
 
-                                        {mdcList.length > 0 && (
-                                            <Dropdown
-                                                label="MDC Subject"
-                                                options={
-                                                    mdcList?.map((s: any) => ({
-                                                        label: s.name || s,
-                                                        value: s.name || s,
-                                                    })) || []
-                                                }
-                                                value={formData.mdcSubject}
-                                                onChange={(value) => handleChange('mdcSubject', value)}
-                                                placeholder="Select MDC Subject"
-                                                searchable
-                                            />
-                                        )}
-                                        {aecList.length > 0 && (
-                                            <Dropdown
-                                                label="AEC Subject"
-                                                options={
-                                                    aecList?.map((s: any) => ({
-                                                        label: s.name || s,
-                                                        value: s.name || s,
-                                                    })) || []
-                                                }
-                                                value={formData.aecSubject}
-                                                onChange={(value) => handleChange('aecSubject', value)}
-                                                placeholder="Select AEC Subject"
-                                                searchable
-                                            />
-                                        )}
-                                        {secList.length > 0 && (
-                                            <Dropdown
-                                                label="SEC Subject"
-                                                options={
-                                                    secList?.map((s: any) => ({
-                                                        label: s.name || s,
-                                                        value: s.name || s,
-                                                    })) || []
-                                                }
-                                                value={formData.secSubject}
-                                                onChange={(value) => handleChange('secSubject', value)}
-                                                placeholder="Select SEC Subject"
-                                                searchable
-                                            />
-                                        )}
-                                        {vacList.length > 0 && (
-                                            <Dropdown
-                                                label="VAC Subject"
-                                                options={
-                                                    vacList?.map((s: any) => ({
-                                                        label: s.name || s,
-                                                        value: s.name || s,
-                                                    })) || []
-                                                }
-                                                value={formData.vacSubject}
-                                                onChange={(value) => handleChange('vacSubject', value)}
-                                                placeholder="Select VAC Subject"
-                                                searchable
-                                            />
-                                        )}
+                                    {mdcList.length > 0 && (
+                                        <Dropdown
+                                            label="MDC Subject"
+                                            options={
+                                                mdcList?.map((s: any) => ({
+                                                    label: s.name || s,
+                                                    value: s.name || s,
+                                                })) || []
+                                            }
+                                            value={formData.mdcSubject}
+                                            onChange={(value) => handleChange('mdcSubject', value)}
+                                            placeholder="Select MDC Subject"
+                                            searchable
+                                        />
+                                    )}
+                                    {aecList.length > 0 && (
+                                        <Dropdown
+                                            label="AEC Subject"
+                                            options={
+                                                aecList?.map((s: any) => ({
+                                                    label: s.name || s,
+                                                    value: s.name || s,
+                                                })) || []
+                                            }
+                                            value={formData.aecSubject}
+                                            onChange={(value) => handleChange('aecSubject', value)}
+                                            placeholder="Select AEC Subject"
+                                            searchable
+                                        />
+                                    )}
+                                    {secList.length > 0 && (
+                                        <Dropdown
+                                            label="SEC Subject"
+                                            options={
+                                                secList?.map((s: any) => ({
+                                                    label: s.name || s,
+                                                    value: s.name || s,
+                                                })) || []
+                                            }
+                                            value={formData.secSubject}
+                                            onChange={(value) => handleChange('secSubject', value)}
+                                            placeholder="Select SEC Subject"
+                                            searchable
+                                        />
+                                    )}
+                                    {vacList.length > 0 && (
+                                        <Dropdown
+                                            label="VAC Subject"
+                                            options={
+                                                vacList?.map((s: any) => ({
+                                                    label: s.name || s,
+                                                    value: s.name || s,
+                                                })) || []
+                                            }
+                                            value={formData.vacSubject}
+                                            onChange={(value) => handleChange('vacSubject', value)}
+                                            placeholder="Select VAC Subject"
+                                            searchable
+                                        />
+                                    )}
                                 </div>
                             </div>
 
@@ -1393,11 +1429,11 @@ const AddApplicationDataPanel = ({
                                         placeholder="Select Counselor"
                                         searchable
                                     />
-                                    
+
                                     {/* Tag Color Display */}
                                     {selectedTag && (
                                         <div className="flex items-center">
-                                            <div 
+                                            <div
                                                 className="inline-flex items-center px-3 py-2 rounded-full text-white text-sm font-medium"
                                                 style={{ backgroundColor: selectedTag.colour || '#6B7280' }}
                                             >
@@ -1405,7 +1441,7 @@ const AddApplicationDataPanel = ({
                                             </div>
                                         </div>
                                     )}
-                                    
+
                                     {/* Age Display for Schools/Colleges */}
                                     {formData.ageAtAdmission && (
                                         <div className="text-sm text-gray-600">
@@ -1483,13 +1519,13 @@ const AddApplicationDataPanel = ({
                                 )}
 
                                 {/* Next Stage Button (Angular parity - not final stage, not approved/rejected) */}
-                                {mode === 'edit' && formData._id && !isFinalStage && 
-                                 formData.currentStage !== 'Approved' && formData.currentStage !== 'Rejected' && 
-                                 checkPermission('editAdmissionStudentData') && (
-                                    <Button variant="primary" onClick={handleNextStage} disabled={isProcessing}>
-                                        Next Stage
-                                    </Button>
-                                )}
+                                {mode === 'edit' && formData._id && !isFinalStage &&
+                                    formData.currentStage !== 'Approved' && formData.currentStage !== 'Rejected' &&
+                                    checkPermission('editAdmissionStudentData') && (
+                                        <Button variant="primary" onClick={handleNextStage} disabled={isProcessing}>
+                                            Next Stage
+                                        </Button>
+                                    )}
 
                                 {/* Save/Update Button */}
                                 {formData.currentStage !== 'Approved' && formData.currentStage !== 'Rejected' && formData.currentStage !== 'Withdrawn' && (
@@ -1505,7 +1541,7 @@ const AddApplicationDataPanel = ({
                                         >
                                             {mode === 'add' ? 'Save' : 'Update'}
                                         </Button>
-                                        
+
                                         {/* Save & Add Visit (Add mode only) */}
                                         {mode === 'add' && (
                                             <Button
@@ -1523,7 +1559,7 @@ const AddApplicationDataPanel = ({
                     </div>
                 </div>
             </div>
-            
+
             {/* Visit Remark Modal */}
             {showVisitRemarkModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
@@ -1558,7 +1594,7 @@ const AddApplicationDataPanel = ({
                     </div>
                 </div>
             )}
-            
+
             {/* Follow-Up Modal */}
             {showFollowUpModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
@@ -1600,7 +1636,7 @@ const AddApplicationDataPanel = ({
                     </div>
                 </div>
             )}
-            
+
             {/* Negative Tag Modal */}
             {showNegativeTagModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">

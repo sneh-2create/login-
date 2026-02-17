@@ -7,6 +7,7 @@ import { BreadcrumbProvider } from '@od-erp/context';
 import { store, useAppDispatch, useAppSelector, setMenuConfig, setPrimaryColor } from '@od-erp/store';
 import { menuConfig } from '@od-erp/constants'
 import { AuthGuard } from './components/AuthGuard'
+import { FloatingThemePicker } from '@od-erp/ui';
 import App from './App'
 import '@od-erp/theme/index.css';
 import './index.css'
@@ -74,6 +75,9 @@ const StandaloneLayout = ({ children }: { children: React.ReactNode }) => {
                     {children}
                 </main>
             </div>
+
+            {/* Floating Theme Picker - Fixed on right side */}
+            <FloatingThemePicker />
         </div>
     );
 };

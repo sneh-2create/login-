@@ -421,6 +421,8 @@ export interface AdmissionDashboardResponse {
     enquiriesBySource: AdmissionSourceCount[];
     enquiriesByCourse: AdmissionCourseCount[];
     stageWiseCount: AdmissionStageCount[];
+}
+
 // --- Template Types ---
 export interface AdmissionTableHead {
     value: string;
@@ -429,8 +431,8 @@ export interface AdmissionTableHead {
 }
 
 export interface TemplateFilterValue {
-    filter: 'stage' | 'course' | 'startDate' | 'endDate' | 'tags' | 
-            'engagementStatus' | 'counselor' | 'source';
+    filter: 'stage' | 'course' | 'startDate' | 'endDate' | 'tags' |
+    'engagementStatus' | 'counselor' | 'source';
     value: any;
 }
 
