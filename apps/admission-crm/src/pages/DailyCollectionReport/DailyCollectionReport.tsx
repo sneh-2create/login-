@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Breadcrumb, HorizontalTabs } from '@od-erp/ui';
+import { DataTable, Button, Breadcrumb, HorizontalTabs, Title } from '@od-erp/ui';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
@@ -373,66 +373,77 @@ const DailyCollectionReportPage = () => {
         window.open('/admission/print/dailyCollectionReport', '_blank');
     };
 
+    const actionButtons = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: reportData && reportData.length > 0,
+            iconClass: isLoading ? 'animate-spin' : ''
+        },
+        {
+            icon: Download,
+            onClick: handleExportExcel,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: reportData && reportData.length > 0,
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: reportData && reportData.length > 0,
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Daily Collection Report</h1>
-                    <Breadcrumb
-                        items={[
-                            { label: 'Dashboard', href: '/dashboard' },
-                            { label: 'Admissions', href: '/admissions' },
-                            { label: 'Reports', href: '/admissions/reports' },
-                            { label: 'Daily Collection Report' }
-                        ]}
-                    />
+            <div className="mb-3">
+                <Title as='h1' variant="pageTitleNoMargin">Daily Collection Report</Title>
+                <Breadcrumb
+                    items={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admissions', href: '/admissions' },
+                        { label: 'Reports', href: '/admissions/reports' },
+                        { label: 'Daily Collection Report' }
+                    ]}
+                />
+            </div>
+
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4">
+                <div className="flex-1 w-full md:w-auto overflow-x-auto">
+                    {reportData && reportData.length > 0 && templates && templates.length > 0 && (
+                        <HorizontalTabs
+                            tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
+                            activeTab={selectedTemplate}
+                            onTabChange={setSelectedTemplate}
+                            className="px-0 mb-0"
+                        />
+                    )}
                 </div>
-                <div className="flex items-center space-x-2">
-                    {/* Filter Toggle */}
-                    <Button
-                        variant="outline"
-                        className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                        onClick={() => setShowFilter(!showFilter)}
-                        title="Filter"
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
-
-                    {/* Refresh */}
-                    {reportData && reportData.length > 0 && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={() => refetch()}
-                            title="Refresh"
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    )}
-
-                    {/* Excel Export */}
-                    {reportData && reportData.length > 0 && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handleExportExcel}
-                            title="Export to Excel"
-                        >
-                            <Download className="h-4 w-4" />
-                        </Button>
-                    )}
-
-                    {/* Print */}
-                    {reportData && reportData.length > 0 && (
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handlePrint}
-                            title="Print"
-                        >
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                    )}
+                <div className="flex items-center space-x-2 shrink-0">
+                    {actionButtons.map((btn, index) => (
+                        btn.isVisible && (
+                            <Button
+                                key={index}
+                                variant="outline"
+                                className={`!p-0 !w-9 !h-9 ${btn.className}`}
+                                onClick={btn.onClick}
+                                title={btn.title}
+                            >
+                                <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                            </Button>
+                        )
+                    ))}
                 </div>
             </div>
 
@@ -463,15 +474,6 @@ const DailyCollectionReportPage = () => {
             {/* Table and Summary - Conditional Rendering */}
             {reportData && reportData.length > 0 && (
                 <>
-                    {templates && templates.length > 0 && (
-                        <HorizontalTabs
-                            tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-                            activeTab={selectedTemplate}
-                            onTabChange={setSelectedTemplate}
-                            className="px-0 mb-3"
-                        />
-                    )}
-
                     <div className="w-full max-w-full overflow-x-auto">
                         <DataTable
                             columns={columns}

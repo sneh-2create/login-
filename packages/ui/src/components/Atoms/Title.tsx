@@ -2,7 +2,7 @@ import React from 'react';
 
 export interface TitleProps {
     as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
-    variant?: 'pageTitle' | 'sectionTitle' | 'cardTitle' | 'subtitle' | 'body';
+    variant?: 'pageTitle' | 'pageTitleNoMargin' | 'sectionTitle' | 'cardTitle' | 'subtitle' | 'body';
     children: React.ReactNode;
     className?: string;
     style?: React.CSSProperties;
@@ -21,6 +21,7 @@ export const Title: React.FC<TitleProps> = ({
 
     const variants = {
         pageTitle: "text-2xl font-bold mb-6",
+        pageTitleNoMargin: "text-2xl font-bold mb-0",
         sectionTitle: "text-lg font-bold mb-4",
         cardTitle: "text-base font-semibold text-[var(--color-foreground)]",
         subtitle: "text-sm text-[var(--color-muted-foreground)]",
