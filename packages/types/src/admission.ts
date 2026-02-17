@@ -421,6 +421,8 @@ export interface AdmissionDashboardResponse {
     enquiriesBySource: AdmissionSourceCount[];
     enquiriesByCourse: AdmissionCourseCount[];
     stageWiseCount: AdmissionStageCount[];
+}
+
 // --- Template Types ---
 export interface AdmissionTableHead {
     value: string;

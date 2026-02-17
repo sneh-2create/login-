@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { DataTable, Button, Breadcrumb, ActionMenu, useToast } from '@od-erp/ui';
+import { DataTable, Button, Breadcrumb, ActionMenu, useToast, Tooltip } from '@od-erp/ui';
 import { useAdmissionLead, useSessions, useBulkCounselorUpdate } from '@od-erp/query';
 import { useAdmissionStageSetup, useAdmissionStages, useAdmissionMaster, useEditAdmissionStudentData } from '@od-erp/query';
 import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
@@ -576,32 +576,35 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                         </select>
                     </div>
 
-                    <Button
-                        variant="outline"
-                        className={`!p-2 !w-10 !h-10 border-gray-200 shadow-sm ${showFilterDialog ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700 bg-white'}`}
-                        onClick={() => setShowFilterDialog(!showFilterDialog)}
-                        title="Filter"
-                    >
-                        <SlidersHorizontal className="h-4 w-4" />
-                    </Button>
+                    <Tooltip content="Filter" placement="bottom">
+                        <Button
+                            variant="outline"
+                            className={`!p-2 !w-10 !h-10 border-gray-200 shadow-sm ${showFilterDialog ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700 bg-white'}`}
+                            onClick={() => setShowFilterDialog(!showFilterDialog)}
+                        >
+                            <SlidersHorizontal className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
 
-                    <Button
-                        variant="outline"
-                        className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-gray-500 hover:text-gray-700 bg-white"
-                        onClick={() => { refetch(); refetchStageCounts(); }}
-                        title="Refresh"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
+                    <Tooltip content="Refresh" placement="bottom">
+                        <Button
+                            variant="outline"
+                            className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-gray-500 hover:text-gray-700 bg-white"
+                            onClick={() => { refetch(); refetchStageCounts(); }}
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </Tooltip>
 
-                    <Button
-                        variant="outline"
-                        className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-green-600 hover:bg-green-50 hover:text-green-700 bg-white"
-                        onClick={handleExport}
-                        title="Export to Excel"
-                    >
-                        <Download className="h-4 w-4" />
-                    </Button>
+                    <Tooltip content="Export to Excel" placement="bottom">
+                        <Button
+                            variant="outline"
+                            className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-green-600 hover:bg-green-50 hover:text-green-700 bg-white"
+                            onClick={handleExport}
+                        >
+                            <Download className="h-4 w-4" />
+                        </Button>
+                    </Tooltip>
 
                     {permissions.includes('addAdmissionStudentData') && (
                         <Button

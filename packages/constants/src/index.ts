@@ -11,10 +11,12 @@ export const PERMISSIONS = {
 } as const;
 
 export * from './admission';
+export * from './alert.config';
 export * from './badge.config';
 export * from './dashboard.config';
 export * from './documents';
 export * from './menu.config';
+export * from './notification-cta.config';
 export * from './report.defaults';
 export * from './table.config';
 export * from './ui.config';
