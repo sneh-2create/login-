@@ -71,7 +71,7 @@ export const CancelTransactionDialog = ({
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-semibold text-gray-800">Cancel Receipt {transaction?.receiptId}</h2>
@@ -151,21 +151,28 @@ export const CancelTransactionDialog = ({
                         </label>
                     </div>
 
-                    <div className="grid gap-2">
-                        <label className="text-sm font-medium">Remark <span className="text-red-500">*</span></label>
-                        <Input value={remark} onChange={(e) => setRemark(e.target.value)} />
+                <div className="grid gap-2">
+                        <Input
+                            label="Remark"
+                            required
+                            value={remark}
+                            onChange={(e) => setRemark(e.target.value)}
+                        />
                     </div>
 
                     {reason === 'chequeBounce' && (
                          <div className="grid gap-2">
-                            <label className="text-sm font-medium">Cheque Bounce Charges</label>
-                            <Input type="number" value={charges} onChange={(e) => setCharges(Number(e.target.value))} />
+                            <Input
+                                label="Cheque Bounce Charges"
+                                type="number"
+                                value={charges}
+                                onChange={(e) => setCharges(Number(e.target.value))}
+                            />
                          </div>
                     )}
                 </div>
 
                 <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
                     <Button 
                         variant="danger" 
                         onClick={handleSubmit} 

@@ -1,4 +1,4 @@
-import { Button, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, DatePicker } from '@od-erp/ui';
 import { useState } from 'react';
 
 interface FilterCardProps {
@@ -40,20 +40,21 @@ export const FilterCard = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
+        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
+            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
+            <div className={`grid grid-cols-1 gap-6 mb-6 ${autoVoucherEnabled ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                <div>
                     <DatePicker
+                        label="Start Date"
                         value={new Date(startDate)}
                         onChange={(date) => date && setStartDate(date.getTime())}
                         maxDate={new Date(endDate)}
                         className="w-full"
                     />
                 </div>
-                <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
+                <div>
                     <DatePicker
+                        label="End Date"
                         value={new Date(endDate)}
                         onChange={(date) => date && setEndDate(date.getTime())}
                         minDate={new Date(startDate)}
@@ -61,23 +62,24 @@ export const FilterCard = ({
                     />
                 </div>
 
-                <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Status</label>
-                    <Dropdown
+                <div>
+                    <SelectSingle
+                        label="Select Status"
                         value={status}
                         onChange={(val) => setStatus(val as string)}
                         options={[
-                            { value: '', label: 'All' },
+                            { value: '', label: 'All Status' },
                             { value: 'confirmed', label: 'Confirmed' },
                             { value: 'cancelled', label: 'Cancelled' },
                         ]}
-                        className="w-full"
+                        containerClassName="w-full"
+                        placeholder="Select Status"
                     />
                 </div>
                 {autoVoucherEnabled && (
-                    <div className="w-full">
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Voucher Status</label>
-                        <Dropdown
+                    <div>
+                        <SelectSingle
+                            label="Select Voucher Status"
                             value={voucherStatus}
                             onChange={(val) => setVoucherStatus(val as string)}
                             options={[
@@ -85,13 +87,14 @@ export const FilterCard = ({
                                 { value: 'true', label: 'Created' },
                                 { value: 'false', label: 'Not Created' },
                             ]}
-                            className="w-full"
+                            containerClassName="w-full"
+                            placeholder="Select Voucher Status"
                         />
                     </div>
                 )}
             </div>
-            <div className="flex justify-end mt-4">
-                <Button variant="primary" onClick={handleApply} isLoading={loading}>
+            <div>
+                <Button variant="primary" onClick={handleApply} isLoading={loading} className="px-8 h-10 font-medium">
                     Apply Filters
                 </Button>
             </div>

@@ -1,17 +1,15 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Input, Dropdown, Breadcrumb, useToast, EmptyState, Tooltip } from '@od-erp/ui';
+import { DataTable, useToast, EmptyState, PageHeader, PageToolbar, SelectSingle, DropdownMenu } from '@od-erp/ui';
+import type { ActionButton } from '@od-erp/ui';
 import { useAdmissionTransactions, useDeleteAdmissionTransaction, useExcelTemplates, useRetryAdmissionVoucher, useFeeMaster, useDefaultExcelTemplates, useSessions } from '@od-erp/query';
 import { AdmissionTransactionPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Download, Printer, Trash2, Eye, SlidersHorizontal, Edit, XCircle, RotateCcw, RefreshCw, Search, Upload } from 'lucide-react';
+import { Download, Printer, Trash2, Eye, SlidersHorizontal, Edit, XCircle, RotateCcw, RefreshCw, Upload, MoreVertical } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
 import { FilterCard } from './components/FilterCard';
 import { EditTransactionDialog } from './components/EditTransactionDialog';
 import { CancelTransactionDialog } from './components/CancelTransactionDialog';
-import { ViewTransactionDialog } from './components/ViewTransactionDialog';
-import { ActionMenu } from './components/ActionMenu';
-import { useDebounce } from '@od-erp/utils';
 import { processTransactionData, extractFeeHeadNames, ProcessedTransaction } from './utils/dataProcessor';
 import * as XLSX from 'xlsx';
 import { DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS } from '@od-erp/constants';
@@ -28,8 +26,6 @@ const AdmissionTransactionPage = () => {
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const [pageNumber] = useState(1);
     const [pageSize] = useState(10);
-    const [searchTerm, setSearchTerm] = useState('');
-    const debouncedSearch = useDebounce(searchTerm, 500);
     
     // Local filter state (changes immediately)
     const [statusFilter, setStatusFilter] = useState('');
@@ -46,11 +42,10 @@ const AdmissionTransactionPage = () => {
         session: session
     });
     
-    const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+    const [selectedTemplate, setSelectedTemplate] = useState<any>({ tableHeads: DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS });
     const [showFilter, setShowFilter] = useState(false);
 
     // Dialog States
-    const [viewDialogOpen, setViewDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
@@ -73,27 +68,20 @@ const AdmissionTransactionPage = () => {
         endDate: appliedFilters.endDate,
         status: appliedFilters.status,
         voucherStatus: appliedFilters.voucherStatus,
-        search: debouncedSearch,
         pageNumber,
         pageSize
-    }), [entityId, appliedFilters, session, debouncedSearch, pageNumber, pageSize]);
+    }), [entityId, appliedFilters, session, pageNumber, pageSize]);
 
-
-    // Set selected template - use first template, default template, or hardcoded fallback
     useEffect(() => {
-        if (excelTemplates && excelTemplates.length > 0 && !selectedTemplate) {
+        if (excelTemplates && excelTemplates.length > 0) {
             setSelectedTemplate(excelTemplates[0]);
-        } else if (defaultTemplate && !selectedTemplate && (!excelTemplates || excelTemplates.length === 0)) {
+        } else if (excelTemplates && excelTemplates.length === 0 && defaultTemplate) {
             setSelectedTemplate(defaultTemplate);
-        } else if (!selectedTemplate && (!excelTemplates || excelTemplates.length === 0) && !defaultTemplate) {
-            setSelectedTemplate({ tableHeads: DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS });
         }
-    }, [excelTemplates, defaultTemplate, selectedTemplate]);
+    }, [excelTemplates, defaultTemplate]);
 
     const { data: transactions, isLoading, refetch } = useAdmissionTransactions(payload);
 
-    // Check if template has 'admissionHeads' column (Angular logic)
-    // If it exists, remove it and enable individual fee head columns
     const includeFeeHeads = useMemo(() => {
         if (!selectedTemplate?.tableHeads) return false;
         return selectedTemplate.tableHeads.some((h: any) => h.value === 'admissionHeads');
@@ -108,21 +96,6 @@ const AdmissionTransactionPage = () => {
     const processedData = useMemo(() => {
         return processTransactionData(transactions, includeFeeHeads);
     }, [transactions, includeFeeHeads]);
-
-    // Client-side search filtering
-    const filteredData = useMemo(() => {
-        if (!searchTerm) return processedData;
-        const searchLower = searchTerm.toLowerCase();
-        return processedData.filter(row => {
-            if (row.receiptId === 'Total') return true; // Always show total row
-            return (
-                row.receiptId?.toLowerCase().includes(searchLower) ||
-                row.studentName?.toLowerCase().includes(searchLower) ||
-                row.applicationDetailsCourse?.toLowerCase().includes(searchLower) ||
-                row.applicationDetailsStream?.toLowerCase().includes(searchLower)
-            );
-        });
-    }, [processedData, searchTerm]);
 
     // Template-Based Columns (from Excel template, default template, or hardcoded fallback)
     const columns = useMemo<ColumnDef<ProcessedTransaction>[]>(() => {
@@ -140,24 +113,7 @@ const AdmissionTransactionPage = () => {
 
         let dynamicCols = [];
         // Default Columns or Template Columns
-        const heads = selectedTemplate?.tableHeads || [
-             { name: 'Receipt No.', value: 'receiptId' },
-             { name: 'Date', value: 'date' },
-             { name: 'Student Name', value: 'studentName' },
-             { name: 'Father Name', value: 'fatherName' },
-             { name: 'Phone', value: 'phone' },
-             { name: 'Class', value: 'applicationDetailsCourse' },
-             { name: 'Stream', value: 'applicationDetailsStream' },
-             { name: 'Batch', value: 'batch' },
-             { name: 'Session', value: 'session' },
-             { name: 'Pay Mode', value: 'paymentDetailsPaymentMode' },
-             { name: 'Ref No.', value: 'paymentDetailsRefId' },
-             { name: 'Bank Name', value: 'paymentDetailsBankName' },
-             { name: 'Cheque Date', value: 'paymentDetailsDate' },
-             { name: 'Remarks', value: 'remarks' },
-             { name: 'Amount', value: 'totalPaidAmount' },
-             { name: 'Status', value: 'status' }
-        ];
+        const heads = selectedTemplate?.tableHeads || DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS;
 
         dynamicCols = heads.map((h: any) => {
             let accessor = h.value;
@@ -205,8 +161,6 @@ const AdmissionTransactionPage = () => {
             };
         });
 
-        // Filter out 'admissionHeads' column if it exists (Angular logic)
-        // This column is replaced by individual fee head columns
         dynamicCols = dynamicCols.filter((col: any) => {
             const head = heads.find((h: any) => h.name === col.header);
             return !head || head.value !== 'admissionHeads';
@@ -237,48 +191,77 @@ const AdmissionTransactionPage = () => {
                      const row = info.row.original;
                      if(row.receiptId === 'Total') return null;
 
-                     const menuItems = [
-                         {
-                             label: 'View Transaction',
-                             icon: <Eye className="h-4 w-4" />,
-                             onClick: () => handleView(row),
-                             hidden: !permissions.includes('viewAdmissionTransaction')
-                         },
-                         {
-                             label: 'Edit Transaction',
-                             icon: <Edit className="h-4 w-4" />,
-                             onClick: () => handleEdit(row),
-                             hidden: !permissions.includes('editAdmissionTransaction')
-                         },
-                         {
-                             label: 'Cancel Transaction',
-                             icon: <XCircle className="h-4 w-4" />,
-                             onClick: () => handleCancel(row),
-                             hidden: !permissions.includes('cancelAdmissionReceipt')
-                         },
-                         {
-                             label: 'Retry Accounting Voucher',
-                             icon: <RotateCcw className="h-4 w-4" />,
-                             onClick: () => handleRetryVoucher(row._id),
-                             hidden: !autoVoucher || row.voucherStatus || !permissions.includes('reCreateAccountingVoucher')
-                         },
-                         {
-                             label: 'Push to OD Pay',
-                             icon: <Upload className="h-4 w-4" />,
-                             onClick: () => handlePushToODPay(row),
-                             hidden: !(entityPreferences as any)?.pushTransactionToODPay
-                         },
-                         {
-                             label: 'Delete Receipt',
-                             icon: <Trash2 className="h-4 w-4" />,
-                             onClick: () => handleDelete(row._id),
-                             disabled: row.voucherStatus,
-                             hidden: !permissions.includes('deleteAdmissionTransaction'),
-                             className: 'text-red-600 hover:bg-red-50'
-                         }
+                     const items = [
+                         ...(permissions.includes('viewAdmissionTransaction') ? [{
+                             key: 'view',
+                             label: (
+                                 <span className="flex items-center gap-2">
+                                     <Eye size={14} className="text-primary" /> View Transaction
+                                 </span>
+                             ),
+                             onClick: () => handleView(row)
+                         }] : []),
+                         ...(permissions.includes('editAdmissionTransaction') ? [{
+                             key: 'edit',
+                             label: (
+                                 <span className="flex items-center gap-2">
+                                     <Edit size={14} className="text-primary" /> Edit Transaction
+                                 </span>
+                             ),
+                             onClick: () => handleEdit(row)
+                         }] : []),
+                         ...(permissions.includes('cancelAdmissionReceipt') ? [{
+                             key: 'cancel',
+                             label: (
+                                 <span className="flex items-center gap-2">
+                                     <XCircle size={14} className="text-orange-500" /> Cancel Transaction
+                                 </span>
+                             ),
+                             onClick: () => handleCancel(row)
+                         }] : []),
+                         ...(autoVoucher && !row.voucherStatus && permissions.includes('reCreateAccountingVoucher') ? [{
+                             key: 'retry',
+                             label: (
+                                 <span className="flex items-center gap-2">
+                                     <RotateCcw size={14} className="text-primary" /> Retry Accounting Voucher
+                                 </span>
+                             ),
+                             onClick: () => handleRetryVoucher(row._id)
+                         }] : []),
+                         ...((entityPreferences as any)?.pushTransactionToODPay ? [{
+                             key: 'odpay',
+                             label: (
+                                 <span className="flex items-center gap-2">
+                                     <Upload size={14} className="text-primary" /> Push to OD Pay
+                                 </span>
+                             ),
+                             onClick: () => handlePushToODPay(row)
+                         }] : []),
+                         ...(permissions.includes('deleteAdmissionTransaction') ? [{
+                             key: 'delete',
+                             label: (
+                                 <span className="flex items-center gap-2 text-red-500">
+                                     <Trash2 size={14} /> Delete Receipt
+                                 </span>
+                             ),
+                             onClick: () => handleDelete(row._id)
+                         }] : [])
                      ];
 
-                     return <ActionMenu items={menuItems} />;
+                     if (items.length === 0) return null;
+
+                     return (
+                         <DropdownMenu
+                             trigger={
+                                 <button className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+                                     <MoreVertical size={16} />
+                                 </button>
+                             }
+                             items={items}
+                             placement="bottom-end"
+                             usePortal
+                         />
+                     );
                 }
             }
         ];
@@ -472,81 +455,76 @@ const AdmissionTransactionPage = () => {
         showToast('info', 'Data refreshed');
     };
 
-    const breadcrumbItems = [
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Admission Transaction', href: '#' }
+    // Action Buttons (same pattern as DailyCollectionReport)
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleRefresh,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExportExcel,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: processedData.length > 0,
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: processedData.length > 0,
+            variant: 'outline'
+        }
     ];
+
+    // Toolbar extra content: session selector
+    const toolbarExtra = sessions && sessions.length > 0 ? (
+        <SelectSingle
+            value={appliedFilters.session || session}
+            onChange={(val) => setAppliedFilters(prev => ({ ...prev, session: val as string }))}
+            options={sessions.map((s: any) => ({ value: s.name, label: s.name }))}
+            containerClassName="w-48"
+            placeholder="Select Session"
+        />
+    ) : undefined;
 
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Transaction</h1>
-                    <Breadcrumb items={breadcrumbItems} />
-                </div>
-                <div className="flex items-center space-x-2">
-                    {/* Select Session Dropdown */}
-                    {sessions && sessions.length > 0 && (
-                        <Dropdown
-                            value={appliedFilters.session || session}
-                            onChange={(val) => {
-                                setAppliedFilters(prev => ({ ...prev, session: val as string }));
-                            }}
-                            options={sessions.map((s: any) => ({ value: s.name, label: s.name }))}
-                            className="w-48 h-9"
-                        />
-                    )}
-                    
-                    {/* Filter Toggle */}
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button 
-                            variant="outline" 
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setShowFilter(!showFilter)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
+            <PageHeader
+                title="Admission Transaction"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission', href: '/admission' },
+                    { label: 'Transaction' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    {/* Refresh */}
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button 
-                            variant="outline" 
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                            onClick={handleRefresh}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
-
-                    {/* Excel Export */}
-                    {processedData.length > 0 && (
-                        <Tooltip content="Export to Excel" placement="bottom">
-                            <Button 
-                                variant="outline" 
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
-                                onClick={handleExportExcel}
-                            >
-                                <Download className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                     {/* Print */}
-                     {processedData.length > 0 && (
-                        <Tooltip content="Print" placement="bottom">
-                            <Button 
-                                variant="outline" 
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
-                                onClick={handlePrint}
-                            >
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-                </div>
-            </div>
+            <PageToolbar
+                tabs={excelTemplates && excelTemplates.length > 0 ? excelTemplates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
+                activeTab={selectedTemplate?.viewName || ''}
+                onTabChange={(val) => {
+                    const temp = excelTemplates?.find(t => t.viewName === val);
+                    setSelectedTemplate(temp || null);
+                }}
+                actions={actionButtons}
+                extraContent={toolbarExtra}
+            />
 
             {/* Collapsible Filter Card */}
             {showFilter && (
@@ -574,67 +552,24 @@ const AdmissionTransactionPage = () => {
                 />
             )}
 
-            {/* Table Container */}
+            {/* Table */}
             {processedData.length > 0 && (
-                <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-                    <div className="p-4 border-b border-gray-200 flex justify-between items-center gap-4">
-                        <h3 className="font-semibold text-gray-700 whitespace-nowrap">Report Data</h3>
-                        
-                        <div className="flex items-center gap-2 w-full justify-end">
-                            {/* Template Selector */}
-                            {excelTemplates && excelTemplates.length > 0 && (
-                                <Dropdown
-                                    value={selectedTemplate?.viewName || ''}
-                                    onChange={(val) => {
-                                        const temp = excelTemplates.find(t => t.viewName === val);
-                                        setSelectedTemplate(temp || null);
-                                    }}
-                                    options={[
-                                        { label: 'DEFAULT VIEW', value: '' },
-                                        ...excelTemplates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))
-                                    ]}
-                                    className="w-48 h-8 text-xs"
-                                    placeholder="Select Template"
-                                />
-                            )}
-                            
-                            {/* Search Input */}
-                            <div className="relative w-64">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Search className="h-4 w-4 text-gray-400" />
-                                </div>
-                                <Input
-                                    placeholder="Search..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="pl-10 h-9 text-sm"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={filteredData}
-                            isLoading={isLoading}
-                            showSearch={false}
-                        />
-                    </div>
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={processedData}
+                        isLoading={isLoading}
+                        showSearch={true}
+                    />
                 </div>
             )}
 
             {/* Empty State */}
             {!isLoading && processedData.length === 0 && (
-                <EmptyState />
+                <EmptyState message="No Records Found" />
             )}
 
             {/* Dialogs */}
-            <ViewTransactionDialog
-                open={viewDialogOpen}
-                onOpenChange={setViewDialogOpen}
-                transaction={selectedTransaction}
-            />
             <EditTransactionDialog
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}

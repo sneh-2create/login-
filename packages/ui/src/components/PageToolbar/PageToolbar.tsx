@@ -19,6 +19,7 @@ interface PageToolbarProps {
     onTabChange?: (_value: string) => void;
     actions?: ActionButton[];
     className?: string;
+    extraContent?: React.ReactNode;
 }
 
 export const PageToolbar: React.FC<PageToolbarProps> = ({ 
@@ -26,7 +27,8 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
     activeTab, 
     onTabChange, 
     actions, 
-    className 
+    className,
+    extraContent
 }) => {
     const [isSticky, setIsSticky] = React.useState(false);
     const [isHovered, setIsHovered] = React.useState(false);
@@ -115,6 +117,11 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                                 </div>
                             )}
 
+                            {/* Extra content (e.g. session selector) */}
+                            {extraContent && (
+                                <div className="shrink-0">{extraContent}</div>
+                            )}
+
                              <div className="flex items-center gap-2">
                                 {actions?.map((btn, index) => (
                                     btn.isVisible !== false && (
@@ -146,6 +153,10 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                             )}
                         </div>
                         <div className="hidden md:flex items-center space-x-2 shrink-0">
+                            {/* Extra content (e.g. session selector) */}
+                            {extraContent && (
+                                <div className="shrink-0">{extraContent}</div>
+                            )}
                             {actions?.map((btn, index) => (
                                 btn.isVisible !== false && (
                                     <Tooltip key={index} content={btn.title} placement="bottom">

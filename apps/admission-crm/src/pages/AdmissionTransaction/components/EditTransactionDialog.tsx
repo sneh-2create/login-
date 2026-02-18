@@ -1,4 +1,4 @@
-import { Button, Input, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, Input, SelectSingle, DatePicker } from '@od-erp/ui';
 import { useEffect, useState } from 'react';
 import { useEditAdmissionTransaction } from '@od-erp/query';
 import { X } from 'lucide-react';
@@ -88,7 +88,7 @@ export const EditTransactionDialog = ({
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl">
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-lg font-semibold text-gray-800">Edit Transaction</h2>
@@ -138,7 +138,7 @@ export const EditTransactionDialog = ({
 
                         {/* Select Payment Mode */}
                         <div>
-                            <Dropdown
+                            <SelectSingle
                                 label="Select Payment Mode"
                                 value={paymentMode}
                                 onChange={(value) => setPaymentMode(String(value))}
@@ -148,7 +148,7 @@ export const EditTransactionDialog = ({
 
                         {/* Select Institute Bank */}
                         <div>
-                            <Dropdown
+                            <SelectSingle
                                 label={`Select ${displayNames.instituteBank}`}
                                 value={bankAccount}
                                 onChange={(value) => setBankAccount(String(value))}
@@ -191,9 +191,6 @@ export const EditTransactionDialog = ({
                 </div>
 
                 <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Back
-                    </Button>
                     <Button onClick={handleSubmit} isLoading={editMutation.isPending}>
                         Edit
                     </Button>
