@@ -365,6 +365,7 @@ const NepSubjectReport = () => {
                                 ...courses.map(c => ({ value: c.name, label: c.displayName || c.name }))
                             ]}
                             placeholder={`Select ${displayNames.course}`}
+                            containerClassName="w-full"
                         />
                         <SelectSingle
                             label={displayNames.stream}
@@ -375,6 +376,7 @@ const NepSubjectReport = () => {
                                 ...streams.map(s => ({ value: s, label: s }))
                             ]}
                             placeholder={`Select ${displayNames.stream}`}
+                            containerClassName="w-full"
                         />
                         {showBatch && (
                             <SelectSingle
@@ -386,6 +388,7 @@ const NepSubjectReport = () => {
                                     ...batches.map(b => ({ value: b, label: b }))
                                 ]}
                                 placeholder={`Select ${displayNames.batch}`}
+                                containerClassName="w-full"
                             />
                         )}
                         <SelectSingle
@@ -397,6 +400,7 @@ const NepSubjectReport = () => {
                             }}
                             options={groupByOptions.map(g => ({ value: g.value, label: g.name }))}
                             placeholder="Select Group"
+                            containerClassName="w-full"
                         />
                     </div>
                     <div className="flex justify-end mt-4">

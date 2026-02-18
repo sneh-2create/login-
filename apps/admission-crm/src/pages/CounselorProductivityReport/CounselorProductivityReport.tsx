@@ -402,20 +402,20 @@ const CounselorProductivityReport = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
                                     <SelectSingle
+                                        label='Select Counselor'
                                         options={counselorOptions}
                                         value={selectedCounselor}
                                         onChange={(val) => setSelectedCounselor(val as string)}
                                         placeholder="Select Counselor"
-                                        className="w-full"
+                                        containerClassName="w-full"
                                     />
                                 </>
                             )}
                         </div>
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
                             <DatePicker
+                                label='Start Date'
                                 value={startDate ? new Date(startDate) : undefined}
                                 onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
                                 maxDate={endDate ? new Date(endDate) : undefined}
@@ -423,8 +423,8 @@ const CounselorProductivityReport = () => {
                             />
                         </div>
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
                             <DatePicker
+                                label='End Date'
                                 value={endDate ? new Date(endDate) : undefined}
                                 onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
                                 minDate={startDate ? new Date(startDate) : undefined}

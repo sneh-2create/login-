@@ -70,8 +70,8 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Start Date</label>
                     <DatePicker 
+                        label='Start Date'
                         value={new Date(localStartDate)}
                         onChange={(date) => date && setLocalStartDate(date.getTime())}
                         maxDate={new Date(localEndDate)}
@@ -79,8 +79,8 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">End Date</label>
                     <DatePicker 
+                        label='End Date'
                         value={new Date(localEndDate)}
                         onChange={(date) => date && setLocalEndDate(date.getTime())}
                         minDate={new Date(localStartDate)}
