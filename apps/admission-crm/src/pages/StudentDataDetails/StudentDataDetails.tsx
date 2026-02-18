@@ -16,13 +16,14 @@ const StudentDataDetails = () => {
     
     // Get navigation context
     const from = (location.state as any)?.from || 'studentData';
+    const initialTab = (location.state as any)?.initialTab || 'Admission Form';
     
     // Redux state
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     
     // Local state
-    const [selectedItem, setSelectedItem] = useState('Admission Form');
+    const [selectedItem, setSelectedItem] = useState(initialTab);
     
     // Fetch student data
     const { data: student, isLoading } = useViewAdmissionStudentData(id || '');
