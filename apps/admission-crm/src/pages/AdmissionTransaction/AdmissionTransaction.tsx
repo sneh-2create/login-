@@ -16,6 +16,7 @@ import { DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS } from '@od-erp/constants';
 
 const AdmissionTransactionPage = () => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
+    const entityDetails = useAppSelector((state) => state.auth.entityDetails);
     const entityType = useAppSelector((state) => state.session.entityType || '');
     const entityPreferences = useAppSelector((state) => state.config.entityPreferences) || null;
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
@@ -269,11 +270,47 @@ const AdmissionTransactionPage = () => {
 
     // Handlers
     const handleView = (row: any) => {
-        // Open print receipt in new window
-        window.open(
-            `/admission/print/open/admissionTransactionReceipt/${row._id}`,
+        const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
+
+        // Open Angular document-template app at the printAdmissionTransaction route
+        const printWindow = window.open(
+            `${angularAppUrl}/print/open/printAdmissionTransaction`,
             '_blank'
         );
+
+        if (printWindow) {
+            const sendData = () => {
+                printWindow.postMessage(
+                    {
+                        type: 'PRINT_ADMISSION_TRANSACTION',
+                        data: {
+                            transactionId: row._id,
+                            entityId,
+                            session,
+                            entity: {
+                                _id: entityId,
+                                displayName: (entityDetails as any)?.displayName,
+                                logo: (entityDetails as any)?.logo,
+                                location: (entityDetails as any)?.location,
+                                receptionNumber: (entityDetails as any)?.receptionNumber,
+                                contactEmail: (entityDetails as any)?.contactEmail,
+                            },
+                            entityPreferences,
+                            entityType,
+                            course: row.applicationDetailsCourse || '',
+                            // Pass full row so Angular can skip the API call
+                            transactionData: row
+                        }
+                    },
+                    angularAppUrl
+                );
+            };
+
+            // Wait for Angular app to boot before sending data
+            setTimeout(sendData, 1000);
+        } else {
+            alert('Popup was blocked. Please allow popups for this site and try again.');
+        }
     };
 
     const handleEdit = async (row: any) => {
