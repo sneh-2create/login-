@@ -620,6 +620,12 @@ const AdmissionLeadLogs = () => {
   const handleNavigateToDetails = (row: AdmissionLeadLog) => {
     if (!row.studentData) return;
 
+    const studentId = row.studentData._id;
+    if (!studentId) {
+      showToast('error', 'Student record not found');
+      return;
+    }
+
     // Save filter state
     const filterState = {
       startDate,
@@ -633,7 +639,7 @@ const AdmissionLeadLogs = () => {
     };
 
     localStorage.setItem('filterObjectData', JSON.stringify(filterState));
-    navigate(`/admission/studentDataDetails/${row.studentData}?tab=timeline`);
+    navigate(`/admission/student-data/${studentId}`, { state: { from: 'admissionLeadLogs' } });
   };
 
   // Dynamic Columns from Template

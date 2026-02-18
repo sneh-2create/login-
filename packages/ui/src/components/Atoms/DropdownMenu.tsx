@@ -23,6 +23,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
     closeOnSelect = true,
     className = '',
     minWidth = '8rem',
+    maxWidth,
     usePortal = false
 }) => {
     const [internalOpen, setInternalOpen] = useState(defaultOpen);
@@ -102,7 +103,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
                 !usePortal && menuPlacementClasses,
                 className
             )}
-            style={{ minWidth, ...(usePortal ? menuStyle : {}) }}
+            style={{ minWidth, maxWidth, ...(usePortal ? menuStyle : {}) }}
         >
             {items.map((item, index) => (
                 <button

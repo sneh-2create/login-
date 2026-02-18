@@ -29,6 +29,8 @@ export interface DropdownMenuProps {
     className?: string;
     /** Min width of menu (e.g. '8rem') */
     minWidth?: string;
+    /** Max width of menu (e.g. '16rem') */
+    maxWidth?: string;
     /** When true, renders the menu in a portal (document.body) to escape overflow/clip contexts (e.g. inside tables) */
     usePortal?: boolean;
 }

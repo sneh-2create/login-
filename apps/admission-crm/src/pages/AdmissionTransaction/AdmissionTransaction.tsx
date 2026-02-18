@@ -261,6 +261,7 @@ const AdmissionTransactionPage = () => {
                              items={items}
                              placement="bottom-end"
                              usePortal
+                             maxWidth="12rem"
                          />
                      );
                 }
