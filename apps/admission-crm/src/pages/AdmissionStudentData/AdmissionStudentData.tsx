@@ -677,45 +677,50 @@ const AdmissionStudentData = () => {
             return;
         }
 
-        const studentIds = Array.from(selectedRows);
+        const selectedStudents = getSelectedStudents();
+        if (selectedStudents.length === 0) {
+            alert('Could not find selected student data. Please try again.');
+            return;
+        }
+
         const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
 
-        studentIds.forEach((studentId, index) => {
-            setTimeout(() => {
-                const printWindow = window.open(
-                    `${angularAppUrl}/print/open/printAdmissionForm`,
-                    '_blank'
-                );
+        // Open a single window and send all students at once
+        // Angular will render all forms on one page with page-break separators
+        const printWindow = window.open(
+            `${angularAppUrl}/print/open/printAdmissionForm`,
+            '_blank'
+        );
 
-                if (printWindow) {
-                    const sendData = () => {
-                        printWindow.postMessage(
-                            {
-                                type: 'PRINT_ADMISSION_FORM',
-                                data: {
-                                    studentId: studentId,
-                                    entityId: entityId,
-                                    session: session,
-                                    entity: {
-                                        _id: entityId,
-                                        displayName: entityDetails?.displayName,
-                                        logo: entityDetails?.logo,
-                                    },
-                                    entityPreferences: entityPreferences,
-                                    entityType: 'school'
-                                }
+        if (printWindow) {
+            const sendData = () => {
+                printWindow.postMessage(
+                    {
+                        type: 'PRINT_ADMISSION_FORM_BULK',
+                        data: {
+                            entityId: entityId,
+                            session: session,
+                            entity: {
+                                _id: entityId,
+                                displayName: entityDetails?.displayName,
+                                logo: entityDetails?.logo,
                             },
-                            angularAppUrl
-                        );
-                    };
+                            entityPreferences: entityPreferences,
+                            entityType: 'school',
+                            students: selectedStudents  // Full student objects array
+                        }
+                    },
+                    angularAppUrl
+                );
+            };
 
-                    setTimeout(sendData, 500);
-                    setTimeout(sendData, 1000);
-                    setTimeout(sendData, 2000);
-                }
-            }, index * 1000);
-        });
+            // Send after Angular app loads
+            setTimeout(sendData, 1000);
+        } else {
+            alert('Popup was blocked. Please allow popups for this site and try again.');
+        }
     };
+
 
     const handleBulkUpdateCounselor = () => {
         if (selectedRows.size === 0) return;
