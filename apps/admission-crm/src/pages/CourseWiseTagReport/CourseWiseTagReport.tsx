@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useCourseWiseTagReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, Tooltip } from '@od-erp/ui';
+import { Button, DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, SelectSingle, DatePicker } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as xlsx from 'xlsx';
@@ -10,7 +10,6 @@ import { processCourseWiseTagData, addExcelReportHeader, addExcelReportFooter } 
 import { format } from 'date-fns';
 
 const CourseWiseTagReport = () => {
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CourseWiseTagReportTableRow[]>([]);
 
     // Filters
@@ -59,9 +58,7 @@ const CourseWiseTagReport = () => {
             const myTeam = admissionMaster.teams.find((team: any) => team.leadDetails?.employee === user._id);
             if (myTeam) {
                 isUserLead = true;
-                // Add Lead (Self)
                 filteredOptions.push({ label: myTeam.leadDetails.employeeName, value: myTeam.leadDetails.employee });
-                // Add Members
                 if (myTeam.memberDetails) {
                     myTeam.memberDetails.forEach((mem: any) => {
                         filteredOptions.push({ label: mem.employeeName, value: mem.employee });
@@ -91,10 +88,8 @@ const CourseWiseTagReport = () => {
         setCounselorOptions(uniqueOptions);
 
         // Tags
-        if (admissionMaster) {
-            if (admissionMaster.tags) {
-                setDynamicColumns(admissionMaster.tags.map((t: any) => t.tag));
-            }
+        if (admissionMaster?.tags) {
+            setDynamicColumns(admissionMaster.tags.map((t: any) => t.tag));
         }
 
     }, [counselors, admissionMaster, isAdmissionAdmin, user]);
@@ -125,7 +120,6 @@ const CourseWiseTagReport = () => {
     useEffect(() => {
         setLoading(isLoading);
         if (reportData && Array.isArray(reportData)) {
-            // Use common utility for data processing
             const processedData = processCourseWiseTagData(reportData, dynamicColumns);
             setData(processedData);
         } else {
@@ -133,9 +127,9 @@ const CourseWiseTagReport = () => {
         }
     }, [reportData, isLoading, dynamicColumns]);
 
-
     const handleSearch = () => {
         refetch();
+        setShowFilter(false);
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => {
@@ -208,13 +202,12 @@ const CourseWiseTagReport = () => {
     }, [columns, dynamicColumns]);
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
 
             // Common Header
-            const tableStartRow = addExcelReportHeader(ws, entityName, 'Course Wise Tag Report', []);
+            const tableStartRow = addExcelReportHeader(ws, entityName, `${displayNames.course} Wise Tag Report`, []);
 
             // Headers with display names
             const headerRow = ['S.No', displayNames.course, displayNames.stream];
@@ -253,8 +246,6 @@ const CourseWiseTagReport = () => {
 
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -264,135 +255,124 @@ const CourseWiseTagReport = () => {
         window.open('/admission/print/courseWiseTagReport', '_blank');
     };
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: data.length > 0,
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: data.length > 0,
+            variant: 'outline'
+        }
+    ];
+
     return (
         <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col mb-6 gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Course Wise Tag Report</h1>
-                        <Breadcrumb
-                            items={[
-                                { label: 'Dashboard', href: '/dashboard' },
-                                { label: 'Admission Reports', href: '/admission/reports' },
-                                { label: 'Course Wise Tag Report' }
-                            ]}
-                        />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        {/* Filter Toggle */}
-                        <Tooltip content="Filter" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                                onClick={() => setShowFilter(!showFilter)}
-                            >
-                                <SlidersHorizontal className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
+            <PageHeader
+                title={`${displayNames.course} Wise Tag Report`}
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: `${displayNames.course} Wise Tag Report` }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                        <Tooltip content="Refresh" placement="bottom">
+            <PageToolbar
+                tabs={[]}
+                activeTab=""
+                onTabChange={() => {}}
+                actions={actionButtons}
+            />
+
+            {/* Collapsible Filter Card */}
+            {showFilter && (
+                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
+                    <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Filter Details</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div>
+                            <DatePicker
+                                label="Start Date"
+                                value={startDate ? new Date(startDate) : undefined}
+                                onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
+                                maxDate={endDate ? new Date(endDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <DatePicker
+                                label="End Date"
+                                value={endDate ? new Date(endDate) : undefined}
+                                onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
+                                minDate={startDate ? new Date(startDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <SelectSingle
+                                label="Select Counselor"
+                                options={counselorOptions}
+                                value={selectedCounselor}
+                                onChange={(val) => setSelectedCounselor(val as string)}
+                                placeholder="Select Counselor"
+                                disabled={!isAdmissionAdmin && !isLead}
+                                containerClassName="w-full"
+                            />
+                        </div>
+                        <div className="flex items-end">
                             <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                                variant="primary"
                                 onClick={handleSearch}
+                                isLoading={loading}
+                                className="w-full md:w-auto px-8 h-10 font-medium"
                             >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                Apply Filters
                             </Button>
-                        </Tooltip>
-
-                        {data.length > 0 && (
-                            <>
-                                <Tooltip content="Export to Excel" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handleExport}
-                                        isLoading={exportLoading}
-                                    >
-                                        <Download className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Print" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handlePrint}
-                                    >
-                                        <Printer className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Collapsible Filter Card */}
-                {showFilter && (
-                    <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
-                        <div className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
-                                <DatePicker
-                                    value={startDate ? new Date(startDate) : undefined}
-                                    onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
-                                    maxDate={endDate ? new Date(endDate) : undefined}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
-                                <DatePicker
-                                    value={endDate ? new Date(endDate) : undefined}
-                                    onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
-                                    minDate={startDate ? new Date(startDate) : undefined}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                                <Dropdown
-                                    options={counselorOptions}
-                                    value={selectedCounselor}
-                                    onChange={(val) => setSelectedCounselor(val as string)}
-                                    placeholder="Select Counselor"
-                                    disabled={!isAdmissionAdmin && !isLead}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-auto">
-                                <Button
-                                    variant="primary"
-                                    onClick={() => {
-                                        handleSearch();
-                                        setShowFilter(false);
-                                    }}
-                                    isLoading={loading}
-                                    className="w-full md:w-auto"
-                                >
-                                    Apply Filters
-                                </Button>
-                            </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Data Table */}
-                {data.length > 0 && (
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={allColumns}
-                            data={data}
-                            isLoading={loading}
-                            showSearch={true}
-                        />
-                    </div>
-                )}
-                {!loading && data.length === 0 && (
-                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                    </div>
-                )}
-            </div>
+            {/* Data Table */}
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={allColumns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
+                </div>
+            )}
+
+            {!loading && data.length === 0 && (
+                <EmptyState message="No Records Found" />
+            )}
         </div>
     );
 };

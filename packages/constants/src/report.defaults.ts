@@ -60,3 +60,19 @@ export const DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS = [
     { name: 'Receipt Id', value: 'receiptId', seqNo: 13 }
 ];
 
+/**
+ * Default table heads for Admission Lead Logs Report
+ * Source: Angular data.json (defaultAdmissionLeadsReportHeads)
+ */
+export const DEFAULT_ADMISSION_LEADS_REPORT_HEADS = [
+    { name: 'CallerInfo', value: 'name', seqNo: 1 },
+    { name: 'Course', value: 'course', seqNo: 2 },
+    { name: 'Stream', value: 'stream', seqNo: 3 },
+    { name: 'Phone', value: 'phone', seqNo: 4 },
+    { name: 'Status', value: 'status', seqNo: 5 },
+    { name: 'Source', value: 'source', seqNo: 6 },
+    { name: 'Call Date', value: 'callTimestamp', seqNo: 7 },
+    { name: 'Call Status', value: 'callStatus', seqNo: 8 },
+    { name: 'Counselor Name', value: 'counselorName', seqNo: 9 },
+    { name: 'Updated By', value: 'updatedBy', seqNo: 10 }
+];
