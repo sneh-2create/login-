@@ -369,7 +369,7 @@ const CounselorProductivityReport = () => {
     ];
 
     return (
-        <div className="w-full max-w-full font-sans pb-8">
+        <div className="w-full max-w-full font-sans">
             <PageHeader
                 title="Counselor Productivity Report"
                 breadcrumbs={[

@@ -410,7 +410,7 @@ const DailyCollectionReportPage = () => {
     ];
 
     return (
-        <div className="w-full max-w-full font-sans pb-8">
+        <div className="w-full max-w-full font-sans">
             <PageHeader
                 title="Daily Collection Report"
                 breadcrumbs={[

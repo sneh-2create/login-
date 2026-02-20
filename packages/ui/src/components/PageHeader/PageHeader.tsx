@@ -23,7 +23,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, breadcrumbs, clas
     const visibleActions = actionButtons?.filter(action => action.isVisible !== false) || [];
     
     return (
-        <div className={`md:mb-3 ${className || ''}`}>
+        <div className={`${className || ''}`}>
             <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
                     <Title as='h1' variant="pageTitleNoMargin">{title}</Title>

@@ -270,7 +270,7 @@ const VacantSeatsReport = () => {
     ];
 
     return (
-        <div className="w-full max-w-full font-sans pb-8">
+        <div className="w-full max-w-full font-sans">
             <PageHeader
                 title={`${displayNames.subjectCombination} Report`}
                 breadcrumbs={[

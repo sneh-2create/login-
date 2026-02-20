@@ -22,185 +22,208 @@ interface PageToolbarProps {
     extraContent?: React.ReactNode;
 }
 
-export const PageToolbar: React.FC<PageToolbarProps> = ({ 
-    tabs, 
-    activeTab, 
-    onTabChange, 
-    actions, 
+export const PageToolbar: React.FC<PageToolbarProps> = ({
+    tabs,
+    activeTab,
+    onTabChange,
+    actions,
     className,
     extraContent
 }) => {
     const [isSticky, setIsSticky] = React.useState(false);
-    const [isHovered, setIsHovered] = React.useState(false);
+    const [actionsExpanded, setActionsExpanded] = React.useState(false);
     const [sidebarWidth, setSidebarWidth] = React.useState(0);
     const sentinelRef = React.useRef<HTMLDivElement>(null);
 
-    // Dynamically track the sidebar <aside> element's width so the sticky
-    // floating button always aligns with the right edge of the sidebar,
-    // regardless of whether it is expanded or collapsed.
+    // Track sidebar width so sticky bar starts after sidebar
     React.useEffect(() => {
         const sidebar = document.querySelector('aside');
         if (!sidebar) return;
-
-        const updateWidth = () => setSidebarWidth(sidebar.getBoundingClientRect().width);
-        updateWidth();
-
-        const ro = new ResizeObserver(updateWidth);
+        const update = () => setSidebarWidth(sidebar.getBoundingClientRect().width);
+        update();
+        const ro = new ResizeObserver(update);
         ro.observe(sidebar);
         return () => ro.disconnect();
     }, []);
 
+    // Detect when toolbar sentinel scrolls past the header
     React.useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
-                // When toolbar scrolls up and reaches the header (top-24 = 96px), show sticky button
-                // entry.boundingClientRect.top gives us the distance from viewport top
-                const hasScrolledPastHeader = entry.boundingClientRect.top <= 96;
-                const shouldBeSticky = !entry.isIntersecting && hasScrolledPastHeader;
-                setIsSticky(shouldBeSticky);
+                const pastHeader = entry.boundingClientRect.top <= 96;
+                setIsSticky(!entry.isIntersecting && pastHeader);
             },
-            { 
-                threshold: [0, 0.1, 0.5, 1],
-                rootMargin: '0px 0px 0px 0px'
-            }
+            { threshold: [0, 0.1, 0.5, 1] }
         );
-
-        if (sentinelRef.current) {
-            observer.observe(sentinelRef.current);
-        }
-
+        if (sentinelRef.current) observer.observe(sentinelRef.current);
         return () => observer.disconnect();
     }, []);
 
-    // When sticky, scroll the original toolbar back into view before firing
-    // the action so that modals/dropdowns open from the correct position.
-    const scrollToToolbar = (callback?: () => void) => {
-        sentinelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setIsHovered(false);
-        // Small delay so the scroll animation starts before the action handler runs
-        if (callback) setTimeout(callback, 200);
-    };
+    // Collapse when toolbar scrolls back into view
+    React.useEffect(() => {
+        if (!isSticky) setActionsExpanded(false);
+    }, [isSticky]);
 
-    const ChevronRight = (props: React.SVGProps<SVGSVGElement>) => (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            {...props}
-        >
+    const visibleActions = actions?.filter(btn => btn.isVisible !== false) ?? [];
+    const hasTabs = !!(tabs && tabs.length > 0 && activeTab && onTabChange);
+
+    const ChevronRightIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="m9 18 6-6-6-6" />
+        </svg>
+    );
+
+    const XIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
         </svg>
     );
 
     return (
         <div className="relative">
+            {/* Sentinel — invisible anchor used to detect scroll position */}
             <div ref={sentinelRef} className="absolute -top-1 w-full h-1 opacity-0 pointer-events-none" />
-            
-            {/* Placeholder to prevent layout shift */}
-            {isSticky && (
-                <div className={`flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4 opacity-0 pointer-events-none ${className || ''}`}>
-                    <div className="h-10 w-full" />
-                </div>
-            )}
 
-            <div
-                className={`transition-all duration-300 ease-in-out ${
-                    isSticky
-                        ? "fixed top-24 z-[9999] flex items-center justify-start"
-                        : `flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4 ${className || ''}`
-                }`}
-                style={isSticky ? { left: sidebarWidth } : undefined}
-            >
-                {isSticky ? (
-                    <div
-                        className={`shadow-lg rounded-r-full p-2 flex items-center transition-all duration-300 ${isHovered ? 'bg-white border border-gray-200 pl-4' : 'bg-[var(--color-primary)] text-white hover:bg-[var(--color-primary-hover)] animate-pulse'}`}
-                        onMouseEnter={() => setIsHovered(true)}
-                        onMouseLeave={() => setIsHovered(false)}
-                        style={{
-                            maxWidth: isHovered ? "100%" : "50px"
-                        }}
-                    >
-                        <div className={`ml-2 cursor-pointer transition-transform duration-300 ${isHovered ? "text-primary" : "text-white rotate-180"}`}>
-                             <ChevronRight className="h-6 w-6" />
-                        </div>
-                        
-                        <div className={`flex items-center gap-4 overflow-hidden transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0 w-0 h-0"}`}>
-                            {/* Render Tabs in Floating View if present */}
-                            {tabs && tabs.length > 0 && activeTab && onTabChange && (
-                                <div className="shrink-0" onClick={() => scrollToToolbar()}>
-                                    <HorizontalTabs
-                                        tabs={tabs}
-                                        activeTab={activeTab}
-                                        onTabChange={(v) => scrollToToolbar(() => onTabChange(v))}
-                                        className="px-0 mb-0"
-                                    />
-                                </div>
-                            )}
-
-                            {/* Extra content (e.g. session selector) — scroll back when interacted with */}
-                            {extraContent && (
-                                <div className="shrink-0" onClick={() => scrollToToolbar()}>{extraContent}</div>
-                            )}
-
-                             <div className="flex items-center gap-2">
-                                {actions?.map((btn, index) => (
-                                    btn.isVisible !== false && (
-                                        <Tooltip key={index} content={btn.title} placement="bottom">
-                                            <Button
-                                                variant={btn.variant || "outline"}
-                                                className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
-                                                onClick={() => scrollToToolbar(btn.onClick)}
-                                                title={btn.title}
-                                            >
-                                                <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                            </Button>
-                                        </Tooltip>
-                                    )
-                                ))}
-                             </div>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex-1 w-full md:w-auto overflow-x-auto">
-                            {tabs && tabs.length > 0 && activeTab && onTabChange && (
-                                <HorizontalTabs
-                                    tabs={tabs}
-                                    activeTab={activeTab}
-                                    onTabChange={onTabChange}
-                                    className="px-0 mb-0"
-                                />
-                            )}
-                        </div>
-                        <div className="hidden md:flex items-center space-x-2 shrink-0">
-                            {/* Extra content (e.g. session selector) */}
-                            {extraContent && (
-                                <div className="shrink-0">{extraContent}</div>
-                            )}
-                            {actions?.map((btn, index) => (
-                                btn.isVisible !== false && (
-                                    <Tooltip key={index} content={btn.title} placement="bottom">
-                                        <Button
-                                            variant={btn.variant || "outline"}
-                                            className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
-                                            onClick={btn.onClick}
-                                            title={btn.title}
-                                        >
-                                            <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                        </Button>
-                                    </Tooltip>
-                                )
+            {/* ── NON-STICKY: normal inline toolbar ───────────────────────── */}
+            {!isSticky && (
+                <>
+                    <div className={`flex flex-row justify-end items-center mb-2 gap-2 ${className || ''}`}>
+                        {extraContent && <div className="shrink-0">{extraContent}</div>}
+                        <div className="flex items-center gap-2">
+                            {visibleActions.map((btn, i) => (
+                                <Tooltip key={i} content={btn.title} placement="bottom">
+                                    <Button
+                                        variant={btn.variant || 'outline'}
+                                        className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
+                                        onClick={btn.onClick}
+                                        title={btn.title}
+                                    >
+                                        <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                                    </Button>
+                                </Tooltip>
                             ))}
                         </div>
-                    </>
-                )}
-            </div>
+                    </div>
+
+                    {/* Tabs row below actions, full width with equal tab widths */}
+                    {hasTabs && (
+                        <div className="w-full mb-4">
+                            <HorizontalTabs
+                                tabs={tabs!}
+                                activeTab={activeTab!}
+                                onTabChange={onTabChange!}
+                                className="px-0 mb-0"
+                                fullWidth
+                            />
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* Placeholder height to prevent layout shift */}
+            {isSticky && (
+                <div
+                    className="opacity-0 pointer-events-none"
+                    style={{ height: hasTabs ? '84px' : '44px' }}
+                />
+            )}
+
+            {/* ── STICKY: 2-row bar fixed below header ────────────────────── */}
+            {isSticky && (
+                <div
+                    className="fixed z-[9999] bg-white border-b border-gray-200 shadow-sm"
+                    style={{
+                        top: '64px',       // adjust to match your header height
+                        left: sidebarWidth,
+                        right: 0,
+                    }}
+                >
+                    {/* ROW 1: expand toggle  +  actions (animated)  +  close btn */}
+                    <div className="flex items-center gap-2 px-3 py-1.5">
+
+                        {/* LEFT: expand toggle — hidden once expanded */}
+                        <div
+                            className="transition-all duration-200 overflow-hidden flex-shrink-0"
+                            style={{
+                                maxWidth: actionsExpanded ? 0 : '36px',
+                                opacity: actionsExpanded ? 0 : 1,
+                                pointerEvents: actionsExpanded ? 'none' : 'auto',
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setActionsExpanded(true)}
+                                onMouseEnter={() => setActionsExpanded(true)}
+                                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
+                                title="Expand actions"
+                            >
+                                <ChevronRightIcon />
+                            </button>
+                        </div>
+
+                        {/* Spacer */}
+                        <div className="flex-1" />
+
+                        {/* Actions — slide in from right */}
+                        <div
+                            className="flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out"
+                            style={{
+                                maxWidth: actionsExpanded ? '600px' : 0,
+                                opacity: actionsExpanded ? 1 : 0,
+                                pointerEvents: actionsExpanded ? 'auto' : 'none',
+                            }}
+                        >
+                            {extraContent && <div className="shrink-0">{extraContent}</div>}
+                            {visibleActions.map((btn, i) => (
+                                <Tooltip key={i} content={btn.title} placement="bottom">
+                                    <Button
+                                        variant={btn.variant || 'outline'}
+                                        className={`!p-0 !w-8 !h-8 flex-shrink-0 ${btn.className || ''}`}
+                                        onClick={btn.onClick}
+                                        title={btn.title}
+                                    >
+                                        <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                                    </Button>
+                                </Tooltip>
+                            ))}
+                        </div>
+
+                        {/* RIGHT: close/collapse — only when expanded */}
+                        <div
+                            className="transition-all duration-200 overflow-hidden flex-shrink-0"
+                            style={{
+                                maxWidth: actionsExpanded ? '36px' : 0,
+                                opacity: actionsExpanded ? 1 : 0,
+                                pointerEvents: actionsExpanded ? 'auto' : 'none',
+                            }}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setActionsExpanded(false)}
+                                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-red-50 hover:border-red-400 hover:text-red-500 transition-colors duration-200 cursor-pointer"
+                                title="Collapse actions"
+                            >
+                                <XIcon />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* ROW 2: Horizontal tabs — full width, equal tab widths */}
+                    {hasTabs && (
+                        <div className="w-full">
+                            <HorizontalTabs
+                                tabs={tabs!}
+                                activeTab={activeTab!}
+                                onTabChange={onTabChange!}
+                                className="px-0 mb-0"
+                                fullWidth
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };

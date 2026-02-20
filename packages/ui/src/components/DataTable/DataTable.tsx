@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useLayoutEffect, useRef } from 'react';
 import {
     useReactTable,
     getCoreRowModel,
@@ -29,7 +29,7 @@ export interface DataTableProps<TData, TValue> extends BaseDataTableProps {
 export function DataTable<TData, TValue>({
     columns,
     data,
-    maxHeight,
+    maxHeight: _maxHeight,
     isLoading,
     showSearch = true,
     searchPlaceholder = DEFAULT_SEARCH_PLACEHOLDER,
@@ -53,6 +53,45 @@ export function DataTable<TData, TValue>({
         pageIndex: 0,
         pageSize: initialItemsPerPage,
     });
+
+    // Auto-detect overflow: only constrain height when card bottom goes past viewport.
+    // This means small datasets render naturally; large ones get sticky header/footer.
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [constrainedHeight, setConstrainedHeight] = React.useState<number | null>(null);
+
+    useLayoutEffect(() => {
+        const compute = () => {
+            const el = cardRef.current;
+            if (!el) return;
+
+            // 1. Temporarily remove the height constraint so we can measure natural content height.
+            //    We do this in useLayoutEffect so it's synchronous — no visible flash.
+            const prevHeight = el.style.height;
+            el.style.height = '';
+
+            // 2. Measure natural scrollHeight (full content) and card's stable page-top offset.
+            const naturalH = el.scrollHeight;
+            let offsetTop = 0;
+            let node: HTMLElement | null = el;
+            while (node) {
+                offsetTop += node.offsetTop;
+                node = node.offsetParent as HTMLElement | null;
+            }
+
+            // 3. Re-apply previous constraint immediately (before paint) to avoid flash.
+            el.style.height = prevHeight;
+
+            const available = window.innerHeight - offsetTop - 16;
+            const next = naturalH > available ? Math.max(available, 200) : null;
+
+            setConstrainedHeight(prev => (prev === next ? prev : next));
+        };
+
+        compute();
+        window.addEventListener('resize', compute);
+        return () => window.removeEventListener('resize', compute);
+    }, [data, columns]);
+
 
     // Handle external pagination updates
     const handlePaginationChange = (updater: any) => {
@@ -208,10 +247,14 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className={`w-full flex justify-center items-start p-0 font-sans ${containerClassName}`}>
-            <div className={`w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
-                {/* Search Section */}
+            <div
+                ref={cardRef}
+                className="w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col"
+                style={constrainedHeight ? { height: constrainedHeight } : undefined}
+            >
+                {/* Search Section — sticky at top */}
                 {showSearch && (
-                    <div className="w-full min-h-16 p-3 box-border flex items-center gap-3 border-b border-[var(--color-border)]">
+                    <div className="w-full min-h-16 p-3 box-border flex items-center gap-3 border-b border-[var(--color-border)] flex-shrink-0 bg-[var(--color-card)]">
                         {/* Search By Dropdown (optional) */}
                         {searchByOptions && searchByOptions.length > 0 && (
                             <div className="w-48 flex-shrink-0">
@@ -240,10 +283,10 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                {/* Table Section */}
-                <div className="w-full overflow-x-auto overflow-y-auto" style={maxHeight ? { maxHeight: maxHeight } : {}}>
+                {/* Table Section — scrollable body */}
+                <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
                     <table className="w-full border-collapse bg-[var(--color-card)]">
-                        <thead className="bg-[var(--color-muted)]">
+                        <thead className="bg-[var(--color-muted)] sticky top-0 z-10">
                             <tr className="h-[50px]">
                                 {table.getHeaderGroups().map((headerGroup) =>
                                     headerGroup.headers.map((header) => {
@@ -315,9 +358,9 @@ export function DataTable<TData, TValue>({
                     </table>
                 </div>
 
-                {/* Pagination Section */}
+                {/* Pagination Section — sticky at bottom */}
                 {showPagination && (
-                    <div className="w-full px-3 py-2 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)]">
+                    <div className="w-full px-3 py-2 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)] flex-shrink-0">
                         <div className="flex items-center gap-2">
                             <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
                                 Items per page:
