@@ -97,8 +97,8 @@ export const TemplateFilter = ({
   };
 
   return (
-    <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+    <div className="bg-white p-3 rounded-lg shadow border border-gray-200 mb-3">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start">
 
         {/* Counselor dropdown — admin or team lead */}
         {(isAdmissionAdmin || isLead) && (
@@ -175,9 +175,8 @@ export const TemplateFilter = ({
           />
         </div>
 
-        {/* Show Member Details — admin AND team lead (matches Angular) */}
         {(isAdmissionAdmin || isLead) && (
-          <div className="w-full flex items-end pb-1">
+          <div className="w-full flex items-center self-center">
             <Toggle
               label="Show Member Details"
               checked={localShowMemberDetails}

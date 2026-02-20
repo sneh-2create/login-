@@ -23,8 +23,8 @@ export const HorizontalTabs: React.FC<HorizontalTabsProps> = ({
 }) => {
   return (
     <div className={cn(
-      "flex flex-nowrap border-b border-gray-200 no-scrollbar",
-      fullWidth ? "w-full" : "overflow-x-auto w-fit",
+      "flex flex-nowrap border-b border-gray-200 overflow-x-auto no-scrollbar",
+      fullWidth ? "w-full" : "w-fit",
       className
     )}>
       {tabs.map((tab) => (
@@ -32,8 +32,8 @@ export const HorizontalTabs: React.FC<HorizontalTabsProps> = ({
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
           className={cn(
-            "px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 ease-in-out hover:text-primary focus:outline-none text-center",
-            fullWidth ? "flex-1" : "",
+            "flex-shrink-0 px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 ease-in-out hover:text-primary focus:outline-none text-center",
+            fullWidth ? "md:flex-1" : "",
             activeTab === tab.value
               ? "border-primary text-primary"
               : "border-transparent text-gray-500"

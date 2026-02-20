@@ -307,8 +307,8 @@ const SourceWiseReport = () => {
 
             {/* Collapsible Filters */}
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="bg-white rounded-lg shadow mb-3 border border-gray-200 p-4">
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end">
                         <div className="w-full md:w-1/4">
                             <SelectSingle
                                 label="Select Source"

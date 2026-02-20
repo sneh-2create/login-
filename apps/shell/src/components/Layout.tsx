@@ -103,7 +103,7 @@ export const Layout: React.FC = () => {
                 <Header isSidebarExpanded={isMobile ? isMobileMenuOpen : isSidebarExpanded} onToggleSidebar={toggleSidebar} isMobile={isMobile} />
 
                 {/* Page Content */}
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6" style={{ background: 'var(--color-background)' }}>
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-2 md:p-6" style={{ background: 'var(--color-background)' }}>
                     <Outlet />
                 </main>
 

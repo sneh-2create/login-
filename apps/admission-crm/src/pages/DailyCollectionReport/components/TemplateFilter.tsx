@@ -68,7 +68,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             
             {/* Section 1: Date and Status */}
             <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
                     <DatePicker 
                         label='Start Date'
@@ -118,7 +118,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
 
             {/* Section 2: Class Information */}
             <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">{displayNames.course} Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
                     <MultiSelect
                         label={`Select ${displayNames.course}`}

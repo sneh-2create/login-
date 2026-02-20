@@ -355,7 +355,7 @@ const NepSubjectReport = () => {
             {/* Collapsible Filter Card */}
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 items-end">
                         <SelectSingle
                             label={displayNames.course}
                             value={selectedCourse}
@@ -403,7 +403,7 @@ const NepSubjectReport = () => {
                             containerClassName="w-full"
                         />
                     </div>
-                    <div className="flex justify-end mt-4">
+                    <div className="flex justify-end mt-1">
                         <button
                             onClick={handleSearch}
                             disabled={isLoading}

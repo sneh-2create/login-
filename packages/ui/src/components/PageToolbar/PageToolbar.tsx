@@ -89,25 +89,28 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
             {/* ── NON-STICKY: normal inline toolbar ───────────────────────── */}
             {!isSticky && (
                 <>
-                    <div className={`flex flex-row justify-end items-center mb-2 gap-2 ${className || ''}`}>
-                        {extraContent && <div className="shrink-0">{extraContent}</div>}
-                        <div className="flex items-center gap-2">
-                            {visibleActions.map((btn, i) => (
-                                <Tooltip key={i} content={btn.title} placement="bottom">
-                                    <Button
-                                        variant={btn.variant || 'outline'}
-                                        className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
-                                        onClick={btn.onClick}
-                                        title={btn.title}
-                                    >
-                                        <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                    </Button>
-                                </Tooltip>
-                            ))}
+                    {/* Actions row — hidden on mobile, visible on md+ */}
+                    {visibleActions.length > 0 && (
+                        <div className={`hidden md:flex flex-row justify-end items-center mb-2 gap-2 ${className || ''}`}>
+                            {extraContent && <div className="shrink-0">{extraContent}</div>}
+                            <div className="flex items-center gap-2">
+                                {visibleActions.map((btn, i) => (
+                                    <Tooltip key={i} content={btn.title} placement="bottom">
+                                        <Button
+                                            variant={btn.variant || 'outline'}
+                                            className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
+                                            onClick={btn.onClick}
+                                            title={btn.title}
+                                        >
+                                            <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                                        </Button>
+                                    </Tooltip>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Tabs row below actions, full width with equal tab widths */}
+                    {/* Tabs row — always visible, scrollable on mobile */}
                     {hasTabs && (
                         <div className="w-full mb-4">
                             <HorizontalTabs
@@ -140,8 +143,8 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                         right: 0,
                     }}
                 >
-                    {/* ROW 1: expand toggle  +  actions (animated)  +  close btn */}
-                    <div className="flex items-center gap-2 px-3 py-1.5">
+                    {/* ROW 1: expand toggle + actions — hidden on mobile */}
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5">
 
                         {/* LEFT: expand toggle — hidden once expanded */}
                         <div

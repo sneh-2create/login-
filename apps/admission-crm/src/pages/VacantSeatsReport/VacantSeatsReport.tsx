@@ -23,7 +23,7 @@ const VacantSeatsReport = () => {
     const [batches, setBatches] = useState<string[]>([]);
     const [selectedBatch, setSelectedBatch] = useState<string>('');
 
-    const [showFilter, setShowFilter] = useState(true);
+    const [showFilter, setShowFilter] = useState(false);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
@@ -290,7 +290,7 @@ const VacantSeatsReport = () => {
 
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-end">
                         <div className="w-full">
                             <SelectSingle
                                 label={`Select ${displayNames.course}`}

@@ -291,9 +291,8 @@ const CounselorTagReport = () => {
 
             {/* Collapsible Filter Card */}
             {showFilter && (
-                <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
-                    <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Filter Details</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4">
                         <div>
                             <DatePicker
                                 label="Start Date"

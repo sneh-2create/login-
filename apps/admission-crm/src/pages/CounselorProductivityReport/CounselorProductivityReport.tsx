@@ -393,7 +393,7 @@ const CounselorProductivityReport = () => {
             {/* Collapsible Filter Section */}
             {showFilter && (
                 <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end">
                         <div className="w-full md:w-1/4">
                             {!isAdmissionAdmin && !isLead ? (
                                 <div className="flex flex-col">

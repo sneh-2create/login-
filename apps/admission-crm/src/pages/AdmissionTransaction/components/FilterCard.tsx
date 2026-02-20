@@ -40,9 +40,8 @@ export const FilterCard = ({
     };
 
     return (
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
-            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
-            <div className={`grid grid-cols-1 gap-6 mb-6 ${autoVoucherEnabled ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+        <div className="bg-white p-3 rounded-lg shadow border border-gray-200 mb-3">
+            <div className={`grid grid-cols-1 gap-2 md:gap-6 mb-1 ${autoVoucherEnabled ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div>
                     <DatePicker
                         label="Start Date"
