@@ -2,9 +2,9 @@ import { useState, useMemo, useRef } from 'react';
 import { useAdmissionFollowUps, useAddAdmissionFollowUp, useEditAdmissionFollowUp } from '@od-erp/query';
 import { AdmissionLead } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
-import { X, MessageSquare, RotateCw, Check } from 'lucide-react';
+import { X, MessageSquare, RotateCw, Check, CalendarClock, AlertTriangle, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTable, Button, Input, DatePicker, TextArea } from '@od-erp/ui';
+import { DataTable, Button, DatePicker, TimePicker, TextArea } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import StudentInfoBar from '../StudentInfoBar';
 
@@ -24,45 +24,43 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
     const editFollowUp = useEditAdmissionFollowUp();
 
     // Form State
-    const [followUpDate, setFollowUpDate] = useState<Date>(new Date()); // Changed to Date
+    const [followUpDate, setFollowUpDate] = useState<Date>(new Date());
     const [time, setTime] = useState<string>(format(new Date(), 'HH:mm'));
     const [remark, setRemark] = useState<string>('');
     const [editId, setEditId] = useState<string | null>(null);
-    const [status, setStatus] = useState<string>('pending');
+    const [status] = useState<string>('pending');
     const [remarkError, setRemarkError] = useState<string>('');
-    // State for inline completion remarks
+
+    // Ref to collect per-row completion remarks without causing re-renders
     const completionRemarksRef = useRef<Record<string, string>>({});
 
     const resetForm = () => {
-        setFollowUpDate(new Date()); // Reset to Date
+        setFollowUpDate(new Date());
         setTime(format(new Date(), 'HH:mm'));
         setRemark('');
         setEditId(null);
-        setStatus('pending');
         setRemarkError('');
     };
 
-    // Time validation handler (matching Angular)
+    // Time validation: prevent selecting a past time on today
     const handleTimeChange = (newTime: string) => {
-        setTime(newTime);
-        
         if (newTime) {
             const currentTime = new Date();
             const selectedTime = new Date(followUpDate);
             const [hours, minutes] = newTime.split(':').map(Number);
-            selectedTime.setHours(hours, minutes);
-
+            selectedTime.setHours(hours, minutes, 0, 0);
             if (selectedTime < currentTime) {
                 alert("Can't set time before current time");
-                // Reset to current time
-                const currentHour = ('0' + currentTime.getHours()).slice(-2);
-                const currentMinute = ('0' + currentTime.getMinutes()).slice(-2);
-                setTime(`${currentHour}:${currentMinute}`);
+                const h = ('0' + currentTime.getHours()).slice(-2);
+                const m = ('0' + currentTime.getMinutes()).slice(-2);
+                setTime(`${h}:${m}`);
+                return;
             }
         }
+        setTime(newTime);
     };
 
-    // Remark validation (matching Angular: 2-100 chars, alphanumeric with ', -, .)
+    // Remark validation: 2–100 chars, alphanumeric + ', -, .
     const validateRemark = (value: string): boolean => {
         if (!value || value.trim().length < 2) {
             setRemarkError('Remark must be at least 2 characters');
@@ -72,10 +70,9 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             setRemarkError('Remark must not exceed 100 characters');
             return false;
         }
-        // Pattern: alphanumeric with special chars (', -, .)
         const pattern = /^[a-zA-Z0-9\s',.-]+$/;
         if (!pattern.test(value)) {
-            setRemarkError("Remark can only contain letters, numbers, and special characters (', -, .)");
+            setRemarkError("Only letters, numbers and special characters (', -, .) are allowed");
             return false;
         }
         setRemarkError('');
@@ -84,40 +81,35 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
 
     const handleRemarkChange = (value: string) => {
         setRemark(value);
-        if (value) {
-            validateRemark(value);
-        } else {
-            setRemarkError('');
-        }
+        if (value) validateRemark(value);
+        else setRemarkError('');
     };
 
     const handleMarkCompleted = async (row: any) => {
-        const remark = completionRemarksRef.current[row._id] || 'completed';
-        const payload: any = {
-            ...row,
-            status: 'completed',
-            completionRemark: remark
-        };
+        const completionRemark = completionRemarksRef.current[row._id] || 'completed';
+        const payload: any = { ...row, status: 'completed', completionRemark };
         try {
             await editFollowUp.mutateAsync(payload);
-            // Clear local state for this row
             delete completionRemarksRef.current[row._id];
         } catch (error) {
             console.error('Failed to mark as completed', error);
         }
     };
 
+    const handleEditRow = (row: any) => {
+        setEditId(row._id);
+        setRemark(row.followUpQuery || '');
+        setFollowUpDate(new Date(row.followUpDate));
+        setTime(format(new Date(row.followUpDate), 'HH:mm'));
+    };
+
     const handleSubmit = async () => {
         if (!student) return;
-
-        // Validate remark before submission
-        if (!validateRemark(remark)) {
-            return;
-        }
+        if (!validateRemark(remark)) return;
 
         const date = new Date(followUpDate);
         const [hours, minutes] = time.split(':').map(Number);
-        date.setHours(hours, minutes);
+        date.setHours(hours, minutes, 0, 0);
 
         const payload: any = {
             studentData: student._id,
@@ -129,7 +121,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             followUpDate: date.toISOString(),
             followUpQuery: remark,
             entity: entityId,
-            status: status
+            status,
         };
 
         try {
@@ -143,217 +135,280 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             resetForm();
         } catch (error) {
             console.error('Failed to save follow up', error);
-            // Ideally show a toast notification here
         }
     };
 
+    const hasPending = followUps?.some((f: any) => f.status?.toLowerCase() === 'pending');
+    const isFormDisabled = !editId && hasPending;
+
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
-            header: 'S.No',
+            header: '#',
+            size: 48,
             accessorFn: (_row, i) => i + 1,
+            cell: info => (
+                <span className="text-xs font-medium text-gray-400">{info.getValue() as number}</span>
+            ),
         },
         {
-            header: 'Counselor Name',
+            header: 'Counselor',
             accessorKey: 'counselorName',
+            cell: info => (
+                <span className="font-medium text-gray-700">{info.getValue() as string || '-'}</span>
+            ),
         },
         {
-            header: 'Created At',
+            header: 'Created',
             accessorKey: 'createdAt',
-            cell: info => info.getValue() ? format(new Date(info.getValue() as string), 'dd/MMM/yyyy') : '-'
+            cell: info => (
+                <span className="text-xs text-gray-500">
+                    {info.getValue() ? format(new Date(info.getValue() as string), 'dd MMM yyyy') : '-'}
+                </span>
+            ),
         },
         {
             header: 'Follow-Up Query',
             accessorKey: 'followUpQuery',
+            cell: info => (
+                <span className="text-sm text-gray-700 line-clamp-2">{info.getValue() as string || '-'}</span>
+            ),
         },
         {
-            header: 'Follow-Up Date',
+            header: 'Follow-Up Date & Time',
             accessorKey: 'followUpDate',
             cell: info => {
                 const date = new Date(info.getValue() as string);
                 return (
-                    <div>
-                        {format(date, 'dd/MMM/yyyy')} <br />
-                        {format(date, 'HH:mm')}
+                    <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-gray-700">{format(date, 'dd MMM yyyy')}</span>
+                        <span className="text-xs text-gray-400">{format(date, 'HH:mm')}</span>
                     </div>
                 );
-            }
+            },
         },
         {
             header: 'Status',
             accessorKey: 'status',
             cell: info => {
-                const status = (info.getValue() as string)?.toLowerCase();
+                const val = (info.getValue() as string) || '';
+                const isPending = val.toLowerCase() === 'pending';
                 return (
-                    <span className={`px-2 py-1 rounded text-white text-xs ${status === 'pending' ? 'bg-red-500' : 'bg-green-500'}`}>
-                        {info.getValue() as string}
+                    <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                            isPending
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        }`}
+                    >
+                        <span className={`w-1.5 h-1.5 rounded-full ${isPending ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                        {val.charAt(0).toUpperCase() + val.slice(1)}
                     </span>
                 );
-            }
+            },
         },
         {
             header: 'Completion Remark',
             accessorKey: 'completionRemark',
+            size: 200,
             cell: info => {
                 const isPending = info.row.original.status?.toLowerCase() === 'pending';
                 if (isPending) {
                     return (
                         <textarea
-                            className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white resize-none transition-colors placeholder:text-gray-400"
                             rows={2}
                             placeholder="Enter completion remark..."
                             defaultValue={completionRemarksRef.current[info.row.original._id] || ''}
                             onChange={(e) => {
                                 completionRemarksRef.current[info.row.original._id] = e.target.value;
                             }}
-                            onClick={(e) => e.stopPropagation()} // Prevent row selection if any
+                            onClick={(e) => e.stopPropagation()}
                         />
                     );
                 }
-                return info.getValue() || '-';
+                return (
+                    <span className="text-sm text-gray-600">{(info.getValue() as string) || '-'}</span>
+                );
             },
-            size: 200
         },
         {
-            header: 'Action',
+            header: 'Actions',
             id: 'actions',
+            size: 90,
             cell: info => {
                 const isPending = info.row.original.status?.toLowerCase() === 'pending';
                 return (
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5">
                         {isPending && (
-                            <button
-                                onClick={() => handleMarkCompleted(info.row.original)}
-                                className="p-1 rounded hover:bg-green-50 text-green-500 bg-green-50 border border-green-200"
-                                title="Mark as Completed"
-                            >
-                                <Check size={16} />
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => handleMarkCompleted(info.row.original)}
+                                    className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-colors"
+                                    title="Mark as Completed"
+                                >
+                                    <Check size={14} />
+                                </button>
+                                <button
+                                    onClick={() => handleEditRow(info.row.original)}
+                                    className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 border border-blue-200 transition-colors"
+                                    title="Edit Follow-Up"
+                                >
+                                    <Pencil size={14} />
+                                </button>
+                            </>
                         )}
                     </div>
                 );
-            }
-        }
+            },
+        },
     ], []);
 
     if (!isOpen || !student) return null;
 
-    // Content component
     const content = (
-        <div className={inline ? "space-y-6" : "p-6 overflow-y-auto flex-1 flex flex-col gap-6"}>
-                    {/* Schedule Follow-Up Form */}
-                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-lg font-medium text-gray-700 flex items-center gap-2">
-                                Schedule Follow-Up
-                                {editId && <span className="text-sm font-normal text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">Editing Mode</span>}
-                            </h4>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={resetForm}
-                                    className="p-1.5 text-gray-500 hover:bg-gray-200 rounded-full"
-                                    title="Reset Form"
-                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
-                                >
-                                    <RotateCw size={18} />
-                                </button>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleSubmit}
-                                    isLoading={addFollowUp.isPending || editFollowUp.isPending}
-                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
-                                >
-                                    {editId ? 'Update' : 'Save'}
-                                </Button>
-                            </div>
-                        </div>
+        <div className={inline ? 'space-y-5' : 'p-3 overflow-y-auto flex-1 flex flex-col gap-5'}>
 
-                        {!editId && followUps?.some((f: any) => f.status === 'pending') && (
-                            <div className="mb-4 bg-orange-50 border-l-4 border-orange-500 p-4">
-                                <div className="flex">
-                                    <div className="flex-shrink-0">
-                                        <svg className="h-5 w-5 text-orange-400" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <div className="ml-3">
-                                        <p className="text-sm text-orange-700">
-                                            A pending follow-up already exists. Please complete or edit the existing follow-up before scheduling a new one.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+            {/* ─── Schedule Follow-Up Card ─── */}
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+
+                {/* Card Header */}
+                <div className="flex items-center justify-between px-2 py-1 bg-gradient-to-r from-primary/5 to-primary/10 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                            <CalendarClock size={16} className="text-primary" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-gray-800">Schedule Follow-Up</h4>
+                        {editId && (
+                            <span className="ml-1 inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                                <Pencil size={10} />
+                                Editing
+                            </span>
                         )}
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">FollowUp Date</label>
-                                    <DatePicker
-                                        value={followUpDate}
-                                        onChange={(date: Date | null) => date && setFollowUpDate(date)}
-                                        minDate={new Date()}
-                                        className="w-full"
-                                        disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
-                                    />
-                                </div>
-                                <div>
-                                    <Input
-                                        label="Time"
-                                        type="time"
-                                        value={time}
-                                        onChange={(e) => handleTimeChange(e.target.value)}
-                                        disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
-                                    />
-                                </div>
-                            </div>
-                            <div className="md:col-span-2">
-                                <TextArea
-                                    label="Remark"
-                                    rows={5}
-                                    value={remark}
-                                    onChange={(val) => handleRemarkChange(val)}
-                                    placeholder="Enter remark here..."
-                                    error={remarkError}
-                                    disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
-                                />
-                            </div>
-                        </div>
                     </div>
-
-                    {/* Follow Ups List */}
-                    <div className="flex-1">
-                        {isFollowUpsLoading ? (
-                            <div className="flex justify-center py-8">Loading...</div>
-                        ) : followUps && followUps.length > 0 ? (
-                            <DataTable columns={columns} data={followUps} />
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-12 text-gray-400 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                                <MessageSquare size={48} className="mb-2 opacity-50" />
-                                <span className="text-lg">No Follow Ups found!</span>
-                            </div>
-                        )}
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={resetForm}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Reset Form"
+                            disabled={isFormDisabled}
+                        >
+                            <RotateCw size={15} />
+                        </button>
+                        <Button
+                            variant="primary"
+                            onClick={handleSubmit}
+                            isLoading={addFollowUp.isPending || editFollowUp.isPending}
+                            disabled={isFormDisabled}
+                        >
+                            {editId ? 'Update' : 'Save Follow-Up'}
+                        </Button>
                     </div>
                 </div>
+
+                {/* Pending Warning */}
+                {isFormDisabled && (
+                    <div className="flex items-start gap-3 px-4 py-3 bg-amber-50 border-b border-amber-100">
+                        <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-500" />
+                        <p className="text-sm text-amber-700">
+                            A pending follow-up already exists. Please complete or edit the existing follow-up before scheduling a new one.
+                        </p>
+                    </div>
+                )}
+
+                {/* Form Fields */}
+                <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-3">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Follow-Up Date</label>
+                            <DatePicker
+                                value={followUpDate}
+                                onChange={(date: Date | null) => date && setFollowUpDate(date)}
+                                minDate={new Date()}
+                                className="w-full"
+                                disabled={isFormDisabled}
+                            />
+                        </div>
+                        <TimePicker
+                            label="Follow-Up Time"
+                            value={time}
+                            onChange={handleTimeChange}
+                            disabled={isFormDisabled}
+                        />
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <TextArea
+                            label="Remark"
+                            rows={5}
+                            value={remark}
+                            onChange={handleRemarkChange}
+                            placeholder="Enter follow-up remarks here (2–100 characters)..."
+                            error={remarkError}
+                            disabled={isFormDisabled}
+                        />
+                        <div className="mt-1 flex justify-end">
+                            <span className={`text-xs ${remark.length > 90 ? 'text-amber-500' : 'text-gray-400'}`}>
+                                {remark.length}/100
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ─── Follow-Up History Table ─── */}
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
+                    <MessageSquare size={15} className="text-gray-500" />
+                    <h4 className="text-sm font-semibold text-gray-700">Follow-Up History</h4>
+                    {followUps && followUps.length > 0 && (
+                        <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {followUps.length} record{followUps.length !== 1 ? 's' : ''}
+                        </span>
+                    )}
+                </div>
+
+                {isFollowUpsLoading ? (
+                    <div className="flex items-center justify-center gap-2 py-12 text-gray-400">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
+                        <span className="text-sm">Loading follow-ups...</span>
+                    </div>
+                ) : followUps && followUps.length > 0 ? (
+                    <DataTable columns={columns} data={followUps} />
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-14 text-gray-400">
+                        <div className="p-4 rounded-full bg-gray-50 border border-dashed border-gray-200 mb-3">
+                            <MessageSquare size={32} className="opacity-40" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-500">No follow-ups yet</p>
+                        <p className="text-xs text-gray-400 mt-0.5">Schedule the first follow-up using the form above.</p>
+                    </div>
+                )}
+            </div>
+        </div>
     );
 
-    // Inline mode - render content directly
+    // Inline mode — render content directly without modal chrome
     if (inline) {
         return content;
     }
 
-    // Modal mode - render with modal wrapper
+    // Modal mode — full modal wrapper
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden m-4">
-                <div className="flex justify-between items-center px-3 py-2 border-b">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                            <MessageSquare className="mr-2 h-5 w-5 text-primary" />
-                            Follow Ups
-                        </h2>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                            <MessageSquare size={18} className="text-primary" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-800">Follow Ups</h2>
                     </div>
-                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
-                        <X size={20} />
+                    <button
+                        onClick={onClose}
+                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                        <X size={18} />
                     </button>
                 </div>
 

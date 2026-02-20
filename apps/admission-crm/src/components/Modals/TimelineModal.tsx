@@ -127,7 +127,7 @@ const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden m-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden m-4">
                 <div className="flex justify-between items-center px-3 py-2 border-b">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                         <Clock className="mr-2 h-5 w-5 text-primary" />

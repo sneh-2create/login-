@@ -4,8 +4,8 @@ import { useAdmissionLeadLog, useClickToCall } from '@od-erp/query';
 import { useViewAdmissionStudentData } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
-import { X, PhoneCall, Download } from 'lucide-react';
-import { Button } from '@od-erp/ui';
+import { X, PhoneCall, Download, Phone } from 'lucide-react';
+import { Button, HorizontalTabs } from '@od-erp/ui';
 import StudentInfoBar from '../StudentInfoBar';
 
 interface CallsModalProps {
@@ -14,101 +14,84 @@ interface CallsModalProps {
     student: AdmissionLead | null;
 }
 
+const VIEW_TABS = [
+    { label: 'Table View', value: 'table' },
+    { label: 'Board View', value: 'board' },
+];
+
 const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
-    const [viewMode, setViewMode] = useState<'table' | 'board'>('table');
+    const [viewMode, setViewMode] = useState<string>('table');
 
-    // Get myOperatorId from localStorage
     const myOperatorId = localStorage.getItem('myOperatorId') || '';
 
-    // Fetch student timeline data
     const { data: studentData } = useViewAdmissionStudentData(student?._id || '');
 
-    // Fetch API logs
     const { data: leadLogsData, isLoading } = useAdmissionLeadLog({
         entity: entityId,
         session,
         phone: student?.phone,
         pageSize: 100,
-        pageNumber: 1
+        pageNumber: 1,
     });
 
-    // Click to call mutation
     const clickToCallMutation = useClickToCall();
 
-    // Combine data from both sources and filter by source 'myOperator'
     const callsData = useMemo(() => {
         const timelineData = studentData?.timeline || [];
         const apiLogsData = leadLogsData?.data || [];
-        
-        // Concatenate both sources
         const combinedData = [...timelineData, ...apiLogsData];
-        
-        // Filter by source 'myOperator' (matching Angular logic)
         const filteredData = combinedData.filter((item: any) => item.source === 'myOperator');
-        
-        // Sort by date (newest first)
-        return filteredData.sort((a: any, b: any) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateB - dateA;
-        });
+        return filteredData.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }, [studentData, leadLogsData]);
 
-    // Check permission
     const hasClickToCallPermission = permissions.includes('peerToPeerCallForAdmission');
 
-    // Handle click to call
     const handleClickToCall = () => {
         if (!student) return;
-
-        const formData = {
-            entity: entityId,
-            session,
-            phone: student.phone,
-            applicationNumber: student.applicationNumber,
-            myOperatorId
-        };
-
-        clickToCallMutation.mutate(formData, {
-            onSuccess: () => {
-                // Call initiated successfully
-                // Success is handled by query invalidation
-            },
-            onError: (error: any) => {
-                console.error('Failed to initiate call:', error);
-            }
-        });
+        clickToCallMutation.mutate(
+            { entity: entityId, session, phone: student.phone, applicationNumber: student.applicationNumber, myOperatorId },
+            { onError: (error: any) => console.error('Failed to initiate call:', error) }
+        );
     };
 
     if (!isOpen || !student) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden m-4">
-                {/* Header */}
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <PhoneCall size={24} className="text-primary" />
-                        Calls
-                    </h2>
-                    <div className="flex items-center gap-3">
-                        {/* Click To Call Button */}
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden m-4">
+
+                {/* ─── Modal Header ─── */}
+                <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                    <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 rounded-lg bg-primary/10">
+                            <PhoneCall size={18} className="text-primary" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-gray-800">Calls</h2>
+                        {callsData.length > 0 && (
+                            <span className="text-xs font-semibold bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full">
+                                {callsData.length} call{callsData.length !== 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
                         {hasClickToCallPermission && (
                             <Button
                                 variant="primary"
                                 onClick={handleClickToCall}
                                 isLoading={clickToCallMutation.isPending}
-                                className="flex items-center gap-2"
                             >
-                                <PhoneCall size={16} />
+                                <PhoneCall size={14} className="mr-1.5" />
                                 {clickToCallMutation.isPending ? 'Calling...' : 'Click To Call'}
                             </Button>
                         )}
-                        <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500">
-                            <X size={20} />
+                        <button
+                            onClick={onClose}
+                            className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X size={18} />
                         </button>
                     </div>
                 </div>
@@ -116,62 +99,68 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                 {/* Student Info Bar */}
                 <StudentInfoBar student={student} />
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4">
+                {/* ─── Scrollable Content ─── */}
+                <div className="flex-1 overflow-y-auto p-3 bg-gray-50">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
-                    {/* View Toggles */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 min-h-[300px]">
-                        <div className="flex border-b px-4 py-2 bg-gray-50 cursor-pointer">
-                            <button
-                                onClick={() => setViewMode('table')}
-                                className={`text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'table' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Table View
-                            </button>
-                            <button
-                                onClick={() => setViewMode('board')}
-                                className={`ml-4 text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'board' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Board View
-                            </button>
-                        </div>
+                        {/* HorizontalTabs for view switching */}
+                        <HorizontalTabs
+                            tabs={VIEW_TABS}
+                            activeTab={viewMode}
+                            onTabChange={setViewMode}
+                            className="px-3 pt-1"
+                        />
 
-                        <div className="p-4">
+                        <div className="p-2">
                             {isLoading ? (
-                                <div className="text-center py-8 text-gray-500">Loading calls...</div>
-                            ) : callsData.length ? (
+                                <div className="flex items-center justify-center gap-2 py-12 text-gray-400">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
+                                    <span className="text-sm">Loading calls...</span>
+                                </div>
+                            ) : callsData.length > 0 ? (
+
                                 viewMode === 'table' ? (
-                                    <div className="overflow-x-auto">
+                                    /* ── Table View ── */
+                                    <div className="overflow-x-auto rounded-lg border border-gray-100">
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-primary text-white font-medium">
+                                            <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
                                                 <tr>
-                                                    <th className="px-4 py-3 rounded-tl-md">Index</th>
-                                                    <th className="px-4 py-3">Call Date</th>
-                                                    <th className="px-4 py-3 rounded-tr-md">Call Remark</th>
+                                                    <th className="px-4 py-3 font-semibold w-12">#</th>
+                                                    <th className="px-4 py-3 font-semibold w-44">Date & Time</th>
+                                                    <th className="px-4 py-3 font-semibold">Remark</th>
+                                                    <th className="px-4 py-3 font-semibold w-28">Recording</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-gray-100">
+                                            <tbody className="divide-y divide-gray-50">
                                                 {callsData.map((log: any, index: number) => (
-                                                    <tr key={log._id || index} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-gray-500 font-medium">{index + 1}</td>
-                                                        <td className="px-4 py-3 font-semibold text-gray-700">
-                                                            {log.date ? format(log.date, 'dd/MM/yyyy - hh:mm a') : '-'}
+                                                    <tr key={log._id || index} className="hover:bg-gray-50/60 transition-colors">
+                                                        <td className="px-4 py-3">
+                                                            <span className="text-xs font-medium text-gray-400">{index + 1}</span>
                                                         </td>
-                                                        <td className="px-4 py-3 text-gray-600">
-                                                            <div>{log.remark || '-'}</div>
-                                                            {log.callDetails?.callRecordingLink && (
-                                                                <div className="mt-2 flex flex-col gap-1">
-                                                                    <span className="text-xs font-semibold text-gray-500">Recording Link:</span>
-                                                                    <a
-                                                                        href={log.callDetails.callRecordingLink}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="inline-flex items-center text-primary hover:text-primary/80 text-xs gap-1"
-                                                                    >
-                                                                        <PhoneCall size={14} />
-                                                                        <span>Download</span>
-                                                                    </a>
-                                                                </div>
+                                                        <td className="px-4 py-3">
+                                                            <div className="font-medium text-sm text-gray-700">
+                                                                {log.date ? format(log.date, 'dd MMM yyyy') : '-'}
+                                                            </div>
+                                                            <div className="text-xs text-gray-400">
+                                                                {log.date ? format(log.date, 'hh:mm a') : '-'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-gray-700 whitespace-pre-wrap leading-relaxed">
+                                                            {log.remark || '-'}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            {log.callDetails?.callRecordingLink ? (
+                                                                <a
+                                                                    href={log.callDetails.callRecordingLink}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                                                                >
+                                                                    <Download size={13} />
+                                                                    Download
+                                                                </a>
+                                                            ) : (
+                                                                <span className="text-xs text-gray-300">—</span>
                                                             )}
                                                         </td>
                                                     </tr>
@@ -180,47 +169,68 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                         </table>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
+                                    /* ── Board View ── */
+                                    <div className="relative pl-10 space-y-2">
+                                        {/* Vertical timeline line */}
+                                        <div className="absolute left-3.5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/30 via-primary/10 to-transparent" />
+
                                         {callsData.map((log: any, index: number) => (
-                                            <div key={log._id || index} className="border border-gray-200 rounded-lg p-4 bg-white hover:shadow-md transition-shadow">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-semibold text-gray-600">
-                                                            {log.date ? format(log.date, 'dd/MM/yyyy') : '-'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {log.date ? format(log.date, 'hh:mm a') : ''}
-                                                        </span>
-                                                    </div>
-                                                    {log.callDetails?.callRecordingLink && (
-                                                        <a
-                                                            href={log.callDetails.callRecordingLink}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="text-gray-500 hover:text-blue-600"
-                                                            title="Download Recording"
-                                                        >
-                                                            <Download size={16} />
-                                                        </a>
-                                                    )}
+                                            <div key={log._id || index} className="relative">
+                                                {/* Timeline dot */}
+                                                <div className="absolute -left-10 top-3 w-7 h-7 rounded-full bg-primary border-4 border-white shadow-sm flex items-center justify-center z-10">
+                                                    <Phone size={12} className="text-white" />
                                                 </div>
-                                                <div className="border-t pt-3">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <PhoneCall size={16} className="text-primary" />
-                                                        <span className="text-xs font-semibold text-gray-700">Call</span>
+
+                                                <div className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                                                    {/* Card header */}
+                                                    <div className="flex items-center justify-between px-3 py-2 bg-gray-50/70 border-b border-gray-100">
+                                                        <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
+                                                            Call
+                                                        </span>
+                                                        <div className="flex items-center gap-3">
+                                                            {log.callDetails?.callRecordingLink && (
+                                                                <a
+                                                                    href={log.callDetails.callRecordingLink}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80"
+                                                                    title="Download Recording"
+                                                                >
+                                                                    <Download size={12} />
+                                                                    Recording
+                                                                </a>
+                                                            )}
+                                                            <div className="flex flex-col items-end">
+                                                                <span className="text-xs font-semibold text-gray-700">
+                                                                    {log.date ? format(log.date, 'dd MMM yyyy') : '-'}
+                                                                </span>
+                                                                <span className="text-[10px] text-gray-400">
+                                                                    {log.date ? format(log.date, 'hh:mm a') : '-'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-sm font-semibold text-gray-800 mb-1">Remark</div>
-                                                    <p className="text-sm text-gray-700">
-                                                        {log.remark || 'No remark'}
-                                                    </p>
+
+                                                    {/* Card body */}
+                                                    <div className="px-3 py-2">
+                                                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Remark</p>
+                                                        <p className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                                                            {log.remark || 'No remark'}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                 )
                             ) : (
-                                <div className="text-center py-12 text-gray-500 font-medium text-sm">
-                                    No Records found !
+                                /* ── Empty State ── */
+                                <div className="flex flex-col items-center justify-center py-14 text-gray-400">
+                                    <div className="p-4 rounded-full bg-gray-50 border border-dashed border-gray-200 mb-3">
+                                        <PhoneCall size={28} className="opacity-40" />
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-500">No calls recorded</p>
+                                    <p className="text-xs text-gray-400 mt-0.5">Call logs from myOperator will appear here.</p>
                                 </div>
                             )}
                         </div>
