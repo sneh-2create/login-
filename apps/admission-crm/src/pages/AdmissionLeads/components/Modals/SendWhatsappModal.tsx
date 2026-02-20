@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, MessageCircle } from 'lucide-react';
-import { Button, SelectInput, useToast } from '@od-erp/ui';
+import { Button, SelectSingle, MultiSelect, TextArea, useToast } from '@od-erp/ui';
 import { useCommunicationTemplates, useCommunicationConfig, useSendAdmissionWhatsapp } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { AdmissionLead } from '@od-erp/types';
-import MultiSelect from '../MultiSelect';
 
 interface SendWhatsappModalProps {
     isOpen: boolean;
@@ -137,11 +136,11 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col">
-                <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex justify-between items-center px-3 py-2 border-b">
                     <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <MessageCircle size={18} className="text-green-600" />
+                        <MessageCircle size={18} className="text-primary" />
                         Send Multiple Admission Reminder Whatsapp SMS
                     </h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
@@ -149,16 +148,19 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="px-3 py-2">
                     {/* Form Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         {/* Template Select */}
                         <div>
-                            <SelectInput
+                            <SelectSingle
                                 label="Select Template"
-                                value={selectedTemplateId}
-                                onChange={handleTemplateChange}
                                 options={templates?.map((t: any) => ({ label: t.name, value: t._id })) || []}
+                                value={selectedTemplateId}
+                                onChange={(val) => {
+                                    const e = { target: { value: val as string } } as React.ChangeEvent<HTMLSelectElement>;
+                                    handleTemplateChange(e);
+                                }}
                                 placeholder="Select Template"
                             />
                         </div>
@@ -169,7 +171,7 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
                                 label="Send to Numbers of"
                                 options={SEND_TO_OPTIONS}
                                 value={sendTo}
-                                onChange={setSendTo}
+                                onChange={(val) => setSendTo(val as string[])}
                                 placeholder="Send to Numbers of"
                            />
                         </div>
@@ -177,18 +179,17 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
 
                     {/* Content Preview */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                        <textarea
-                            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none min-h-[120px] bg-gray-50 font-medium disabled:opacity-75"
+                        <TextArea
+                            label="Content"
                             placeholder="Content"
                             value={content}
-                            readOnly
                             disabled
+                            rows={5}
                         />
                     </div>
                 </div>
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
+                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
                     <Button variant="outline" onClick={onClose} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
                         Cancel
                     </Button>
@@ -196,7 +197,7 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
                         variant="primary" 
                         onClick={handleSend}
                         disabled={isSending || !selectedTemplateId}
-                        className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                        className="flex items-center gap-2"
                     >
                         {isSending ? 'Sending...' : 'Send'}
                     </Button>

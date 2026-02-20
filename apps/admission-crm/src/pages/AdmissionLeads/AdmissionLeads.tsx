@@ -1,11 +1,12 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { DataTable, Button, Breadcrumb, ActionMenu, useToast, Tooltip } from '@od-erp/ui';
+import { useState, useMemo, useEffect } from 'react';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, DropdownMenu, Badge, Checkbox, SelectSingle, Tooltip, Button, useToast } from '@od-erp/ui';
 import { useAdmissionLead, useSessions, useBulkCounselorUpdate } from '@od-erp/query';
 import { useAdmissionStageSetup, useAdmissionStages, useAdmissionMaster, useEditAdmissionStudentData } from '@od-erp/query';
 import { AdmissionLead, AdmissionLeadPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Plus, Clock, MessageSquare, Plane, FileText, PhoneCall, Search, SlidersHorizontal, RefreshCw, Download } from 'lucide-react';
+import { Plus, MessageSquare, SlidersHorizontal, RefreshCw, Download, Clock, Plane, FileText, PhoneCall, MoreVertical, Users } from 'lucide-react';
+import { ADMISSION_LEADS_SEARCH_BY_OPTIONS } from '@od-erp/constants';
 import { useAppSelector, useAppDispatch, setAcademicSession } from '@od-erp/store';
 import TimelineModal from '../../components/Modals/TimelineModal';
 import ViewFollowUpModal from '../../components/Modals/ViewFollowUpModal';
@@ -27,27 +28,10 @@ const AdmissionLeads = () => {
     const dispatch = useAppDispatch();
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
 
-    // State for Bulk Action Menu
-    const [isBulkActionOpen, setIsBulkActionOpen] = useState(false);
-    const bulkActionRef = useRef<HTMLDivElement>(null);
-
     // Modal States
     const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
     const [isWhatsappModalOpen, setIsWhatsappModalOpen] = useState(false);
     const [isBulkUpdateCounselorOpen, setIsBulkUpdateCounselorOpen] = useState(false);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (bulkActionRef.current && !bulkActionRef.current.contains(event.target as Node)) {
-                setIsBulkActionOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     // State
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -69,12 +53,12 @@ const AdmissionLeads = () => {
     const { refetch: refetchStageCounts } = useAdmissionStages(entityId, session);
     const { data: admissionMaster } = useAdmissionMaster(entityId, session);
 
-    const [selectedStage, setSelectedStage] = useState<string>(''); // Default to first stage or empty
+    const [selectedStage, setSelectedStage] = useState<string>('');
 
     const [showFilterDialog, setShowFilterDialog] = useState(false);
     const [globalSearch, setGlobalSearch] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchType, setSearchType] = useState('name');
+    const [searchBy, setSearchBy] = useState('');
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
     const user = useAppSelector((state: any) => state.auth.user);
@@ -84,7 +68,7 @@ const AdmissionLeads = () => {
     const [filters, setFilters] = useState({
         startDate: undefined as number | undefined,
         endDate: undefined as number | undefined,
-        followUpEndDate: new Date().setHours(23, 59, 59, 999), // Default to end of today (Angular parity)
+        followUpEndDate: new Date().setHours(23, 59, 59, 999),
         counselorId: '',
         course: [] as string[],
         stream: [] as string[],
@@ -105,18 +89,17 @@ const AdmissionLeads = () => {
     // Set default stage when stages load
     useEffect(() => {
         if (stagesSetup && stagesSetup.length > 0 && !selectedStage && !globalSearch) {
-            // Angular Logic: Filter by stageType == 'lead' and sort by sequence
             const leadStages = stagesSetup.filter(s => s.stageType === 'lead');
             leadStages.sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
 
             if (leadStages.length > 0) {
                 setSelectedStage(leadStages[0].stage);
             } else {
-                 const sortedStages = [...stagesSetup].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
-                 const firstLead = sortedStages.find(s => s.stageType === 'lead');
-                 if(firstLead) {
+                const sortedStages = [...stagesSetup].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+                const firstLead = sortedStages.find(s => s.stageType === 'lead');
+                if (firstLead) {
                     setSelectedStage(firstLead.stage);
-                 }
+                }
             }
         }
     }, [stagesSetup, selectedStage, globalSearch]);
@@ -129,7 +112,6 @@ const AdmissionLeads = () => {
         }
     }, [session]);
 
-    // ... (rest of code)
     const [timelineStudent, setTimelineStudent] = useState<AdmissionLead | null>(null);
     const [isTimelineOpen, setIsTimelineOpen] = useState(false);
     const [followUpStudent, setFollowUpStudent] = useState<AdmissionLead | null>(null);
@@ -142,8 +124,8 @@ const AdmissionLeads = () => {
     const [isCallsOpen, setIsCallsOpen] = useState(false);
     const [referenceStudent, setReferenceStudent] = useState<AdmissionLead | null>(null);
     const [isReferenceOpen, setIsReferenceOpen] = useState(false);
-    
-    // Pending Tag State (Strict Parity)
+
+    // Pending Tag State
     const [pendingTag, setPendingTag] = useState<{ tag: any, student: any } | null>(null);
     const { mutate: updateStudent } = useEditAdmissionStudentData();
 
@@ -172,49 +154,43 @@ const AdmissionLeads = () => {
         };
 
         if (globalSearch) {
-             if (filters.counselorId) _payload.counselorId = filters.counselorId;
-             
-             if (searchTerm) {
-                 _payload.search = searchTerm;
-                 _payload.searchBy = searchType; 
-             } else {
-                 // Angular Fallback for Global Search with NO search term:
-                 // 1. Tags: 'positive' 
-                 if (admissionMaster?.tags) {
-                     const positiveTags = admissionMaster.tags
-                         .filter((t: any) => t.label === 'positive')
-                         .map((t: any) => t.tag);
-                     if (positiveTags.length > 0) {
-                         _payload.tag = positiveTags;
-                     }
-                 }
+            if (filters.counselorId) _payload.counselorId = filters.counselorId;
 
-                 // 2. FollowUpDates: set to default
-                 _payload.followUpStartDate = new Date(new Date(0).setHours(0, 0, 0, 0)).getTime();
-                 const todayEnd = new Date();
-                 todayEnd.setHours(23, 59, 59, 999);
-                 _payload.followUpEndDate = filters.followUpEndDate || todayEnd.getTime();
+            if (searchTerm) {
+                _payload.search = searchTerm;
+                _payload.searchBy = searchBy;
+            } else {
+                if (admissionMaster?.tags) {
+                    const positiveTags = admissionMaster.tags
+                        .filter((t: any) => t.label === 'positive')
+                        .map((t: any) => t.tag);
+                    if (positiveTags.length > 0) {
+                        _payload.tag = positiveTags;
+                    }
+                }
 
-                 // 3. Stage: 'lead'
-                 if (stagesSetup) {
-                     const leadStage = stagesSetup.find((s: any) => s.stageType === 'lead');
-                     if (leadStage) {
-                         _payload.stage = leadStage.stage;
-                     }
-                 } else if (selectedStage) {
-                     _payload.stage = selectedStage;
-                 }
-                 
-                 // 4. EngagementStatus
-                 if (filters.engagementStatus?.length) {
-                     _payload.engagementStatus = filters.engagementStatus;
-                 }
-             }
+                _payload.followUpStartDate = new Date(new Date(0).setHours(0, 0, 0, 0)).getTime();
+                const todayEnd = new Date();
+                todayEnd.setHours(23, 59, 59, 999);
+                _payload.followUpEndDate = filters.followUpEndDate || todayEnd.getTime();
+
+                if (stagesSetup) {
+                    const leadStage = stagesSetup.find((s: any) => s.stageType === 'lead');
+                    if (leadStage) {
+                        _payload.stage = leadStage.stage;
+                    }
+                } else if (selectedStage) {
+                    _payload.stage = selectedStage;
+                }
+
+                if (filters.engagementStatus?.length) {
+                    _payload.engagementStatus = filters.engagementStatus;
+                }
+            }
         } else {
-            // Normal Mode - Include all filters
             _payload.followUpStartDate = new Date(new Date(0).setHours(0, 0, 0, 0)).getTime();
             _payload.followUpEndDate = filters.followUpEndDate;
-            
+
             if (filters.startDate) _payload.startDate = filters.startDate;
             if (filters.endDate) _payload.endDate = filters.endDate;
             if (filters.counselorId) _payload.counselorId = filters.counselorId;
@@ -224,27 +200,25 @@ const AdmissionLeads = () => {
             if (filters.tag?.length) _payload.tag = filters.tag;
             if (filters.source?.length) _payload.source = filters.source;
             if (filters.engagementStatus?.length) _payload.engagementStatus = filters.engagementStatus;
-            
-            // Stage is only sent in Normal Mode
+
             if (selectedStage) {
                 _payload.stage = selectedStage;
             }
 
             if (searchTerm) {
                 _payload.search = searchTerm;
-                _payload.searchBy = searchType;
+                _payload.searchBy = searchBy;
             }
         }
 
         return _payload as AdmissionLeadPayload;
-    }, [entityId, session, pagination, searchTerm, searchType, globalSearch, selectedStage, filters]);
+    }, [entityId, session, pagination, searchTerm, searchBy, globalSearch, selectedStage, filters]);
 
     const { data, isLoading, refetch } = useAdmissionLead(payload);
 
     // Row Selection State
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
 
-    // Handle row selection
     const handleSelectRow = (id: string) => {
         setSelectedRows(prev => ({
             ...prev,
@@ -266,9 +240,14 @@ const AdmissionLeads = () => {
 
     const selectedCount = Object.keys(selectedRows).filter(key => selectedRows[key]).length;
 
-const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
+    const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
         setFilters(newFilters);
         setGlobalSearch(newGlobalSearch);
+        setPagination({ ...pagination, pageIndex: 0 });
+    };
+
+    const handleSearch = (query: string) => {
+        setSearchTerm(query);
         setPagination({ ...pagination, pageIndex: 0 });
     };
 
@@ -307,7 +286,7 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
             const exportPayload = {
                 ...payload,
                 pageNumber: 1,
-                pageSize: 10000 // Fetch all records for export
+                pageSize: 10000
             };
 
             const xlsx = await import('xlsx');
@@ -317,7 +296,7 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
             const exportData = response.data || [];
 
             if (exportData.length === 0) {
-                alert('No data to export');
+                showToast('warning', 'No data to export');
                 return;
             }
 
@@ -342,7 +321,7 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
 
         } catch (error) {
             console.error('Export failed:', error);
-            alert('Failed to export data');
+            showToast('error', 'Failed to export data');
         }
     };
 
@@ -351,10 +330,10 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
 
     const handleBulkUpdateCounselor = (counselorId: string) => {
         const studentDataIds = Object.keys(selectedRows).filter(key => selectedRows[key]);
-        
+
         if (studentDataIds.length === 0) {
-             showToast('error', 'No leads selected');
-             return;
+            showToast('error', 'No leads selected');
+            return;
         }
 
         const payload = {
@@ -376,16 +355,99 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
         });
     };
 
-    const breadcrumbItems = [
-        { label: 'Dashboard', href: '/dashboard' },
-        { label: 'Admission', href: '#' },
-        { label: 'Admission Leads', href: '#' }
+    // Action Buttons (icon-only, tooltip on hover — Add Lead is in extraContent)
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilterDialog(!showFilterDialog),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => { refetch(); refetchStageCounts(); },
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        }
     ];
 
-    // Display Name Helper
-    const getDisplayName = (key: string) => {
-        return entityPreferences?.displayNames?.find((d: any) => d.value === key)?.name;
-    };
+    // Session Selector + Bulk Actions as extraContent for PageToolbar
+    const toolbarExtraContent = (
+        <div className="flex items-center gap-2">
+            {/* Bulk Update Counselor - icon only with tooltip */}
+            {selectedCount > 0 && permissions.includes('counselorUpdateBulkRequest') && (
+                <Tooltip content="Bulk Update Counselor" placement="bottom">
+                    <button
+                        className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                        onClick={() => setIsBulkUpdateCounselorOpen(true)}
+                    >
+                        <Users size={16} />
+                    </button>
+                </Tooltip>
+            )}
+
+            {/* Send Message - icon only with tooltip dropdown */}
+            {selectedCount > 0 && (
+                <DropdownMenu
+                    trigger={
+                        <Tooltip content="Send Message" placement="bottom">
+                            <button className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors">
+                                <MessageSquare size={16} />
+                            </button>
+                        </Tooltip>
+                    }
+                    items={[
+                        {
+                            label: 'Send SMS',
+                            onClick: () => setIsSmsModalOpen(true),
+                            disabled: !permissions.includes('sendMultipleAdmissionReminderSMSCommunication')
+                        },
+                        {
+                            label: 'Send WhatsApp',
+                            onClick: () => setIsWhatsappModalOpen(true),
+                            disabled: !permissions.includes('sendMultipleAdmissionReminderWhatsAppCommunication')
+                        }
+                    ]}
+                    placement="bottom-end"
+                    usePortal={true}
+                />
+            )}
+
+            {/* Session Selector */}
+            <SelectSingle
+                options={sessions?.map(s => ({ value: s.name, label: s.name })) || [{ value: session, label: session }]}
+                value={session}
+                onChange={(val) => dispatch(setAcademicSession(val as string))}
+                placeholder="Select Session"
+                containerClassName="w-40"
+            />
+
+            {/* Add Lead - labeled primary button */}
+            {permissions.includes('addAdmissionStudentData') && (
+                <Button
+                    variant="primary"
+                    onClick={handleAddLead}
+                    className="flex items-center gap-1.5"
+                >
+                    <Plus size={16} />
+                    Add Lead
+                </Button>
+            )}
+        </div>
+    );
 
     // Columns
     const columns = useMemo<ColumnDef<AdmissionLead>[]>(
@@ -394,37 +456,93 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 id: 'actions',
                 header: () => (
                     <div className="flex items-center gap-2 pl-2">
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        <Checkbox
                             checked={!!data?.data?.length && selectedCount === data?.data.length}
-                            onChange={(e) => handleSelectAll(e.target.checked)}
+                            onChange={(checked) => handleSelectAll(checked)}
                         />
                         <span className="font-semibold text-gray-700">Action</span>
                     </div>
                 ),
                 cell: ({ row }) => (
                     <div className="flex items-center gap-3 justify-center">
-                        <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        <Checkbox
                             checked={!!selectedRows[row.original._id]}
                             onChange={() => handleSelectRow(row.original._id)}
                         />
-                        <ActionMenu
+                        <DropdownMenu
+                            trigger={
+                                <button className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+                                    <MoreVertical size={16} />
+                                </button>
+                            }
+                            placement='bottom-end'
+                            maxWidth='12rem'
                             items={[
-                                { label: 'Edit Lead', onClick: () => handleEditLead(row.original), icon: <FileText size={14} /> },
-                                { label: 'Timeline', onClick: () => handleViewTimeline(row.original), icon: <Clock size={14} /> },
-                                { label: 'Follow Ups', onClick: () => handleViewFollowUp(row.original), icon: <Plane size={14} /> },
-                                { label: 'Notes', onClick: () => handleViewNotes(row.original), icon: <FileText size={14} /> },
-                                { label: 'Calls', onClick: () => handleViewCalls(row.original), icon: <PhoneCall size={14} /> },
-                                { label: 'Visits', onClick: () => handleViewVisits(row.original), icon: <Plane size={14} /> },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <FileText size={14} className="text-primary" />
+                                            <span>Edit Lead</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleEditLead(row.original)
+                                },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <Clock size={14} className="text-primary" />
+                                            <span>Timeline</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewTimeline(row.original)
+                                },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <Plane size={14} className="text-primary" />
+                                            <span>Follow Ups</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewFollowUp(row.original)
+                                },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <FileText size={14} className="text-primary" />
+                                            <span>Notes</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewNotes(row.original)
+                                },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <PhoneCall size={14} className="text-primary" />
+                                            <span>Calls</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewCalls(row.original)
+                                },
+                                {
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <Plane size={14} className="text-primary" />
+                                            <span>Visits</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewVisits(row.original)
+                                },
                                 ...(row.original.source === 'Reference' ? [{
-                                    label: 'Reference',
-                                    onClick: () => handleViewReference(row.original),
-                                    icon: <FileText size={14} />
+                                    label: (
+                                        <div className="flex items-center gap-2">
+                                            <FileText size={14} className="text-primary" />
+                                            <span>Reference</span>
+                                        </div>
+                                    ) as any,
+                                    onClick: () => handleViewReference(row.original)
                                 }] : []),
                             ]}
+                            usePortal={true}
                         />
                     </div>
                 ),
@@ -434,8 +552,8 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
             {
                 header: 'Tag',
                 accessorKey: 'tag',
-                cell: info => <TableTagSelect 
-                    student={info.row.original} 
+                cell: info => <TableTagSelect
+                    student={info.row.original}
                     onTagChange={(tag) => {
                         if (tag.label === 'positive') {
                             setPendingTag({ tag, student: info.row.original });
@@ -446,7 +564,7 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 size: 140
             },
             {
-                header: getDisplayName('applicationNumber') || 'Application Number',
+                header: 'Application Number',
                 accessorKey: 'applicationNumber',
                 cell: info => <span className="font-semibold text-gray-700">{info.getValue() as string || '-'}</span>,
                 size: 140
@@ -463,7 +581,6 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 cell: info => <span className="font-medium text-gray-800">{info.getValue() as string}</span>,
                 size: 180
             },
-
             {
                 header: 'Phone',
                 accessorKey: 'phone',
@@ -477,13 +594,13 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 size: 120
             },
             {
-                header: getDisplayName('course'),
+                header: displayNames.course,
                 accessorKey: 'course',
                 cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
                 size: 100
             },
             {
-                header: getDisplayName('stream'),
+                header: displayNames.stream,
                 accessorKey: 'stream',
                 cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
                 size: 100
@@ -492,9 +609,9 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 header: 'Source',
                 accessorKey: 'source',
                 cell: info => (
-                    <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded-md text-xs font-medium">
+                    <Badge variant="error" appearance="subtle">
                         {info.getValue() as string || 'Reference'}
-                    </span>
+                    </Badge>
                 ),
                 size: 120
             }
@@ -503,121 +620,21 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
     );
 
     return (
-        <div className="w-full max-w-full font-sans pb-8 px-4">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Lead</h1>
-                    <Breadcrumb items={breadcrumbItems} />
-                </div>
-                <div className="flex items-center gap-3">
-                    {selectedCount > 0 && permissions.includes('counselorUpdateBulkRequest') && (
-                        <Button
-                            variant="outline"
-                            className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 flex items-center gap-2 py-1 h-8 text-xs"
-                            onClick={() => setIsBulkUpdateCounselorOpen(true)}
-                        >
-                            <SlidersHorizontal size={14} />
-                            Bulk Update Counselor
-                        </Button>
-                    )}
+        <div className="w-full max-w-full font-sans pb-8">
+            <PageHeader
+                title="Admission Leads"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission', href: '/admission' },
+                    { label: 'Admission Leads' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    {/* Bulk Actions in Toolbar */}
-                    {selectedCount > 0 && (
-                        <div className="relative mr-2 animate-in fade-in slide-in-from-right-4 duration-300" ref={bulkActionRef}>
-                            <Button
-                                variant="outline"
-                                className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 flex items-center gap-2"
-                                onClick={() => setIsBulkActionOpen(!isBulkActionOpen)}
-                            >
-                                <MessageSquare size={16} />
-                                Send Message
-                            </Button>
-
-                            {isBulkActionOpen && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 ring-1 ring-black ring-opacity-5 py-1">
-                                    <button
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-left hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={!permissions.includes('sendMultipleAdmissionReminderSMSCommunication')}
-                                        onClick={() => {
-                                            setIsSmsModalOpen(true);
-                                            setIsBulkActionOpen(false);
-                                        }}
-                                    >
-                                        <MessageSquare size={16} />
-                                        <span>Send SMS</span>
-                                    </button>
-                                    <button
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-left hover:bg-gray-50 text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled={!permissions.includes('sendMultipleAdmissionReminderWhatsAppCommunication')}
-                                        onClick={() => {
-                                            setIsWhatsappModalOpen(true);
-                                            setIsBulkActionOpen(false);
-                                        }}
-                                    >
-                                        <MessageSquare size={16} />
-                                        <span>Send WhatsApp</span>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    <div className="text-xs text-gray-500 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm">
-                        <select
-                            className="bg-transparent font-semibold text-gray-700 focus:ring-0 border-none p-0 cursor-pointer text-sm outline-none"
-                            value={session}
-                            onChange={(e) => dispatch(setAcademicSession(e.target.value))}
-                        >
-                            {sessions?.map(s => (
-                                <option key={s._id} value={s.name}>{s.name}</option>
-                            ))}
-                            {!sessions?.length && <option value={session}>{session}</option>}
-                        </select>
-                    </div>
-
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-2 !w-10 !h-10 border-gray-200 shadow-sm ${showFilterDialog ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700 bg-white'}`}
-                            onClick={() => setShowFilterDialog(!showFilterDialog)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
-
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-gray-500 hover:text-gray-700 bg-white"
-                            onClick={() => { refetch(); refetchStageCounts(); }}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
-
-                    <Tooltip content="Export to Excel" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-2 !w-10 !h-10 border-gray-200 shadow-sm text-green-600 hover:bg-green-50 hover:text-green-700 bg-white"
-                            onClick={handleExport}
-                        >
-                            <Download className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
-
-                    {permissions.includes('addAdmissionStudentData') && (
-                        <Button
-                            variant="primary"
-                            className="text-white flex items-center gap-2 shadow-sm"
-                            onClick={handleAddLead}
-                        >
-                            <Plus size={18} />
-                            Add Lead
-                        </Button>
-                    )}
-                </div>
-            </div>
+            <PageToolbar
+                actions={actionButtons}
+                extraContent={toolbarExtraContent}
+            />
 
             {/* Filter Card */}
             {showFilterDialog && (
@@ -630,38 +647,6 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                     />
                 </div>
             )}
-
-            {/* Search Bar */}
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 mb-6 max-w-2xl mx-auto">
-                <div className="flex items-center divide-x divide-gray-200">
-                    <div className="px-3">
-                        <select
-                            className="w-32 border-none focus:ring-0 text-sm font-medium text-gray-600 bg-transparent py-2 outline-none cursor-pointer"
-                            value={searchType}
-                            onChange={(e) => setSearchType(e.target.value)}
-                        >
-                            <option value="name">Name</option>
-                            <option value="phone">Phone</option>
-                            <option value="applicationNumber">{getDisplayName('applicationNumber') || 'App No'}</option>
-                        </select>
-                    </div>
-                    <div className="flex-1 px-3 flex items-center">
-                        <Search size={18} className="text-gray-400 mr-2" />
-                        <input
-                            type="text"
-                            className="w-full border-none focus:ring-0 text-sm py-2 outline-none placeholder-gray-400"
-                            placeholder="Search leads..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
-            </div>
-
-
-
-
-
 
 
             {/* Add/Edit Lead Drawer */}
@@ -692,16 +677,31 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 </div>
             )}
 
-
-
             {/* Table */}
             <div className="w-full max-w-full overflow-x-auto">
                 <DataTable
                     data={data?.data || []}
                     columns={columns}
                     isLoading={isLoading}
+                    showSearch={true}
+                    searchPlaceholder="Search leads..."
+                    onSearch={handleSearch}
+                    searchByOptions={ADMISSION_LEADS_SEARCH_BY_OPTIONS as any}
+                    searchByValue={searchBy}
+                    onSearchByChange={(value) => setSearchBy(value)}
+                    showPagination={true}
+                    manualPagination={true}
+                    rowCount={data?.totalCount || 0}
+                    onPaginationChange={(p: any) => {
+                        setPagination({ pageIndex: p.pageIndex, pageSize: p.pageSize });
+                    }}
                 />
             </div>
+
+            {/* Empty State */}
+            {!isLoading && (!data?.data || data.data.length === 0) && (
+                <EmptyState message="No Leads Found" />
+            )}
 
             <SendSmsModal
                 isOpen={isSmsModalOpen}
@@ -746,21 +746,21 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
                 }}
                 student={followUpStudent}
                 onSaveSuccess={() => {
-                     if (pendingTag && followUpStudent && pendingTag.student._id === followUpStudent._id) {
+                    if (pendingTag && followUpStudent && pendingTag.student._id === followUpStudent._id) {
                         updateStudent({
-                           id: pendingTag.student._id,
-                           data: { tag: pendingTag.tag.tag }, 
-                       }, {
-                           onSuccess: () => {
-                               showToast('success', 'Tag updated successfully');
-                               setPendingTag(null);
-                               refetch(); // Refresh list to show new tag
-                           },
-                           onError: () => {
-                               showToast('error', 'Failed to update tag');
-                           }
-                       });
-                   }
+                            id: pendingTag.student._id,
+                            data: { tag: pendingTag.tag.tag },
+                        }, {
+                            onSuccess: () => {
+                                showToast('success', 'Tag updated successfully');
+                                setPendingTag(null);
+                                refetch();
+                            },
+                            onError: () => {
+                                showToast('error', 'Failed to update tag');
+                            }
+                        });
+                    }
                 }}
             />
 
@@ -792,4 +792,3 @@ const handleApplyFilters = (newFilters: any, newGlobalSearch: boolean) => {
 };
 
 export default AdmissionLeads;
-

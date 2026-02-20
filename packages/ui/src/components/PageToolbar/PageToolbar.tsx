@@ -32,7 +32,23 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
 }) => {
     const [isSticky, setIsSticky] = React.useState(false);
     const [isHovered, setIsHovered] = React.useState(false);
+    const [sidebarWidth, setSidebarWidth] = React.useState(0);
     const sentinelRef = React.useRef<HTMLDivElement>(null);
+
+    // Dynamically track the sidebar <aside> element's width so the sticky
+    // floating button always aligns with the right edge of the sidebar,
+    // regardless of whether it is expanded or collapsed.
+    React.useEffect(() => {
+        const sidebar = document.querySelector('aside');
+        if (!sidebar) return;
+
+        const updateWidth = () => setSidebarWidth(sidebar.getBoundingClientRect().width);
+        updateWidth();
+
+        const ro = new ResizeObserver(updateWidth);
+        ro.observe(sidebar);
+        return () => ro.disconnect();
+    }, []);
 
     React.useEffect(() => {
         const observer = new IntersectionObserver(
@@ -55,6 +71,15 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
 
         return () => observer.disconnect();
     }, []);
+
+    // When sticky, scroll the original toolbar back into view before firing
+    // the action so that modals/dropdowns open from the correct position.
+    const scrollToToolbar = (callback?: () => void) => {
+        sentinelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setIsHovered(false);
+        // Small delay so the scroll animation starts before the action handler runs
+        if (callback) setTimeout(callback, 200);
+    };
 
     const ChevronRight = (props: React.SVGProps<SVGSVGElement>) => (
         <svg
@@ -87,9 +112,10 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
             <div
                 className={`transition-all duration-300 ease-in-out ${
                     isSticky
-                        ? "fixed top-24 left-64 z-[9999] flex items-center justify-start"
+                        ? "fixed top-24 z-[9999] flex items-center justify-start"
                         : `flex flex-col md:flex-row justify-between items-end md:items-center mb-4 gap-4 ${className || ''}`
                 }`}
+                style={isSticky ? { left: sidebarWidth } : undefined}
             >
                 {isSticky ? (
                     <div
@@ -107,19 +133,19 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                         <div className={`flex items-center gap-4 overflow-hidden transition-opacity duration-300 ${isHovered ? "opacity-100" : "opacity-0 w-0 h-0"}`}>
                             {/* Render Tabs in Floating View if present */}
                             {tabs && tabs.length > 0 && activeTab && onTabChange && (
-                                <div className="shrink-0">
+                                <div className="shrink-0" onClick={() => scrollToToolbar()}>
                                     <HorizontalTabs
                                         tabs={tabs}
                                         activeTab={activeTab}
-                                        onTabChange={onTabChange}
+                                        onTabChange={(v) => scrollToToolbar(() => onTabChange(v))}
                                         className="px-0 mb-0"
                                     />
                                 </div>
                             )}
 
-                            {/* Extra content (e.g. session selector) */}
+                            {/* Extra content (e.g. session selector) — scroll back when interacted with */}
                             {extraContent && (
-                                <div className="shrink-0">{extraContent}</div>
+                                <div className="shrink-0" onClick={() => scrollToToolbar()}>{extraContent}</div>
                             )}
 
                              <div className="flex items-center gap-2">
@@ -129,7 +155,7 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                                             <Button
                                                 variant={btn.variant || "outline"}
                                                 className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
-                                                onClick={btn.onClick}
+                                                onClick={() => scrollToToolbar(btn.onClick)}
                                                 title={btn.title}
                                             >
                                                 <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />

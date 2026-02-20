@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, DatePicker, MultiSelect, Checkbox } from '@od-erp/ui';
 import { useCounselors, useAdmissionMaster, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { X } from 'lucide-react';
-import MultiSelect from './MultiSelect';
 
 interface FilterCardProps {
     onClose: () => void;
@@ -117,7 +116,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     {/* Academic Section */}
                     <section>
                         <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Academic</h3>
+                                <h3 className="font-semibold text-sm text-gray-700 tracking-wide">Academic</h3>
                                 <div className="h-px bg-gray-100 flex-1"></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -152,7 +151,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     {/* Application Details Section */}
                     <section>
                             <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Application Details</h3>
+                                <h3 className="font-semibold text-sm text-gray-700 tracking-wide">Application Details</h3>
                                 <div className="h-px bg-gray-100 flex-1"></div>
                         </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
@@ -160,23 +159,11 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                                 label="Tags"
                                 options={admissionMaster?.tags?.map((t: any) => ({ 
                                     value: t.tag, 
-                                    label: t.tag,
-                                    group: t.label ? t.label.toUpperCase() : 'OTHER',
-                                    color: t.colour 
+                                    label: t.tag
                                 })) || []}
                                 value={filters.tag || []}
                                 onChange={(val) => setFilters({ ...filters, tag: val })}
                                 placeholder="Select Tags"
-                                groupBy="group"
-                                renderOption={(option: any) => (
-                                    <div className="flex items-center gap-2 w-full">
-                                        <div 
-                                            className="w-3 h-3 rounded-full" 
-                                            style={{ backgroundColor: option.color || '#ccc' }}
-                                        />
-                                        <span>{option.label}</span>
-                                    </div>
-                                )}
                             />
                             <MultiSelect
                                 label="Source"
@@ -200,26 +187,20 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                             </div>
                             
                             {/* Counselor Selection */}
-                            <Select
+                            <SelectSingle
                                 label="Counselor"
                                 options={counselors?.map((c: any) => ({ value: c._id, label: c.name })) || []}
                                 value={filters.counselorId}
-                                onChange={(e) => setFilters({ ...filters, counselorId: e.target.value })}
+                                onChange={(val) => setFilters({ ...filters, counselorId: val as string })}
                                 placeholder="Select Counselor"
-                                className="w-full"
                             />
                             
                             <div className="flex items-center h-full pt-6">
-                                    <label className="inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={filters.memberDetails || false}
-                                        onChange={(e) => setFilters({...filters, memberDetails: e.target.checked})}
-                                        className="sr-only peer"
-                                        />
-                                    <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                    <span className="ms-2 text-sm font-medium text-gray-700">Show Member Details</span>
-                                </label>
+                                <Checkbox
+                                    label="Show Member Details"
+                                    checked={filters.memberDetails || false}
+                                    onChange={(checked) => setFilters({ ...filters, memberDetails: checked })}
+                                />
                             </div>
                             </div>
                     </section>
@@ -227,7 +208,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     {/* Dates Section */}
                     <section>
                         <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Dates</h3>
+                                <h3 className="font-semibold text-sm text-gray-700 tracking-wide">Dates</h3>
                                 <div className="h-px bg-gray-100 flex-1"></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">

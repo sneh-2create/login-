@@ -4,7 +4,7 @@ import { useAddAdmissionLeadLog, useAdmissionLeadLog } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
 import { X, User, Phone, MessageSquare, StickyNote, Building, Calendar } from 'lucide-react';
-import { Button } from '@od-erp/ui';
+import { Button, TextArea } from '@od-erp/ui';
 import StudentInfoBar from '../StudentInfoBar';
 
 interface VisitsModalProps {
@@ -85,7 +85,7 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
                     href={part} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-blue-600 hover:underline break-all"
+                    className="text-primary hover:underline break-all"
                 >
                     {part}
                 </a>
@@ -107,8 +107,7 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
     };
 
     const getIconColor = (_: any) => {
-         // Matching Angular's color logic or using a primary color
-         return 'bg-blue-500';
+         return 'bg-primary';
     };
 
     if (!isOpen || !student) return null;
@@ -150,13 +149,12 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
                         </div>
                         
                         <div className="flex flex-col gap-2">
-                             <label className="text-xs text-gray-500 font-medium">Remark <span className="text-red-500">*</span></label>
-                            <textarea
-                                className="w-full border rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-100 outline-none resize-none bg-gray-50 focus:bg-white transition-colors"
+                            <TextArea
+                                label="Remark *"
                                 rows={3}
                                 placeholder="Enter visit remarks..."
                                 value={remark}
-                                onChange={(e) => setRemark(e.target.value)}
+                                onChange={(val) => setRemark(val)}
                             />
                         </div>
                     </div>
@@ -166,13 +164,13 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
                         <div className="flex border-b px-4 py-2 bg-gray-50 cursor-pointer">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'table' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                             >
                                 Table View
                             </button>
                             <button
                                 onClick={() => setViewMode('board')}
-                                className={`ml-2 text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'board' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                className={`ml-2 text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'board' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                             >
                                 Board View
                             </button>
@@ -209,8 +207,8 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
                                 ) : (
                                     <div className="relative pl-4 space-y-6 before:absolute before:inset-0 before:ml-4 before:w-0.5 before:-translate-x-1/2 before:bg-gradient-to-b before:from-gray-200 before:to-transparent">
                                          <div className="flex items-center gap-2 mb-6 -ml-6">
-                                            <div className="bg-blue-100 p-2 rounded-full border-4 border-white shadow-sm z-10">
-                                                <Calendar size={20} className="text-blue-600" />
+                                            <div className="bg-primary/10 p-2 rounded-full border-4 border-white shadow-sm z-10">
+                                                <Calendar size={20} className="text-primary" />
                                             </div>
                                             <span className="font-semibold text-gray-700 bg-white px-3 py-1 rounded-full shadow-sm text-sm border">Timeline</span>
                                             <span className="text-xs text-gray-500">{visitsData.length} Entries</span>
@@ -256,7 +254,7 @@ const VisitsModal = ({ isOpen, onClose, student }: VisitsModalProps) => {
                                                                     href={visit.callDetails.callRecordingLink} 
                                                                     target="_blank" 
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                                    className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium"
                                                                  >
                                                                     <Phone size={12} />
                                                                     Download Recording

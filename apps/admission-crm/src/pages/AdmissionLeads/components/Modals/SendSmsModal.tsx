@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Send } from 'lucide-react';
-import { Button, SelectInput, useToast } from '@od-erp/ui';
+import { Button, SelectSingle, MultiSelect, TextArea, useToast } from '@od-erp/ui';
 import { useCommunicationTemplates, useCommunicationConfig, useSendAdmissionSms } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { AdmissionLead } from '@od-erp/types';
-import MultiSelect from '../MultiSelect';
 
 interface SendSmsModalProps {
     isOpen: boolean;
@@ -123,11 +122,11 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModa
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col">
-                <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex justify-between items-center px-3 py-2 border-b">
                     <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <Send size={18} className="text-blue-600" />
+                        <Send size={18} className="text-primary" />
                         Send Multiple Admission Reminder SMS
                     </h2>
                     <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
@@ -135,16 +134,19 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModa
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="px-3 py-2">
                     {/* Form Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                         {/* Template Select */}
                         <div>
-                            <SelectInput
+                            <SelectSingle
                                 label="Select Template"
-                                value={selectedTemplateId}
-                                onChange={handleTemplateChange}
                                 options={templates?.map((t: any) => ({ label: t.name, value: t._id })) || []}
+                                value={selectedTemplateId}
+                                onChange={(val) => {
+                                    const e = { target: { value: val as string } } as React.ChangeEvent<HTMLSelectElement>;
+                                    handleTemplateChange(e);
+                                }}
                                 placeholder="Select Template"
                             />
                         </div>
@@ -155,18 +157,18 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModa
                                 label="Send to Numbers of"
                                 options={SEND_TO_OPTIONS}
                                 value={sendTo}
-                                onChange={setSendTo}
+                                onChange={(val) => setSendTo(val as string[])}
                                 placeholder="Send to Numbers of"
                            />
                         </div>
 
                         {/* Sender ID Select */}
                         <div>
-                            <SelectInput
+                            <SelectSingle
                                 label="Select Sender ID"
-                                value={senderId}
-                                onChange={(e) => setSenderId(e.target.value)}
                                 options={senderIdList.map((id: string) => ({ label: id, value: id }))}
+                                value={senderId}
+                                onChange={(val) => setSenderId(val as string)}
                                 placeholder="Select Sender ID"
                             />
                         </div>
@@ -180,20 +182,20 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModa
 
                     {/* Content Preview */}
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                        <textarea
-                            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none min-h-[120px] bg-gray-50 font-medium"
+                        <TextArea
+                            label="Content"
                             placeholder="Content preview..."
                             value={content}
-                            readOnly
+                            disabled
+                            rows={5}
                         />
-                         <div className="text-xs text-gray-500 mt-1 text-right">
+                        <div className="text-xs text-gray-500 mt-1 text-right">
                             Sending to {selectedLeads.length} leads
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
+                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
                     <Button variant="outline" onClick={onClose} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
                         Cancel
                     </Button>
@@ -201,7 +203,7 @@ const SendSmsModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendSmsModa
                         variant="primary" 
                         onClick={handleSend}
                         disabled={isSending || !selectedTemplateId}
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        className="flex items-center gap-2"
                     >
                         {isSending ? 'Sending...' : 'Send'}
                     </Button>

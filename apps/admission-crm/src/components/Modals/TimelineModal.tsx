@@ -128,7 +128,7 @@ const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden m-4">
-                <div className="flex justify-between items-center px-6 py-4 border-b">
+                <div className="flex justify-between items-center px-3 py-2 border-b">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                         <Clock className="mr-2 h-5 w-5 text-primary" />
                         Timeline for {student.name}
@@ -148,7 +148,7 @@ const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
                     </div>
                 </div>
 
-                <div className="p-6 overflow-y-auto flex-1">
+                <div className="p-3 overflow-y-auto flex-1">
                     {isLoading ? (
                         <div className="flex justify-center py-8">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -186,9 +186,9 @@ const TimelineModal = ({ isOpen, onClose, student }: TimelineModalProps) => {
                                         </div>
 
                                         {/* Timeline Box */}
-                                        <div className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm">
+                                        <div className="border border-gray-200 rounded-lg p-2 bg-white shadow-sm">
                                             {/* Box Content */}
-                                            <div className="space-y-2">
+                                            <div>
                                                 {/* Remark Header and User Name */}
                                                 <div className="flex items-center justify-between">
                                                     <div className="text-sm font-bold text-gray-800">Remark</div>

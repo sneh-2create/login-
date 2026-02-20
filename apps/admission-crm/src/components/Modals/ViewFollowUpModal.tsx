@@ -4,7 +4,7 @@ import { AdmissionLead } from '@od-erp/types';
 import { useAppSelector } from '@od-erp/store';
 import { X, MessageSquare, RotateCw, Check } from 'lucide-react';
 import { format } from 'date-fns';
-import { DataTable, Button, Input, DatePicker } from '@od-erp/ui'; // Added Input, DatePicker
+import { DataTable, Button, Input, DatePicker, TextArea } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import StudentInfoBar from '../StudentInfoBar';
 
@@ -257,9 +257,9 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                                     <RotateCw size={18} />
                                 </button>
                                 <Button
+                                    variant="primary"
                                     onClick={handleSubmit}
                                     isLoading={addFollowUp.isPending || editFollowUp.isPending}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
                                     disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                 >
                                     {editId ? 'Update' : 'Save'}
@@ -307,20 +307,15 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                                 </div>
                             </div>
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
-                                <textarea
+                                <TextArea
+                                    label="Remark"
                                     rows={5}
                                     value={remark}
-                                    onChange={(e) => handleRemarkChange(e.target.value)}
+                                    onChange={(val) => handleRemarkChange(val)}
                                     placeholder="Enter remark here..."
-                                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 resize-none disabled:bg-gray-100 disabled:text-gray-500 ${
-                                        remarkError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
-                                    }`}
+                                    error={remarkError}
                                     disabled={!editId && followUps?.some((f: any) => f.status === 'pending')}
                                 />
-                                {remarkError && (
-                                    <p className="mt-1 text-sm text-red-600">{remarkError}</p>
-                                )}
                             </div>
                         </div>
                     </div>
@@ -350,7 +345,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden m-4">
-                <div className="flex justify-between items-center px-6 py-4 border-b">
+                <div className="flex justify-between items-center px-3 py-2 border-b">
                     <div className="flex items-center gap-4">
                         <h2 className="text-xl font-semibold text-gray-800 flex items-center">
                             <MessageSquare className="mr-2 h-5 w-5 text-primary" />

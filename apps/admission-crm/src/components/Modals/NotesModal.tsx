@@ -4,7 +4,7 @@ import { useEditAdmissionStudentData, useAdmissionLeadLog, useViewAdmissionStude
 import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
 import { X, User, Phone, MessageSquare, StickyNote, Building, Calendar } from 'lucide-react';
-import { Button } from '@od-erp/ui';
+import { Button, TextArea } from '@od-erp/ui';
 import StudentInfoBar from '../StudentInfoBar';
 
 interface NotesModalProps {
@@ -83,7 +83,7 @@ const NotesModal = ({ isOpen, onClose, student }: NotesModalProps) => {
                     href={part} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-blue-600 hover:underline break-all"
+                    className="text-primary hover:underline break-all"
                 >
                     {part}
                 </a>
@@ -142,13 +142,12 @@ const NotesModal = ({ isOpen, onClose, student }: NotesModalProps) => {
                         </div>
                         
                         <div className="flex flex-col gap-2">
-                             <label className="text-xs text-gray-500 font-medium">Note <span className="text-red-500">*</span></label>
-                            <textarea
-                                className="w-full border rounded-md p-3 text-sm focus:ring-2 focus:ring-blue-100 outline-none resize-none bg-gray-50 focus:bg-white transition-colors"
+                            <TextArea
+                                label="Note *"
                                 rows={3}
                                 placeholder="Enter note details..."
                                 value={note}
-                                onChange={(e) => setNote(e.target.value)}
+                                onChange={(val) => setNote(val)}
                             />
                         </div>
                     </div>
@@ -158,13 +157,13 @@ const NotesModal = ({ isOpen, onClose, student }: NotesModalProps) => {
                         <div className="flex border-b px-4 py-2 bg-gray-50 cursor-pointer">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'table' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                className={`text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'table' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                             >
                                 Table View
                             </button>
                             <button
                                 onClick={() => setViewMode('board')}
-                                className={`ml-2 text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'board' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                                className={`ml-2 text-sm font-semibold px-4 py-2 rounded-md transition-colors duration-200 outline-none ${viewMode === 'board' ? 'bg-white shadow-sm text-primary' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
                             >
                                 Board View
                             </button>
@@ -245,7 +244,7 @@ const NotesModal = ({ isOpen, onClose, student }: NotesModalProps) => {
                                                                     href={item.callDetails.callRecordingLink} 
                                                                     target="_blank" 
                                                                     rel="noopener noreferrer"
-                                                                    className="inline-flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                                                    className="inline-flex items-center gap-2 text-xs text-primary hover:text-primary/80 font-medium"
                                                                  >
                                                                     <Phone size={12} />
                                                                     Download Recording

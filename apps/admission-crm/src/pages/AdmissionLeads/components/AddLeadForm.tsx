@@ -385,7 +385,7 @@ const AddLeadForm = ({ onClose, onSuccess, entityId, session, permissions, initi
                     variant="primary"
                     onClick={handleSubmit}
                     isLoading={isLoading}
-                    className="bg-orange-600 hover:bg-orange-700 text-white min-w-[100px]"
+                    className="min-w-[100px]"
                 >
                     {isEditMode ? 'Edit Lead' : 'Add Lead'}
                 </Button>

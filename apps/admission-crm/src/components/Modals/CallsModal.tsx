@@ -5,6 +5,7 @@ import { useViewAdmissionStudentData } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { format } from 'date-fns';
 import { X, PhoneCall, Download } from 'lucide-react';
+import { Button } from '@od-erp/ui';
 import StudentInfoBar from '../StudentInfoBar';
 
 interface CallsModalProps {
@@ -90,20 +91,21 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                 {/* Header */}
                 <div className="flex justify-between items-center p-4 border-b">
                     <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-                        <PhoneCall size={24} className="text-blue-600" />
+                        <PhoneCall size={24} className="text-primary" />
                         Calls
                     </h2>
                     <div className="flex items-center gap-3">
                         {/* Click To Call Button */}
                         {hasClickToCallPermission && (
-                            <button
+                            <Button
+                                variant="primary"
                                 onClick={handleClickToCall}
-                                disabled={clickToCallMutation.isPending}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                isLoading={clickToCallMutation.isPending}
+                                className="flex items-center gap-2"
                             >
                                 <PhoneCall size={16} />
                                 {clickToCallMutation.isPending ? 'Calling...' : 'Click To Call'}
-                            </button>
+                            </Button>
                         )}
                         <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full text-gray-500">
                             <X size={20} />
@@ -122,13 +124,13 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                         <div className="flex border-b px-4 py-2 bg-gray-50 cursor-pointer">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'table' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'table' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Table View
                             </button>
                             <button
                                 onClick={() => setViewMode('board')}
-                                className={`ml-4 text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'board' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`ml-4 text-sm font-semibold px-2 pb-2 -mb-2.5 transition-colors duration-200 outline-none ${viewMode === 'board' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Board View
                             </button>
@@ -141,7 +143,7 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                 viewMode === 'table' ? (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm text-left">
-                                            <thead className="bg-blue-900 text-white font-medium">
+                                            <thead className="bg-primary text-white font-medium">
                                                 <tr>
                                                     <th className="px-4 py-3 rounded-tl-md">Index</th>
                                                     <th className="px-4 py-3">Call Date</th>
@@ -164,7 +166,7 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                                                         href={log.callDetails.callRecordingLink}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs gap-1"
+                                                                        className="inline-flex items-center text-primary hover:text-primary/80 text-xs gap-1"
                                                                     >
                                                                         <PhoneCall size={14} />
                                                                         <span>Download</span>
@@ -204,7 +206,7 @@ const CallsModal = ({ isOpen, onClose, student }: CallsModalProps) => {
                                                 </div>
                                                 <div className="border-t pt-3">
                                                     <div className="flex items-center gap-2 mb-2">
-                                                        <PhoneCall size={16} className="text-blue-600" />
+                                                        <PhoneCall size={16} className="text-primary" />
                                                         <span className="text-xs font-semibold text-gray-700">Call</span>
                                                     </div>
                                                     <div className="text-sm font-semibold text-gray-800 mb-1">Remark</div>
