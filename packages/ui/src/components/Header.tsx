@@ -65,8 +65,8 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
     return (
         <header
             className={cn(
-                "bg-[var(--header-bg)] flex items-center justify-between transition-all duration-300",
-                isMobile ? "h-[70px] px-2" : "h-[80px] px-6",
+                "bg-[var(--header-bg)] flex items-center justify-between transition-all duration-300 h-[70px]",
+                isMobile ? "px-2" : "px-6",
                 "border-b border-[var(--header-border)] shadow-md z-[58]",
                 className
             )}
