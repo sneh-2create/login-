@@ -220,7 +220,7 @@ const admissionSummaryReport = () => {
 
             {/* Collapsible Filter Card */}
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-6 border border-[var(--color-border)] p-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-center">
                         <div className="w-full">
                             <DatePicker
@@ -254,7 +254,7 @@ const admissionSummaryReport = () => {
                             />
                         </div>
                         <div className="w-full">
-                            <label className="text-xs font-semibold text-gray-500 mb-1 block">Exclude Unpaid</label>
+                            <label className="text-xs font-semibold text-[var(--color-muted-foreground)] mb-1 block">Exclude Unpaid</label>
                             <Checkbox
                                 label="Yes"
                                 checked={excludeUnpaid}

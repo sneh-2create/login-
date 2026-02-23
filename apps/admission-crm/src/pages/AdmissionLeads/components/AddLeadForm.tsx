@@ -195,27 +195,27 @@ const AddLeadForm = ({ onClose, onSuccess, entityId, session, permissions, initi
     const isLoading = addLeadMutation.isPending || updateLeadMutation.isPending;
 
     return (
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-[var(--color-card)]">
             <div className="flex justify-between items-center px-2 py-2 border-b">
                 <div>
-                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-[var(--color-foreground)] flex items-center gap-2">
                         {isEditMode ? 'Edit' : 'Add'} Lead
                     </h3>
                 </div>
-                <div className="cursor-pointer text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors" onClick={onClose}>
+                <div className="cursor-pointer text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] p-1 hover:bg-[var(--color-background)] rounded-full transition-colors" onClick={onClose}>
                     <X size={24} />
                 </div>
             </div>
 
             {isEditMode && initialData && (
-                <div className="mx-6 mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 flex justify-between items-center">
+                <div className="mx-6 mt-2 px-3 py-2 bg-[var(--color-background)] rounded-lg border border-[var(--color-border)] flex justify-between items-center">
                     <div>
-                        <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">{getDisplayName('applicationNumber')}</span>
-                        <span className="text-lg font-bold text-gray-800">{initialData.applicationNumber || 'N/A'}</span>
+                        <span className="block text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider mb-1">{getDisplayName('applicationNumber')}</span>
+                        <span className="text-lg font-bold text-[var(--color-foreground)]">{initialData.applicationNumber || 'N/A'}</span>
                     </div>
                     <div className="text-right">
-                        <span className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Created On</span>
-                        <span className="text-sm font-semibold text-gray-800">
+                        <span className="block text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider mb-1">Created On</span>
+                        <span className="text-sm font-semibold text-[var(--color-foreground)]">
                             {initialData.date ? new Date(initialData.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
                         </span>
                     </div>
@@ -377,8 +377,8 @@ const AddLeadForm = ({ onClose, onSuccess, entityId, session, permissions, initi
                 </div>
             </div>
 
-            <div className="px-3 py-2 border-t bg-white flex justify-end gap-3">
-                <Button variant="outline" onClick={onClose} className="border-gray-300 text-gray-700">
+            <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-card)] flex justify-end gap-3">
+                <Button variant="outline" onClick={onClose} className="border-[var(--color-border)] text-[var(--color-foreground)]">
                     Cancel
                 </Button>
                 <Button

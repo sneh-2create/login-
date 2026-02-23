@@ -64,10 +64,10 @@ const TemplateFilter = (props: TemplateFilterProps) => {
     };
 
     return (
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
+        <div className="bg-[var(--color-card)] p-3 rounded-lg shadow-sm border border-[var(--color-border)] mb-6 animate-in slide-in-from-top-2 relative z-10">
             
             {/* Section 1: Date and Status */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-2 tracking-wider border-b border-[var(--color-border)] pb-1">Date and Status Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
                     <DatePicker 
@@ -117,7 +117,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
             </div>
 
             {/* Section 2: Class Information */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">{displayNames.course} Information</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-2 tracking-wider border-b border-[var(--color-border)] pb-1">{displayNames.course} Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
                     <MultiSelect

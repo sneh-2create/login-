@@ -61,11 +61,11 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
     };
 
     const getDisplayValue = () => {
-        if (value.length === 0) return <span className="text-gray-400">{placeholder}</span>;
+        if (value.length === 0) return <span className="text-[var(--color-muted-foreground)]">{placeholder}</span>;
         
         // Show count if more than 2 selected, else show chips
         if (value.length > 2) {
-             return <span className="text-gray-700">{value.length} selected</span>;
+             return <span className="text-[var(--color-foreground)]">{value.length} selected</span>;
         }
 
         return (
@@ -85,24 +85,24 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
 
     return (
         <div className="flex flex-col gap-1.5" ref={containerRef}>
-            <label className="text-sm font-medium text-gray-700">{label}</label>
+            <label className="text-sm font-medium text-[var(--color-foreground)]">{label}</label>
             <div className="relative">
                 <div
-                    className={`min-h-[40px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm flex justify-between items-center cursor-pointer ${
-                        disabled ? 'bg-gray-100 cursor-not-allowed' : 'hover:border-gray-400'
+                    className={`min-h-[40px] w-full rounded-md border border-[var(--color-border)] bg-[var(--color-card)] px-3 py-2 text-sm flex justify-between items-center cursor-pointer ${
+                        disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-[var(--color-foreground)]/30'
                     } ${isOpen ? 'ring-2 ring-blue-500 border-transparent' : ''}`}
                     onClick={handleToggle}
                 >
                     <div className="flex-1 mr-2 overflow-hidden">
                         {getDisplayValue()}
                     </div>
-                    <ChevronDown size={16} className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown size={16} className={`text-[var(--color-muted-foreground)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
 
                 {isOpen && !disabled && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-[var(--color-card)] border border-[var(--color-border)] rounded-md shadow-lg max-h-60 overflow-y-auto">
                         {options.length === 0 ? (
-                            <div className="p-2 text-sm text-gray-500 text-center">No options available</div>
+                            <div className="p-2 text-sm text-[var(--color-muted-foreground)] text-center">No options available</div>
                         ) : groupBy ? (
                             // Grouped Options
                             Object.entries(
@@ -114,13 +114,13 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                                 }, {})
                             ).map(([group, groupOptions]: [string, any]) => (
                                 <div key={group}>
-                                    <div className="px-3 py-1 bg-gray-100 text-xs font-semibold text-gray-600 uppercase">
+                                    <div className="px-3 py-1 bg-[var(--color-background)] text-xs font-semibold text-[var(--color-muted-foreground)] uppercase">
                                         {group}
                                     </div>
                                     {groupOptions.map((option: any) => (
                                         <div
                                             key={option.value}
-                                            className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm pl-6"
+                                            className="flex items-center px-3 py-2 hover:bg-[var(--color-background)] cursor-pointer text-sm pl-6"
                                             onClick={() => handleOptionClick(option.value)}
                                         >
                                             <input
@@ -129,7 +129,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                                                 onChange={() => {}}
                                                 className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2"
                                             />
-                                            {renderOption ? renderOption(option) : <span className="text-gray-700">{option.label}</span>}
+                                            {renderOption ? renderOption(option) : <span className="text-[var(--color-foreground)]">{option.label}</span>}
                                         </div>
                                     ))}
                                 </div>
@@ -139,7 +139,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                             options.map((option) => (
                                 <div
                                     key={option.value}
-                                    className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                                    className="flex items-center px-3 py-2 hover:bg-[var(--color-background)] cursor-pointer text-sm"
                                     onClick={() => handleOptionClick(option.value)}
                                 >
                                     <input
@@ -148,7 +148,7 @@ const MultiSelect: React.FC<MultiSelectProps> = ({
                                         onChange={() => {}}
                                         className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mr-2"
                                     />
-                                    {renderOption ? renderOption(option) : <span className="text-gray-700">{option.label}</span>}
+                                    {renderOption ? renderOption(option) : <span className="text-[var(--color-foreground)]">{option.label}</span>}
                                 </div>
                             ))
                         )}

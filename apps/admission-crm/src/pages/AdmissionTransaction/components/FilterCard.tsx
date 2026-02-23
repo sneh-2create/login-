@@ -40,7 +40,7 @@ export const FilterCard = ({
     };
 
     return (
-        <div className="bg-white p-3 rounded-lg shadow border border-gray-200 mb-3">
+        <div className="bg-[var(--color-card)] p-3 rounded-lg shadow border border-[var(--color-border)] mb-3">
             <div className={`grid grid-cols-1 gap-2 md:gap-6 mb-1 ${autoVoucherEnabled ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                 <div>
                     <DatePicker

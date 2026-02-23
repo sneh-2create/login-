@@ -88,21 +88,21 @@ const TableTagSelect: React.FC<TableTagSelectProps> = ({ student, onTagChange })
                 }}
             >
                 <span className="truncate">{currentTagName || 'Select Tag'}</span>
-                <ChevronDown size={14} className="text-gray-500 ml-1" />
+                <ChevronDown size={14} className="text-[var(--color-muted-foreground)] ml-1" />
             </div>
 
             {isOpen && (
-                <div className="absolute z-50 w-full min-w-[150px] mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto left-0">
+                <div className="absolute z-50 w-full min-w-[150px] mt-1 bg-[var(--color-card)] border border-[var(--color-border)] rounded-md shadow-lg max-h-60 overflow-y-auto left-0">
                     {groupedTags && Object.entries(groupedTags).map(([group, tags]: [string, any]) => (
                         <div key={group}>
-                            <div className="px-2 py-1 bg-gray-50 text-xs font-semibold text-gray-500 uppercase">
+                            <div className="px-2 py-1 bg-[var(--color-background)] text-xs font-semibold text-[var(--color-muted-foreground)] uppercase">
                                 {group}
                             </div>
                             {tags.map((tag: any) => (
                                 <div
                                     key={tag._id}
                                     onClick={() => handleSelect(tag)}
-                                    className="px-3 py-2 text-sm hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                                    className="px-3 py-2 text-sm hover:bg-[var(--color-background)] cursor-pointer flex items-center gap-2"
                                     style={{ borderLeft: `3px solid ${tag.colour}` }}
                                 >
                                     {tag.tag}

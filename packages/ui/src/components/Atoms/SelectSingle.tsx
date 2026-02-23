@@ -83,18 +83,18 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 aria-label={label}
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
-                    'relative w-full cursor-pointer rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px]',
-                    disabled && 'cursor-not-allowed opacity-50 bg-gray-50',
+                    'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] text-[var(--color-foreground)]',
+                    disabled && 'cursor-not-allowed opacity-50 bg-[var(--color-background)]',
                     error && !open && 'border-red-500 focus:ring-red-500',
                     open && 'ring-1 ring-primary border-primary'
                 )}
             >
-                <div className={cn('block truncate mr-2', !displayLabel && 'text-gray-400')}>
+                <div className={cn('block truncate mr-2', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
                     {displayLabel || placeholder}
                 </div>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronDown
-                        className={cn('h-4 w-4 text-gray-400 transition-transform', open && 'rotate-180')}
+                        className={cn('h-4 w-4 text-[var(--color-muted-foreground)] transition-transform', open && 'rotate-180')}
                         aria-hidden
                     />
                 </span>
@@ -104,7 +104,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                     role="listbox"
                     aria-activedescendant={selected ? `${selectId}-opt-${String(selected.value)}` : undefined}
                     className={cn(
-                        'absolute left-0 z-[10002] overflow-auto rounded-md bg-white text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm py-1',
+                        'absolute left-0 z-[10002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-lg ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
                         placement === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
                     )}
                     style={{ width: triggerWidth, maxWidth: triggerWidth, maxHeight: '240px', boxSizing: 'border-box' }}
@@ -118,8 +118,8 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                                 role="option"
                                 aria-selected={isSelected}
                                 className={cn(
-                                    'relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-gray-50',
-                                    isSelected ? 'bg-primary/5 text-primary' : 'text-gray-900'
+                                    'relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-[var(--color-background)]',
+                                    isSelected ? 'bg-primary/5 text-primary' : 'text-[var(--color-foreground)]'
                                 )}
                                 onClick={() => handleSelect(option)}
                             >

@@ -235,7 +235,7 @@ const CounselorProductivityReport = () => {
             header: 'S.No',
             cell: info => {
                 const val = info.getValue() as number;
-                return val === 0 ? '' : <span className="text-gray-500">{val}</span>;
+                return val === 0 ? '' : <span className="text-[var(--color-foreground)]">{val}</span>;
             }
         },
         {
@@ -243,13 +243,13 @@ const CounselorProductivityReport = () => {
             header: 'Counselor Name',
             cell: info => {
                 const val = info.getValue() as string;
-                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
             }
         },
         {
             accessorKey: 'totalCount',
             header: stageType === 'lead' ? 'Total Leads' : 'Application Count',
-            cell: info => <span className="text-gray-700 font-medium">{info.getValue() as number}</span>
+            cell: info => <span className="text-[var(--color-foreground)] font-medium">{info.getValue() as number}</span>
         },
         {
             accessorKey: 'engagedCount',
@@ -326,8 +326,8 @@ const CounselorProductivityReport = () => {
                 const row = info.row.original;
                 const val = row[`tag_${tag}`] || 0;
 
-                if (row.position === 0) return <span className="font-bold text-gray-900">{val}</span>;
-                return <span className="text-gray-700">{val}</span>;
+                if (row.position === 0) return <span className="font-bold text-[var(--color-foreground)]">{val}</span>;
+                return <span className="text-[var(--color-muted-foreground)]">{val}</span>;
             }
         });
     });
@@ -392,13 +392,13 @@ const CounselorProductivityReport = () => {
 
             {/* Collapsible Filter Section */}
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-6 border border-[var(--color-border)] p-4">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end">
                         <div className="w-full md:w-1/4">
                             {!isAdmissionAdmin && !isLead ? (
                                 <div className="flex flex-col">
-                                    <label className="text-xs font-semibold text-gray-600 mb-1 block">Name</label>
-                                    <p className="text-gray-900 font-medium py-2">{user?.name}</p>
+                                    <label className="text-xs font-semibold text-[var(--color-muted-foreground)] mb-1 block">Name</label>
+                                    <p className="text-[var(--color-foreground)] font-medium py-2">{user?.name}</p>
                                 </div>
                             ) : (
                                 <>

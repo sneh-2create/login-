@@ -139,7 +139,7 @@ const CourseWiseTagReport = () => {
                 header: 'S.No',
                 cell: info => {
                     const val = info.getValue() as number;
-                    return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                    return val === 0 ? '' : <span className="text-[var(--color-foreground)]">{info.row.index + 1}</span>;
                 }
             },
             {
@@ -147,7 +147,7 @@ const CourseWiseTagReport = () => {
                 header: displayNames.course,
                 cell: info => {
                     const val = info.getValue() as string;
-                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
                 }
             },
             {
@@ -312,7 +312,7 @@ const CourseWiseTagReport = () => {
 
             {/* Collapsible Filter Card */}
             {showFilter && (
-                <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-3">
+                <div className="bg-[var(--color-card)] rounded-lg shadow border border-[var(--color-border)] mb-3 p-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4">
                         <div>
                             <DatePicker

@@ -190,7 +190,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             {...rest}
         >
             {label && (
-                <label htmlFor={inputId} className="text-sm font-medium text-gray-700">
+                <label htmlFor={inputId} className="text-sm font-medium text-[var(--color-foreground)]">
                     {label}
                 </label>
             )}
@@ -201,8 +201,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     type="button"
                     onClick={() => setIsOpen(!isOpen)}
                     className={clsx(
-                        "relative w-full cursor-pointer rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px]",
-                        disabled && "cursor-not-allowed opacity-50 bg-gray-50",
+                        "relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] text-[var(--color-foreground)]",
+                        disabled && "cursor-not-allowed opacity-50 bg-[var(--color-background)]",
                         error && "border-red-500 focus:ring-red-500",
                         isOpen && "ring-1 ring-primary border-primary",
                         className
@@ -212,7 +212,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 >
                     <div className="block truncate mr-2">{getDisplayValue()}</div>
                     <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                        <ChevronDown className={clsx("h-4 w-4 text-gray-400 transition-transform", isOpen && "rotate-180")} aria-hidden="true" />
+                        <ChevronDown className={clsx("h-4 w-4 text-[var(--color-muted-foreground)] transition-transform", isOpen && "rotate-180")} aria-hidden="true" />
                     </span>
                 </button>
 
@@ -230,10 +230,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         }}
                     >
                         {searchable && (
-                            <div className="sticky top-0 z-10 bg-white px-2 py-1.5 border-b border-gray-100 shrink-0">
+                            <div className="sticky top-0 z-10 bg-[var(--color-card)] px-2 py-1.5 border-b border-[var(--color-border)] shrink-0">
                                 <input
                                     type="text"
-                                    className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                                    className="w-full rounded border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] px-2 py-1 text-xs focus:border-primary focus:outline-none"
                                     placeholder="Search..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -245,7 +245,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                         
                         <div className="overflow-auto py-1 flex-1">
                              {filteredOptions.length === 0 ? (
-                                <div className="relative cursor-default select-none py-2 px-4 text-gray-500 italic">
+                                <div className="relative cursor-default select-none py-2 px-4 text-[var(--color-muted-foreground)] italic">
                                     No options found.
                                 </div>
                             ) : (
@@ -258,8 +258,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                                         <div
                                             key={option.value}
                                             className={clsx(
-                                                "relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-gray-50",
-                                                isSelected ? "bg-primary/5 text-primary" : "text-gray-900",
+                                                "relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-[var(--color-background)]",
+                                                isSelected ? "bg-primary/5 text-primary" : "text-[var(--color-foreground)]",
                                                 option.disabled && "cursor-not-allowed opacity-50"
                                             )}
                                             onClick={() => !option.disabled && handleSelect(option.value)}
@@ -268,7 +268,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                                                 {multiple && (
                                                   <div className={clsx(
                                                       "mr-2 flex h-4 w-4 items-center justify-center rounded border",
-                                                      isSelected ? "border-primary bg-primary text-white" : "border-gray-300 bg-white"
+                                                      isSelected ? "border-primary bg-primary text-white" : "border-[var(--color-border)] bg-[var(--color-card)]"
                                                   )}>
                                                       {isSelected && <Check size={12} />}
                                                   </div>

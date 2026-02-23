@@ -104,22 +104,22 @@ const SendWhatsappWebModal = ({ isOpen, onClose, selectedStudents, onSuccess }: 
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center px-3 py-2 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
                         <MessageCircle size={18} className="text-primary" />
                         Send Admission Reminder WhatsApp Web
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body */}
                 <div className="px-3 py-3 flex flex-col gap-3">
-                    <p className="text-sm text-gray-600">
-                        Sending to <span className="font-bold text-gray-900">{selectedStudents.length}</span> student{selectedStudents.length !== 1 ? 's' : ''}.
+                    <p className="text-sm text-[var(--color-muted-foreground)]">
+                        Sending to <span className="font-bold text-[var(--color-foreground)]">{selectedStudents.length}</span> student{selectedStudents.length !== 1 ? 's' : ''}.
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -151,7 +151,7 @@ const SendWhatsappWebModal = ({ isOpen, onClose, selectedStudents, onSuccess }: 
                 </div>
 
                 {/* Footer */}
-                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">
+                <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-2">
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>

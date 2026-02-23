@@ -178,7 +178,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 <label
                     htmlFor={pickerId}
                     className={cn(
-                        'block text-sm font-medium text-gray-700',
+                        'block text-sm font-medium text-[var(--color-foreground)]',
                         disabled && 'opacity-60'
                     )}
                 >
@@ -194,18 +194,18 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 aria-haspopup="dialog"
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
-                    "relative w-full cursor-pointer rounded-md border border-gray-300 bg-white py-2 px-3 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] flex items-center gap-2",
-                    disabled && "cursor-not-allowed opacity-50 bg-gray-50",
+                    "relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 px-3 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] flex items-center gap-2 text-[var(--color-foreground)]",
+                    disabled && "cursor-not-allowed opacity-50 bg-[var(--color-background)]",
                     error && "border-red-500 focus:ring-red-500",
                     open && "ring-1 ring-primary border-primary",
                     className
                 )}
             >
-                <Calendar className="w-4 h-4 shrink-0 text-gray-400" aria-hidden />
-                <span className={cn('flex-1 min-w-0 truncate', !displayValue && 'text-gray-400')}>
+                <Calendar className="w-4 h-4 shrink-0 text-[var(--color-muted-foreground)]" aria-hidden />
+                <span className={cn('flex-1 min-w-0 truncate', !displayValue && 'text-[var(--ui-placeholder-color)]')}>
                     {valueDate ? toYYYYMMDD(valueDate) : (typeof displayValue === 'string' ? displayValue : '') || placeholder}
                 </span>
-                <ChevronDown className={cn("w-4 h-4 shrink-0 text-gray-400 transition-transform", open && "rotate-180")} aria-hidden />
+                <ChevronDown className={cn("w-4 h-4 shrink-0 text-[var(--color-muted-foreground)] transition-transform", open && "rotate-180")} aria-hidden />
             </button>
             {open && !disabled && triggerWidth != null && (
                 <div

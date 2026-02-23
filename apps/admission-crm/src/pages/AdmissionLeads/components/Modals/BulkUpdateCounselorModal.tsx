@@ -26,20 +26,20 @@ const BulkUpdateCounselorModal = ({ isOpen, onClose, selectedCount, entityId, on
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 flex flex-col overflow-visible">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-sm mx-4 flex flex-col overflow-visible">
                 <div className="flex justify-between items-center px-3 py-2 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
                         <Users size={18} className="text-primary" />
                         Update Counselor
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 <div className="px-3 py-2 overflow-visible">
-                    <p className="text-sm text-gray-600 mb-2">
-                        Assigning new counselor for <span className="font-bold text-gray-900">{selectedCount}</span> selected leads.
+                    <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
+                        Assigning new counselor for <span className="font-bold text-[var(--color-foreground)]">{selectedCount}</span> selected leads.
                     </p>
                     
                     <div className="mb-4">
@@ -54,8 +54,8 @@ const BulkUpdateCounselorModal = ({ isOpen, onClose, selectedCount, entityId, on
                     </div>
                 </div>
 
-                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
-                    <Button variant="outline" onClick={onClose} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
+                <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-3">
+                    <Button variant="outline" onClick={onClose} className="border-[var(--color-border)] text-[var(--color-foreground)]">
                         Cancel
                     </Button>
                     <Button 

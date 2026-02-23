@@ -460,7 +460,7 @@ const AdmissionLeads = () => {
                             checked={!!data?.data?.length && selectedCount === data?.data.length}
                             onChange={(checked) => handleSelectAll(checked)}
                         />
-                        <span className="font-semibold text-gray-700">Action</span>
+                        <span className="font-semibold text-[var(--color-foreground)]">Action</span>
                     </div>
                 ),
                 cell: ({ row }) => (
@@ -471,7 +471,7 @@ const AdmissionLeads = () => {
                         />
                         <DropdownMenu
                             trigger={
-                                <button className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+                                <button className="p-1 rounded hover:bg-[var(--color-background)] text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                                     <MoreVertical size={16} />
                                 </button>
                             }
@@ -566,19 +566,19 @@ const AdmissionLeads = () => {
             {
                 header: 'Application Number',
                 accessorKey: 'applicationNumber',
-                cell: info => <span className="font-semibold text-gray-700">{info.getValue() as string || '-'}</span>,
+                cell: info => <span className="font-semibold text-[var(--color-foreground)]">{info.getValue() as string || '-'}</span>,
                 size: 140
             },
             {
                 header: 'Date',
                 accessorKey: 'date',
-                cell: info => <span className="text-gray-600">{info.getValue() ? format(info.getValue() as number, 'dd-MMM-yyyy') : '-'}</span>,
+                cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() ? format(info.getValue() as number, 'dd-MMM-yyyy') : '-'}</span>,
                 size: 110
             },
             {
                 header: 'Name',
                 accessorKey: 'name',
-                cell: info => <span className="font-medium text-gray-800">{info.getValue() as string}</span>,
+                cell: info => <span className="font-medium text-[var(--color-foreground)]">{info.getValue() as string}</span>,
                 size: 180
             },
             {
@@ -587,22 +587,22 @@ const AdmissionLeads = () => {
                 cell: info => {
                     const phone = info.getValue() as string;
                     if (permissions.includes('viewAdmissionPhoneNumber')) {
-                        return <span className="font-mono text-gray-600">{phone}</span>;
+                        return <span className="font-mono text-[var(--color-foreground)]">{phone}</span>;
                     }
-                    return <span className="font-mono text-gray-400">{phone ? phone.replace(/(\d{2})\d+(\d{4})/, '$1****$2') : '-'}</span>;
+                    return <span className="font-mono text-[var(--color-muted-foreground)]">{phone ? phone.replace(/(\d{2})\d+(\d{4})/, '$1****$2') : '-'}</span>;
                 },
                 size: 120
             },
             {
                 header: displayNames.course,
                 accessorKey: 'course',
-                cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
+                cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() as string || '-'}</span>,
                 size: 100
             },
             {
                 header: displayNames.stream,
                 accessorKey: 'stream',
-                cell: info => <span className="text-gray-600">{info.getValue() as string || '-'}</span>,
+                cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() as string || '-'}</span>,
                 size: 100
             },
             {
@@ -659,7 +659,7 @@ const AdmissionLeads = () => {
                     />
 
                     {/* Drawer Panel */}
-                    <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+                    <div className="relative w-full max-w-2xl bg-[var(--color-card)] h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
                         <AddLeadForm
                             onClose={() => setIsLeadFormOpen(false)}
                             onSuccess={() => {

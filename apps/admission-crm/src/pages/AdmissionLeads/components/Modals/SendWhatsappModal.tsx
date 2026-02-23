@@ -137,13 +137,13 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col">
                 <div className="flex justify-between items-center px-3 py-2 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <h2 className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
                         <MessageCircle size={18} className="text-primary" />
                         Send Multiple Admission Reminder Whatsapp SMS
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -189,8 +189,8 @@ const SendWhatsappModal = ({ isOpen, onClose, selectedLeads, onSuccess }: SendWh
                     </div>
                 </div>
 
-                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
-                    <Button variant="outline" onClick={onClose} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
+                <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-3">
+                    <Button variant="outline" onClick={onClose} className="border-[var(--color-border)] text-[var(--color-foreground)]">
                         Cancel
                     </Button>
                     <Button 

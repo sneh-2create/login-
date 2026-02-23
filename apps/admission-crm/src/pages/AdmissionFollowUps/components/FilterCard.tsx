@@ -42,7 +42,7 @@ export const FilterCard = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow mb-3 border border-gray-200 p-3">
+        <div className="bg-[var(--color-card)] rounded-lg shadow mb-3 border border-[var(--color-border)] p-3">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-end">
                 {isAdmissionAdmin && (
                     <div className="w-full">

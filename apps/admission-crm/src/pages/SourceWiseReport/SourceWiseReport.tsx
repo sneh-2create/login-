@@ -162,7 +162,7 @@ const SourceWiseReport = () => {
             header: 'S.No',
             cell: info => {
                 const val = info.getValue() as number;
-                return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                return val === 0 ? '' : <span className="text-[var(--color-foreground)]">{info.row.index + 1}</span>;
             }
         },
         {
@@ -170,7 +170,7 @@ const SourceWiseReport = () => {
             header: 'Source',
             cell: info => {
                 const val = info.getValue() as string;
-                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
             }
         },
         {
@@ -307,7 +307,7 @@ const SourceWiseReport = () => {
 
             {/* Collapsible Filters */}
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-3 border border-gray-200 p-4">
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-3 border border-[var(--color-border)] p-4">
                     <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end">
                         <div className="w-full md:w-1/4">
                             <SelectSingle

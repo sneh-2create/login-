@@ -241,7 +241,7 @@ const NepSubjectReport = () => {
                 cell: info => {
                     const row = info.row.original;
                     if (row.name === 'Total') return '';
-                    return <span className="text-gray-500">{info.getValue() as ReactNode}</span>;
+                    return <span className="text-[var(--color-foreground)]">{info.getValue() as ReactNode}</span>;
                 }
             },
             {
@@ -249,7 +249,7 @@ const NepSubjectReport = () => {
                 header: 'Name',
                 cell: info => {
                     const row = info.row.original;
-                    return row.name === 'Total' ? <span className="font-bold">Total</span> : <span className="font-medium text-gray-900">{info.getValue() as ReactNode}</span>;
+                    return row.name === 'Total' ? <span className="font-bold">Total</span> : <span className="font-medium text-[var(--color-foreground)]">{info.getValue() as ReactNode}</span>;
                 }
             },
             {
@@ -275,7 +275,7 @@ const NepSubjectReport = () => {
             {
                 accessorKey: 'seats',
                 header: 'Seats',
-                cell: info => <span className="text-gray-900">{info.getValue() as ReactNode}</span>
+                cell: info => <span className="text-[var(--color-foreground)]">{info.getValue() as ReactNode}</span>
             },
             {
                 accessorKey: 'availableSeats',
@@ -354,7 +354,7 @@ const NepSubjectReport = () => {
 
             {/* Collapsible Filter Card */}
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-6 border border-[var(--color-border)] p-4">
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-4 items-end">
                         <SelectSingle
                             label={displayNames.course}

@@ -97,7 +97,7 @@ export const TemplateFilter = ({
   };
 
   return (
-    <div className="bg-white p-3 rounded-lg shadow border border-gray-200 mb-3">
+    <div className="bg-[var(--color-card)] p-3 rounded-lg shadow border border-[var(--color-border)] mb-3">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-start">
 
         {/* Counselor dropdown — admin or team lead */}
@@ -117,8 +117,8 @@ export const TemplateFilter = ({
         {/* Non-lead, non-admin: read-only name label (matches Angular) */}
         {!isAdmissionAdmin && !isLead && (
           <div className="w-full">
-            <label className="text-xs font-semibold text-gray-500 mb-1 block">Name</label>
-            <p className="text-sm font-medium text-gray-800">{userName}</p>
+            <label className="text-xs font-semibold text-[var(--color-muted-foreground)] mb-1 block">Name</label>
+            <p className="text-sm font-medium text-[var(--color-foreground)]">{userName}</p>
           </div>
         )}
 

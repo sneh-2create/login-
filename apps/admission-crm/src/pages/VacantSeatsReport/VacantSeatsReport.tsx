@@ -56,7 +56,7 @@ const VacantSeatsReport = () => {
                 cell: (info: any) => {
                     const row = info.row.original;
                     if (row.course === 'Total') return '';
-                    return <span className="text-gray-500">{info.getValue()}</span>;
+                    return <span className="text-[var(--color-foreground)]">{info.getValue()}</span>;
                 }
             },
             {
@@ -65,13 +65,13 @@ const VacantSeatsReport = () => {
                 cell: (info: any) => {
                     const row = info.row.original;
                     const val = info.getValue();
-                    return row.course === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                    return row.course === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
                 }
             },
             {
                 accessorKey: 'stream',
                 header: displayNames.stream,
-                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+                cell: (info: any) => <span className="text-[var(--color-foreground)]">{info.getValue()}</span>
             },
         ];
 
@@ -79,7 +79,7 @@ const VacantSeatsReport = () => {
             cols.push({
                 accessorKey: 'batch',
                 header: displayNames.batch,
-                cell: (info: any) => <span className="text-gray-700">{info.getValue()}</span>
+                cell: (info: any) => <span className="text-[var(--color-foreground)]">{info.getValue()}</span>
             });
         }
 
@@ -90,13 +90,13 @@ const VacantSeatsReport = () => {
                 cell: (info: any) => {
                     const row = info.row.original;
                     if (row.course === 'Total') return '';
-                    return <span className="font-medium text-gray-900">{info.getValue()}</span>;
+                    return <span className="font-medium text-[var(--color-foreground)]">{info.getValue()}</span>;
                 }
             },
             {
                 accessorKey: 'seats',
                 header: 'Seats',
-                cell: (info: any) => <span className="text-gray-900">{info.getValue()}</span>
+                cell: (info: any) => <span className="text-[var(--color-foreground)]">{info.getValue()}</span>
             },
             {
                 accessorKey: 'availableSeats',
@@ -289,7 +289,7 @@ const VacantSeatsReport = () => {
             />
 
             {showFilter && (
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-6 border border-[var(--color-border)] p-4">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-end">
                         <div className="w-full">
                             <SelectSingle

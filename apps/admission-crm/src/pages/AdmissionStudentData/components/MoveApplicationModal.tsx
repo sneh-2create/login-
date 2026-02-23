@@ -144,13 +144,13 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess, inline = fa
 
             {/* Session Display */}
             {admissionSession && (
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-sm text-[var(--color-muted-foreground)] mb-2">
                     Admission Session: {admissionSession}
                 </p>
             )}
 
             {/* Note */}
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
                 Note: Please make sure if course combination exists in new entity
             </p>
 
@@ -179,14 +179,14 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess, inline = fa
     // Modal mode - render with modal wrapper
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-2xl mx-4">
                 {/* Header */}
                 <div className="flex justify-between items-center px-3 py-2 border-b">
-                    <h2 className="text-xl font-bold text-gray-800">Move Application</h2>
+                    <h2 className="text-xl font-bold text-[var(--color-foreground)]">Move Application</h2>
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={handleRefresh} 
-                            className="text-gray-500 hover:text-gray-700"
+                            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                             disabled={isLoading}
                             title="Refresh"
                         >
@@ -194,7 +194,7 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess, inline = fa
                         </button>
                         <button 
                             onClick={onClose} 
-                            className="text-gray-500 hover:text-gray-700"
+                            className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                             disabled={isLoading}
                         >
                             <X size={24} />
@@ -205,7 +205,7 @@ const MoveApplicationModal = ({ isOpen, onClose, student, onSuccess, inline = fa
                 {content}
 
                 {/* Footer */}
-                <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">
+                <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-2">
                     <Button
                         variant="primary"
                         onClick={handleSubmit}
