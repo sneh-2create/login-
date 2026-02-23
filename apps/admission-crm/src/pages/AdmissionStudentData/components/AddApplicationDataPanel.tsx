@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Printer, Flag } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
 import {
@@ -988,18 +989,18 @@ const AddApplicationDataPanel = ({
 
     const checkPermission = (permission: string) => permissions.includes(permission);
 
-    return (
+    return createPortal(
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+                className={`fixed inset-0 bg-black transition-opacity duration-300 z-[9998] ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
                     }`}
                 onClick={handleClose}
             />
 
             {/* Sliding Panel */}
             <div
-                className={`fixed inset-y-0 right-0 z-50 w-full max-w-5xl bg-white shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                className={`fixed inset-y-0 right-0 z-[9999] w-full max-w-5xl bg-[var(--color-card)] shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
                     }`}
             >
                 <div className="h-full flex flex-col">
@@ -1722,7 +1723,7 @@ const AddApplicationDataPanel = ({
                 </div>
             )}
         </>
-    );
+    , document.body);
 };
 
 export default AddApplicationDataPanel;

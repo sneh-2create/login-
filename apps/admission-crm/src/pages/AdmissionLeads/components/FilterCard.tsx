@@ -101,7 +101,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                          onClick={() => setGlobalSearch(!globalSearch)}
                      >
                          <div className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors ${globalSearch ? 'bg-blue-600' : 'bg-[var(--ui-gray-300)]'}`}>
-                             <div className={`bg-white w-3 h-3 rounded-full shadow-sm transform duration-300 ease-in-out ${globalSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                              <div className={`bg-[var(--color-card)] w-3 h-3 rounded-full shadow-sm transform duration-300 ease-in-out ${globalSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
                          </div>
                          <span className={`text-xs font-medium ${globalSearch ? 'text-blue-700' : 'text-[var(--color-muted-foreground)]'}`}>Global Search</span>
                      </div>

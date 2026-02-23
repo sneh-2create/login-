@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, DropdownMenu, Badge, Checkbox, SelectSingle, Tooltip, Button, useToast } from '@od-erp/ui';
 import { useAdmissionLead, useSessions, useBulkCounselorUpdate } from '@od-erp/query';
 import { useAdmissionStageSetup, useAdmissionStages, useAdmissionMaster, useEditAdmissionStudentData } from '@od-erp/query';
@@ -650,8 +651,8 @@ const AdmissionLeads = () => {
 
 
             {/* Add/Edit Lead Drawer */}
-            {isLeadFormOpen && (
-                <div className="fixed inset-0 z-[100] flex justify-end">
+            {isLeadFormOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex justify-end">
                     {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200"
@@ -675,7 +676,7 @@ const AdmissionLeads = () => {
                         />
                     </div>
                 </div>
-            )}
+            , document.body)}
 
             {/* Table */}
             <div className="w-full max-w-full overflow-x-auto">
