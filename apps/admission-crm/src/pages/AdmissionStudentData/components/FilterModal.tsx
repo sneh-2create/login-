@@ -195,7 +195,7 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 2: Academic, Batch & Source */}
-                        <div className="bg-purple-50 rounded-xl px-3 py-2 border border-purple-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-purple-500 rounded-lg">
                                     <BookOpen className="w-5 h-5 text-white" />
@@ -260,7 +260,7 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 3: Stage & Engagement */}
-                        <div className="bg-green-50 rounded-xl px-3 py-2 border border-green-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-green-500 rounded-lg">
                                     <Target className="w-5 h-5 text-white" />
@@ -291,7 +291,7 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 4: Counselor & Tag */}
-                        <div className="bg-orange-50 rounded-xl px-3 py-2 border border-orange-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-orange-500 rounded-lg">
                                     <Users className="w-5 h-5 text-white" />
@@ -344,9 +344,8 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                     <Button 
                         variant="primary" 
                         onClick={handleApply}
-                        className="px-8 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all"
                     >
-                        Go <ArrowRightIcon className="w-5 h-5 text-white" />
+                        Go <ArrowRightIcon className="w-5 h-5" />
                     </Button>
                 </div>
             </div>
