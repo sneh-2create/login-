@@ -20,8 +20,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
         switch (selectedItem) {
             case 'Admission Form':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Admission Form</h3>
                         </div>
                         <div className="p-6">
@@ -35,8 +35,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Tags and Notes':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Tags & Notes</h3>
                         </div>
                         <div className="p-6">
@@ -47,8 +47,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Follow Up':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Follow Up</h3>
                         </div>
                         <div className="p-6">
@@ -59,8 +59,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Timeline':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Timeline</h3>
                         </div>
                         <div className="p-6">
@@ -71,8 +71,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'View Transaction':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Transactions</h3>
                         </div>
                         <div className="p-6">
@@ -83,8 +83,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'View Document':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Documents</h3>
                         </div>
                         <div className="p-6">
@@ -95,8 +95,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Verify Document':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-full flex flex-col">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] h-full flex flex-col">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Verify Documents</h3>
                         </div>
                         <div className="flex-1 overflow-hidden">
@@ -107,8 +107,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Bank Details':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Bank Details</h3>
                         </div>
                         <div className="p-6">
@@ -119,8 +119,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Move Application':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Move Application</h3>
                         </div>
                         <div className="p-6">
@@ -131,8 +131,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             case 'Move Student':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="bg-primary px-4 py-3 border-b border-gray-200">
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
+                        <div className="bg-primary px-4 py-3 border-b border-[var(--color-border)]">
                             <h3 className="text-white font-semibold">Move Student</h3>
                         </div>
                         <div className="p-6">
@@ -143,8 +143,8 @@ const DetailsContentArea = ({ selectedItem, student }: DetailsContentAreaProps) 
                 
             default:
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                        <p className="text-gray-500 text-lg">Select an item from the sidebar</p>
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] p-12 text-center">
+                        <p className="text-[var(--color-muted-foreground)] text-lg">Select an item from the sidebar</p>
                     </div>
                 );
         }

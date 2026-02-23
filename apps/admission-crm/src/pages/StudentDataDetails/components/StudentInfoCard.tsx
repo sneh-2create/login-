@@ -90,11 +90,11 @@ const StudentInfoCard = ({ student }: StudentInfoCardProps) => {
     };
     
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] overflow-hidden">
             {/* Horizontal Layout */}
             <div className="flex items-stretch">
                 {/* Photo Section - Left Side */}
-                <div className="bg-primary/5 p-8 flex items-center justify-center border-r border-gray-200">
+                <div className="bg-primary/5 p-8 flex items-center justify-center border-r border-[var(--color-border)]">
                     <div className="relative">
                         <img
                             src={photoUrl}
@@ -117,21 +117,21 @@ const StudentInfoCard = ({ student }: StudentInfoCardProps) => {
                         {/* Column 1 */}
                         <div className="space-y-4">
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Application Number</div>
-                                <div className="text-base font-bold text-gray-900">{student.applicationNumber || '-'}</div>
-                                <div className="text-xs text-gray-500 mt-0.5">
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Application Number</div>
+                                <div className="text-base font-bold text-[var(--color-foreground)]">{student.applicationNumber || '-'}</div>
+                                <div className="text-xs text-[var(--color-muted-foreground)] mt-0.5">
                                     {student.date ? format(new Date(student.date), 'dd-MMM-yyyy') : '-'}
                                 </div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Student Name</div>
-                                <div className="text-sm font-semibold text-gray-900">{student.name || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Student Name</div>
+                                <div className="text-sm font-semibold text-[var(--color-foreground)]">{student.name || '-'}</div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Date of Birth</div>
-                                <div className="text-sm text-gray-900">
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Date of Birth</div>
+                                <div className="text-sm text-[var(--color-foreground)]">
                                     {student.dob ? format(new Date(student.dob), 'dd-MMM-yyyy') : '-'}
                                 </div>
                             </div>
@@ -140,32 +140,32 @@ const StudentInfoCard = ({ student }: StudentInfoCardProps) => {
                         {/* Column 2 */}
                         <div className="space-y-4">
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Father Name</div>
-                                <div className="text-sm text-gray-900">{student.fatherName || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Father Name</div>
+                                <div className="text-sm text-[var(--color-foreground)]">{student.fatherName || '-'}</div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Course</div>
-                                <div className="text-sm font-medium text-gray-900">{student.course || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Course</div>
+                                <div className="text-sm font-medium text-[var(--color-foreground)]">{student.course || '-'}</div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Stream</div>
-                                <div className="text-sm font-medium text-gray-900">{student.stream || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Stream</div>
+                                <div className="text-sm font-medium text-[var(--color-foreground)]">{student.stream || '-'}</div>
                             </div>
                         </div>
                         
                         {/* Column 3 */}
                         <div className="space-y-4">
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Receipt Number</div>
-                                <div className="text-sm text-gray-900">{student.receiptNumber || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Receipt Number</div>
+                                <div className="text-sm text-[var(--color-foreground)]">{student.receiptNumber || '-'}</div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Phone Number</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Phone Number</div>
                                 <div className="flex items-center gap-2">
-                                    <div className="text-sm font-medium text-gray-900">{displayPhone}</div>
+                                    <div className="text-sm font-medium text-[var(--color-foreground)]">{displayPhone}</div>
                                     {canClickToCall && student.phone && (
                                         <Tooltip content="Click to Call" placement="top">
                                             <button
@@ -180,22 +180,22 @@ const StudentInfoCard = ({ student }: StudentInfoCardProps) => {
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Source</div>
-                                <div className="text-sm text-gray-900">{student.source || '-'}</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Source</div>
+                                <div className="text-sm text-[var(--color-foreground)]">{student.source || '-'}</div>
                             </div>
                         </div>
                         
                         {/* Column 4 - Current Stage */}
                         <div className="space-y-4">
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-1">Admission Date</div>
-                                <div className="text-sm text-gray-900">
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-1">Admission Date</div>
+                                <div className="text-sm text-[var(--color-foreground)]">
                                     {student.doa ? format(new Date(student.doa), 'dd-MMM-yyyy') : '-'}
                                 </div>
                             </div>
                             
                             <div>
-                                <div className="text-xs font-medium text-gray-500 mb-2">Current Stage</div>
+                                <div className="text-xs font-medium text-[var(--color-muted-foreground)] mb-2">Current Stage</div>
                                 <div className={`px-3 py-2 rounded-lg border-2 text-center font-bold text-sm ${getStageColor(student.currentStage || '')}`}>
                                     {student.currentStage || 'Student'}
                                 </div>

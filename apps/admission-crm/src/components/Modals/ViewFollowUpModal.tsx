@@ -147,21 +147,21 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             size: 48,
             accessorFn: (_row, i) => i + 1,
             cell: info => (
-                <span className="text-xs font-medium text-gray-400">{info.getValue() as number}</span>
+                <span className="text-xs font-medium text-[var(--color-muted-foreground)]">{info.getValue() as number}</span>
             ),
         },
         {
             header: 'Counselor',
             accessorKey: 'counselorName',
             cell: info => (
-                <span className="font-medium text-gray-700">{info.getValue() as string || '-'}</span>
+                <span className="font-medium text-[var(--color-foreground)]">{info.getValue() as string || '-'}</span>
             ),
         },
         {
             header: 'Created',
             accessorKey: 'createdAt',
             cell: info => (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-[var(--color-muted-foreground)]">
                     {info.getValue() ? format(new Date(info.getValue() as string), 'dd MMM yyyy') : '-'}
                 </span>
             ),
@@ -170,7 +170,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             header: 'Follow-Up Query',
             accessorKey: 'followUpQuery',
             cell: info => (
-                <span className="text-sm text-gray-700 line-clamp-2">{info.getValue() as string || '-'}</span>
+                <span className="text-sm text-[var(--color-foreground)] line-clamp-2">{info.getValue() as string || '-'}</span>
             ),
         },
         {
@@ -180,8 +180,8 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                 const date = new Date(info.getValue() as string);
                 return (
                     <div className="flex flex-col gap-0.5">
-                        <span className="text-sm font-medium text-gray-700">{format(date, 'dd MMM yyyy')}</span>
-                        <span className="text-xs text-gray-400">{format(date, 'HH:mm')}</span>
+                        <span className="text-sm font-medium text-[var(--color-foreground)]">{format(date, 'dd MMM yyyy')}</span>
+                        <span className="text-xs text-[var(--color-muted-foreground)]">{format(date, 'HH:mm')}</span>
                     </div>
                 );
             },
@@ -215,7 +215,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                 if (isPending) {
                     return (
                         <textarea
-                            className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-white resize-none transition-colors placeholder:text-gray-400"
+                            className="w-full px-2.5 py-1.5 text-xs border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary bg-[var(--color-background)] text-[var(--color-foreground)] resize-none transition-colors placeholder:text-[var(--color-muted-foreground)]"
                             rows={2}
                             placeholder="Enter completion remark..."
                             defaultValue={completionRemarksRef.current[info.row.original._id] || ''}
@@ -227,7 +227,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                     );
                 }
                 return (
-                    <span className="text-sm text-gray-600">{(info.getValue() as string) || '-'}</span>
+                    <span className="text-sm text-[var(--color-muted-foreground)]">{(info.getValue() as string) || '-'}</span>
                 );
             },
         },
@@ -269,15 +269,15 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
         <div className={inline ? 'space-y-5' : 'p-3 overflow-y-auto flex-1 flex flex-col gap-5'}>
 
             {/* ─── Schedule Follow-Up Card ─── */}
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm overflow-hidden">
 
                 {/* Card Header */}
-                <div className="flex items-center justify-between px-2 py-1 bg-gradient-to-r from-primary/5 to-primary/10 border-b border-gray-100">
+                <div className="flex items-center justify-between px-2 py-1 bg-gradient-to-r from-primary/5 to-primary/10 border-b border-[var(--color-border)]">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 rounded-lg bg-primary/10">
                             <CalendarClock size={16} className="text-primary" />
                         </div>
-                        <h4 className="text-sm font-semibold text-gray-800">Schedule Follow-Up</h4>
+                        <h4 className="text-sm font-semibold text-[var(--color-foreground)]">Schedule Follow-Up</h4>
                         {editId && (
                             <span className="ml-1 inline-flex items-center gap-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
                                 <Pencil size={10} />
@@ -288,7 +288,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                     <div className="flex items-center gap-2">
                         <button
                             onClick={resetForm}
-                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="p-1.5 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] hover:bg-[var(--color-background)] rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                             title="Reset Form"
                             disabled={isFormDisabled}
                         >
@@ -319,7 +319,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                 <div className="p-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-3">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1.5">Follow-Up Date</label>
+                            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1.5">Follow-Up Date</label>
                             <DatePicker
                                 value={followUpDate}
                                 onChange={(date: Date | null) => date && setFollowUpDate(date)}
@@ -347,7 +347,7 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
                             disabled={isFormDisabled}
                         />
                         <div className="mt-1 flex justify-end">
-                            <span className={`text-xs ${remark.length > 90 ? 'text-amber-500' : 'text-gray-400'}`}>
+                            <span className={`text-xs ${remark.length > 90 ? 'text-amber-500' : 'text-[var(--color-muted-foreground)]'}`}>
                                 {remark.length}/100
                             </span>
                         </div>
@@ -356,31 +356,31 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
             </div>
 
             {/* ─── Follow-Up History Table ─── */}
-            <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-                <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
-                    <MessageSquare size={15} className="text-gray-500" />
-                    <h4 className="text-sm font-semibold text-gray-700">Follow-Up History</h4>
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] shadow-sm overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-background)]">
+                    <MessageSquare size={15} className="text-[var(--color-muted-foreground)]" />
+                    <h4 className="text-sm font-semibold text-[var(--color-foreground)]">Follow-Up History</h4>
                     {followUps && followUps.length > 0 && (
-                        <span className="ml-auto text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                        <span className="ml-auto text-xs text-[var(--color-muted-foreground)] bg-[var(--color-background)] px-2 py-0.5 rounded-full">
                             {followUps.length} record{followUps.length !== 1 ? 's' : ''}
                         </span>
                     )}
                 </div>
 
                 {isFollowUpsLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-12 text-gray-400">
+                    <div className="flex items-center justify-center gap-2 py-12 text-[var(--color-muted-foreground)]">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
                         <span className="text-sm">Loading follow-ups...</span>
                     </div>
                 ) : followUps && followUps.length > 0 ? (
                     <DataTable columns={columns} data={followUps} />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-14 text-gray-400">
-                        <div className="p-4 rounded-full bg-gray-50 border border-dashed border-gray-200 mb-3">
+                    <div className="flex flex-col items-center justify-center py-14 text-[var(--color-muted-foreground)]">
+                        <div className="p-4 rounded-full bg-[var(--color-background)] border border-dashed border-[var(--color-border)] mb-3">
                             <MessageSquare size={32} className="opacity-40" />
                         </div>
-                        <p className="text-sm font-medium text-gray-500">No follow-ups yet</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Schedule the first follow-up using the form above.</p>
+                        <p className="text-sm font-medium text-[var(--color-muted-foreground)]">No follow-ups yet</p>
+                        <p className="text-xs text-[var(--color-muted-foreground)] mt-0.5">Schedule the first follow-up using the form above.</p>
                     </div>
                 )}
             </div>
@@ -395,18 +395,18 @@ const ViewFollowUpModal = ({ isOpen, onClose, student, onSaveSuccess, inline = f
     // Modal mode — full modal wrapper
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-[var(--color-card)] rounded-xl shadow-2xl w-full max-w-6xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between p-2 border-b border-gray-100">
+                <div className="flex items-center justify-between p-2 border-b border-[var(--color-border)]">
                     <div className="flex items-center gap-2.5">
                         <div className="p-1.5 rounded-lg bg-primary/10">
                             <MessageSquare size={18} className="text-primary" />
                         </div>
-                        <h2 className="text-lg font-semibold text-gray-800">Follow Ups</h2>
+                        <h2 className="text-lg font-semibold text-[var(--color-foreground)]">Follow Ups</h2>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-1.5 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors"
+                        className="p-1.5 hover:bg-[var(--color-background)] rounded-lg text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
                     >
                         <X size={18} />
                     </button>

@@ -222,13 +222,13 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
             <div className="grid grid-cols-12 gap-6">
                 {/* Left Section - Note (8 columns) */}
                 <div className="col-span-8">
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-3">
+                    <div className="bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] p-6">
+                        <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-3">
                             Note
                         </label>
                         <div className="flex gap-4">
                             <textarea
-                                className="flex-1 min-h-[120px] px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                                className="flex-1 min-h-[120px] px-4 py-3 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none placeholder:text-[var(--color-muted-foreground)]"
                                 placeholder="Enter note..."
                                 value={selectedNote}
                                 onChange={(e) => setSelectedNote(e.target.value)}
@@ -247,16 +247,16 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
                 
                 {/* Right Section - Tags and Counselor (4 columns) */}
                 <div className="col-span-4">
-                    <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+                    <div className="bg-[var(--color-card)] rounded-lg border border-[var(--color-border)] p-6 space-y-6">
                         {/* Tag Selector */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                            <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-3">
                                 Add Tags
                             </label>
                             <select
                                 value={selectedTagId}
                                 onChange={(e) => handleTagChange(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             >
                                 <option value="">Select Tag</option>
                                 {tagsList.map((tag: any) => (
@@ -269,10 +269,10 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
                         
                         {/* Tag Display */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                            <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-3">
                                 Tag
                             </label>
-                            <div className="flex items-center justify-center p-4 rounded-lg border border-gray-200 min-h-[60px]">
+                            <div className="flex items-center justify-center p-4 rounded-lg border border-[var(--color-border)] min-h-[60px]">
                                 {currentTag || selectedTagId ? (
                                     <div
                                         className="flex items-center gap-3 px-4 py-2 rounded-full"
@@ -286,7 +286,7 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
                                         </span>
                                     </div>
                                 ) : (
-                                    <span className="text-gray-400 text-sm">
+                                    <span className="text-[var(--color-muted-foreground)] text-sm">
                                         Click on add tags button
                                     </span>
                                 )}
@@ -295,13 +295,13 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
                         
                         {/* Counselor Selector */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">
+                            <label className="block text-sm font-semibold text-[var(--color-foreground)] mb-3">
                                 Choose Counselor
                             </label>
                             <select
                                 value={selectedCounselorId}
                                 onChange={(e) => setSelectedCounselorId(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                                className="w-full px-4 py-2 border border-[var(--color-border)] bg-[var(--color-background)] text-[var(--color-foreground)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                             >
                                 <option value="">Select Counselor</option>
                                 {counselors.map((counselor: any) => (
@@ -330,7 +330,7 @@ const TagsNotesView = ({ student }: TagsNotesViewProps) => {
             </div>
             
             {/* Timeline Section */}
-            <div className="bg-white rounded-lg border border-gray-200">
+            <div className="bg-[var(--color-card)] rounded-lg border border-[var(--color-border)]">
                 <TimelineView student={student} />
             </div>
             

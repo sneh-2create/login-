@@ -7,7 +7,7 @@ interface MoveStudentViewProps {
 
 const MoveStudentView = ({ student }: MoveStudentViewProps) => {
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)]">
             <MoveStudentModal
                 isOpen={true}
                 onClose={() => {}}
