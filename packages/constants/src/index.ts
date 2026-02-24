@@ -23,3 +23,4 @@ export * from './ui.config';
 export * from './studentFields';
 export * from './login.config';
 export * from './theme.constants';
+export * from './stageFields';

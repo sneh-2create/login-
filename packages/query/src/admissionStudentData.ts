@@ -191,3 +191,16 @@ export const useStudentMaster = (entity: string, session: string, enabled: boole
         staleTime: 10 * 60 * 1000,
     });
 };
+
+// Note: Application Number setup data is stored in admissionMaster.applicationNumber array.
+// Use useAdmissionMaster hook to read it, and admissionStudentDataService.editAdmissionMaster to save it.
+
+export const useCourseList = (entityId: string, session: string) => {
+    return useQuery<any[]>({
+        queryKey: ['courseList', entityId, session],
+        queryFn: () => admissionStudentDataService.listCourses(entityId, session),
+        enabled: !!entityId && !!session,
+        staleTime: 10 * 60 * 1000,
+    });
+};
+

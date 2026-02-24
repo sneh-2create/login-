@@ -103,4 +103,11 @@ export const admissionService = {
         const response = await apiClient.post(`/add/reportFile`, formData);
         return response.data;
     },
+
+    copyFromSession: async (entityId: string, fromSession: string, toSession: string) => {
+        const response = await apiClient.get(
+            `/copyFromSession/admissionStageSetup?entity=${entityId}&fromSession=${fromSession}&toSession=${toSession}`
+        );
+        return response.data;
+    },
 };

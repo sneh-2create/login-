@@ -3,6 +3,7 @@ import React from 'react';
 export interface SelectSingleOption {
     label: string;
     value: string | number;
+    disabled?: boolean;
 }
 
 /** Figma 659-6670: single-select dropdown (closed and open state). */

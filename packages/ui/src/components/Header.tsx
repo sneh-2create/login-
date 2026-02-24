@@ -177,6 +177,13 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
                                             <p className="text-[10px] text-[var(--color-muted-foreground)]">Fee Details</p>
                                         </div>
                                     </div>
+                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs">AS</div>
+                                        <div>
+                                            <p className="text-xs font-bold text-[var(--color-foreground)]">Admission Setup</p>
+                                            <p className="text-[10px] text-[var(--color-muted-foreground)]">Configure Admission</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

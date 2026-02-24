@@ -33,6 +33,24 @@ const VerifyDocuments = lazy(() => import('./pages/AdmissionStudentData/componen
 const PrintAdmissionTransactionReceipt = lazy(() => import('./pages/AdmissionTransaction/PrintAdmissionTransactionReceipt'));
 const StudentDataDetails = lazy(() => import('./pages/StudentDataDetails/StudentDataDetails'));
 
+// Admission Setup
+const AdmissionSetup = lazy(() => import('./pages/AdmissionSetup/AdmissionSetup'));
+const AdmissionMaster = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/AdmissionMaster'));
+const StagesSetup = lazy(() => import('./pages/AdmissionSetup/StagesSetup/StagesSetup'));
+// Admission Master Sub-pages
+const ApplicationNumber = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/ApplicationNumber'));
+const StagesMaster = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/StagesMaster'));
+const TxnReceipt = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/TxnReceipt'));
+const AdmissionHead = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/AdmissionHead'));
+const AdmissionTags = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/AdmissionTags'));
+const AdmissionSource = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/AdmissionSource'));
+const AdmissionSeats = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/AdmissionSeats'));
+const CounselorMapper = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/CounselorMapper'));
+const DuplicateFields = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/DuplicateFields'));
+const MyOperatorConfig = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/MyOperatorConfig'));
+const AdmissionTeams = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/AdmissionTeams'));
+const MinimumAgeMaster = lazy(() => import('./pages/AdmissionSetup/AdmissionMaster/sub-pages/MinimumAgeMaster'));
+
 function App() {
     return (
         <QueryClientProvider client={queryClient}>
@@ -67,6 +85,25 @@ function App() {
                         <Route path="print/open/admissionForm" element={<PrintAdmissionForm />} />
                         <Route path="print/open/admissionTransactionReceipt/:id" element={<PrintAdmissionTransactionReceipt />} />
                         <Route path="verify-documents/:id" element={<VerifyDocuments />} />
+
+                        {/* Admission Setup Routes */}
+                        <Route path="setup" element={<AdmissionSetup />} />
+                        <Route path="setup/master" element={<AdmissionMaster />} />
+                        <Route path="setup/stagesSetup" element={<StagesSetup />} />
+                        {/* Admission Master Sub-pages */}
+                        <Route path="setup/master/applicationNumber" element={<ApplicationNumber />} />
+                        <Route path="setup/master/stages" element={<StagesMaster />} />
+                        <Route path="setup/master/txnReceipt" element={<TxnReceipt />} />
+                        <Route path="setup/master/admissionHead" element={<AdmissionHead />} />
+                        <Route path="setup/master/tags" element={<AdmissionTags />} />
+                        <Route path="setup/master/source" element={<AdmissionSource />} />
+                        <Route path="setup/master/seats" element={<AdmissionSeats />} />
+                        <Route path="setup/master/counselorMapper" element={<CounselorMapper />} />
+                        <Route path="setup/master/duplicateFields" element={<DuplicateFields />} />
+                        <Route path="setup/master/myOperatorConfig" element={<MyOperatorConfig />} />
+                        <Route path="setup/master/admissionTeams" element={<AdmissionTeams />} />
+                        <Route path="setup/master/minimumAgeMaster" element={<MinimumAgeMaster />} />
+
                         <Route index element={<Navigate to="admissionSummaryReports" replace />} />
                     </Routes>
                 </Suspense>

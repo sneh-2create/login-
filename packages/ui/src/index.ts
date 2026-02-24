@@ -49,6 +49,8 @@ export * from './components/Atoms/LoginButton';
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
 export * from './components/DataTable/DataTable';
+export * from './components/EditableTable/EditableTable';
+
 
 // Molecules
 export * from './components/DateRangeFilter/DateRangeFilter';
