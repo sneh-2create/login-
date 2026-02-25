@@ -111,22 +111,27 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 >
                     {options.map((option) => {
                         const isSelected = option.value === value;
+                        const isDisabled = !!option.disabled;
                         return (
                             <li
                                 key={String(option.value)}
                                 id={`${selectId}-opt-${String(option.value)}`}
                                 role="option"
                                 aria-selected={isSelected}
+                                aria-disabled={isDisabled}
                                 className={cn(
-                                    'relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-[var(--color-background)]',
-                                    isSelected ? 'bg-primary/5 text-primary' : 'text-[var(--color-foreground)]'
+                                    'relative select-none py-2 pl-3 pr-9',
+                                    isDisabled
+                                        ? 'cursor-not-allowed opacity-40 text-[var(--color-muted-foreground)]'
+                                        : 'cursor-pointer hover:bg-[var(--color-background)]',
+                                    isSelected && !isDisabled ? 'bg-primary/5 text-primary' : 'text-[var(--color-foreground)]'
                                 )}
-                                onClick={() => handleSelect(option)}
+                                onClick={() => !isDisabled && handleSelect(option)}
                             >
                                 <span className={cn('block truncate', isSelected && 'font-medium')}>
                                     {option.label}
                                 </span>
-                                {isSelected && (
+                                {isSelected && !isDisabled && (
                                     <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-primary">
                                         <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

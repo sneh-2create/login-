@@ -68,6 +68,8 @@ export * from './components/Toast/Toast';
 export * from './components/EmptyState/EmptyState';
 export * from './components/NeedHelpPanel';
 export { default as ViewDocumentsModal } from './components/ViewDocumentsModal/ViewDocumentsModal';
+export * from './components/ExcelTemplateEditDrawer/ExcelTemplateEditDrawer';
+
 
 // Utils
 export { cn } from './utils';

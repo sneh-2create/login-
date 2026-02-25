@@ -29,5 +29,15 @@ export const excelTemplateService = {
             }
         });
         return response.data;
-    }
+    },
+
+    editExcelTemplate: async (payload: Partial<ExcelTemplate> & { _id: string }) => {
+        const response = await apiClient.post<ExcelTemplate>(`/edit/excelTemplate`, payload);
+        return response.data;
+    },
+
+    addExcelTemplate: async (payload: Omit<ExcelTemplate, '_id'>) => {
+        const response = await apiClient.post<ExcelTemplate>(`/add/excelTemplate`, payload);
+        return response.data;
+    },
 };
