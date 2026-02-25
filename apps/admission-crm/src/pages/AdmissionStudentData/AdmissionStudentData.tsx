@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall, useEditExcelTemplate } from '@od-erp/query';
-import { DataTable, Button, Badge, PageHeader, PageToolbar, ActionButton, NeedHelpPanel, HorizontalTabs, ActionMenu, ViewDocumentsModal, SelectSingle, Tooltip, ExcelTemplateEditDrawer } from '@od-erp/ui';
+import { DataTable, Button, Badge, PageHeader, PageToolbar, ActionButton, NeedHelpPanel, ActionMenu, ViewDocumentsModal, SelectSingle, Tooltip, ExcelTemplateEditDrawer } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
 import {
     ADMISSION_SEARCH_BY_OPTIONS,
@@ -1293,6 +1293,9 @@ const AdmissionStudentData = () => {
                     : []}
                 activeTab={selectedTemplate}
                 onTabChange={(val) => { setSelectedTemplate(val); setEditDrawerOpen(false); }}
+                secondaryTabs={tabs.map(tab => ({ label: `${tab.name} (${tab.count})`, value: tab.value }))}
+                secondaryActiveTab={selectedStage}
+                onSecondaryTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
                 actions={actionButtons}
                 extraContent={
                     <div className="flex items-center gap-2">
@@ -1316,14 +1319,6 @@ const AdmissionStudentData = () => {
                 }
             />
 
-            {/* Stats / Stage Tabs */}
-            <HorizontalTabs
-                tabs={tabs.map(tab => ({ label: `${tab.name} (${tab.count})`, value: tab.value }))}
-                activeTab={selectedStage}
-                onTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
-                className="mb-4"
-                fullWidth
-            />
 
             {/* View Admission (Edit Mode) */}
             <AddApplicationDataPanel

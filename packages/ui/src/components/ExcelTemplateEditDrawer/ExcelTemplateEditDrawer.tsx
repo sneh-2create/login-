@@ -3,11 +3,12 @@ import { Plus, Trash2, X, RotateCcw } from 'lucide-react';
 import { SelectSingle } from '../Atoms/SelectSingle';
 import { MultiSelect } from '../Atoms/MultiSelect';
 import { Button } from '../Atoms/Button';
-import type { TableHead, FilterValue } from '@od-erp/types';
-import type {
+import type { 
+    TableHead, 
+    FilterValue,
     ExcelFilterValueOption,
-    ExcelTemplateEditDrawerProps,
-} from '../../types/ExcelTemplateEditDrawer';
+    ExcelTemplateEditDrawerProps
+} from '@od-erp/types';
 
 const DEFAULT_STATUS_OPTIONS: ExcelFilterValueOption[] = [
     { label: 'Confirmed', value: 'confirmed' },
@@ -138,10 +139,10 @@ export const ExcelTemplateEditDrawer: React.FC<ExcelTemplateEditDrawerProps> = (
     return (
         <>
             {/* Backdrop */}
-            <div className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm" onClick={onClose} />
+            <div className="fixed inset-0 z-[100000] bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
             {/* Drawer */}
-            <div className="fixed right-0 top-0 bottom-0 z-[1001] w-full max-w-2xl bg-[var(--color-card)] shadow-2xl flex flex-col overflow-hidden">
+            <div className="fixed right-0 top-0 bottom-0 z-[100001] w-full max-w-2xl bg-[var(--color-card)] shadow-2xl flex flex-col overflow-hidden">
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border)] shrink-0">

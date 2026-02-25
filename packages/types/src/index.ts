@@ -126,3 +126,5 @@ export * from './employee';
 export * from './theme.types';
 export * from './excelTemplate';
 export * from './feeMaster';
+export * from './tabs';
+export * from './pageToolbar';

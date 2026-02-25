@@ -9,7 +9,7 @@ import {
     ColumnDef,
 } from '@tanstack/react-table';
 import { Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { ExtendedColumnMeta, BaseDataTableProps } from '@od-erp/types';
+import { ExtendedColumnMeta, DataTableProps } from '@od-erp/types';
 import { Dropdown } from '../Atoms/Dropdown';
 import {
     FONT_WEIGHT_NUMERIC_MAP,
@@ -21,10 +21,17 @@ import {
     DEFAULT_SEARCH_PLACEHOLDER,
 } from '@od-erp/constants';
 
-export interface DataTableProps<TData, TValue> extends BaseDataTableProps {
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-}
+const getScrollParent = (node: HTMLElement | null): HTMLElement => {
+    if (!node || node === document.body || node === document.documentElement) {
+        return document.documentElement;
+    }
+    const overflowY = window.getComputedStyle(node).overflowY;
+    const isScrollable = overflowY !== 'visible' && overflowY !== 'hidden';
+    if (isScrollable && node.scrollHeight > node.clientHeight) {
+        return node;
+    }
+    return getScrollParent(node.parentElement);
+};
 
 export function DataTable<TData, TValue>({
     columns,
@@ -59,12 +66,12 @@ export function DataTable<TData, TValue>({
     // --table-sticky-top on <html>.  DataTable reads it here — no DOM-query
     // race conditions, works regardless of the GlobalHeader's HTML markup.
     const cardRef = useRef<HTMLDivElement>(null);
+    const cardSentinelRef = useRef<HTMLDivElement>(null);
     const [cardStyle, setCardStyle] = React.useState<React.CSSProperties>({});
+    const [isTableSticky, setIsTableSticky] = useState(false);
 
-    useLayoutEffect(() => {
-        const BOTTOM_GAP = 16;
-
-        /** Read the CSS variable set by PageToolbar (px, unitless number string). */
+    // Track when the card sentinel scrolls past the sticky offset
+    React.useEffect(() => {
         const getStickyOffset = (): number => {
             const raw = getComputedStyle(document.documentElement)
                 .getPropertyValue('--table-sticky-top')
@@ -73,90 +80,60 @@ export function DataTable<TData, TValue>({
             return isNaN(val) ? 0 : Math.max(val, 0);
         };
 
-        /** Walk up ancestors to find the element that actually scrolls. */
-        const findScrollParent = (el: HTMLElement): HTMLElement | null => {
-            let node = el.parentElement;
-            while (node && node !== document.body) {
-                const { overflowY } = window.getComputedStyle(node);
-                if (overflowY === 'auto' || overflowY === 'scroll') return node;
-                node = node.parentElement;
-            }
-            return null;
-        };
-
-        const compute = () => {
-            const el = cardRef.current;
-            if (!el) return;
-
+        const updateSticky = () => {
+            if (!cardSentinelRef.current) return;
+            
+            const sentinelRect = cardSentinelRef.current.getBoundingClientRect();
             const stickyOffset = getStickyOffset();
-
-            // ── fast path: already pinned at the correct offset, nothing to do ──
-            // (avoids the style clear/restore cycle during every tbody scroll event)
-            if (
-                el.style.position === 'sticky' &&
-                el.style.top === `${stickyOffset}px` &&
-                stickyOffset > 0
-            ) {
-                // Re-check height in case the viewport resized
-                const h = Math.max(window.innerHeight - stickyOffset - BOTTOM_GAP, 200);
-                setCardStyle(prev =>
-                    prev.position === 'sticky' && prev.height === `${h}px` && prev.top === `${stickyOffset}px`
-                        ? prev
-                        : { position: 'sticky', top: `${stickyOffset}px`, height: `${h}px` }
-                );
-                return;
-            }
-
-            // Temporarily clear inline styles to read the natural-flow position
-            const savedPos = el.style.position;
-            const savedTop = el.style.top;
-            const savedH   = el.style.height;
-            el.style.position = '';
-            el.style.top      = '';
-            el.style.height   = '';
-
-            const rect = el.getBoundingClientRect();
-
-            el.style.position = savedPos;
-            el.style.top      = savedTop;
-            el.style.height   = savedH;
-
-            if (stickyOffset > 0 && rect.top <= stickyOffset + 1) {
-                // Card has scrolled into the fixed-header zone → pin + fill viewport
-                const h = Math.max(window.innerHeight - stickyOffset - BOTTOM_GAP, 200);
-                setCardStyle(prev =>
-                    prev.position === 'sticky' && prev.height === `${h}px` && prev.top === `${stickyOffset}px`
-                        ? prev
-                        : { position: 'sticky', top: `${stickyOffset}px`, height: `${h}px` }
-                );
-            } else {
-                // Natural flow — no height constraint, let the page scroll freely
-                setCardStyle(prev => (Object.keys(prev).length === 0 ? prev : {}));
-            }
+            
+            // We become sticky when the sentinel's top hits the stickyOffset
+            // relative to the viewport.
+            const shouldBeSticky = sentinelRect.top <= (stickyOffset + 10);
+            setIsTableSticky(shouldBeSticky);
         };
 
-        // Scroll inside the card's own tbody should NOT trigger a recompute —
-        // doing so clears the card height momentarily and kills the scroll momentum.
-        const handleScroll = (e: Event) => {
-            const el = cardRef.current;
-            if (el && e.target instanceof Node && el.contains(e.target)) return;
-            compute();
-        };
-
-        compute();
-
-        window.addEventListener('resize', compute, { passive: true });
-        document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
-
-        const scrollParent = findScrollParent(cardRef.current!);
-        scrollParent?.addEventListener('scroll', handleScroll, { passive: true });
+        const parent = getScrollParent(cardRef.current);
+        parent.addEventListener('scroll', updateSticky, { passive: true });
+        window.addEventListener('resize', updateSticky);
+        updateSticky();
 
         return () => {
-            window.removeEventListener('resize', compute);
-            document.removeEventListener('scroll', handleScroll, { capture: true });
-            scrollParent?.removeEventListener('scroll', handleScroll);
+            parent.removeEventListener('scroll', updateSticky);
+            window.removeEventListener('resize', updateSticky);
         };
     }, [data, columns]);
+
+    useLayoutEffect(() => {
+        if (!isTableSticky) {
+            setCardStyle({});
+            return;
+        }
+
+        const BOTTOM_GAP = 16;
+        const update = () => {
+            const raw = getComputedStyle(document.documentElement)
+                .getPropertyValue('--table-sticky-top')
+                .trim();
+            const stickyOffset = parseFloat(raw) || 0;
+            const h = Math.max(window.innerHeight - stickyOffset - BOTTOM_GAP, 300);
+            
+            setCardStyle({
+                position: 'sticky',
+                top: `${stickyOffset}px`,
+                height: `${h}px`
+            });
+        };
+
+        update();
+        const parent = getScrollParent(cardRef.current);
+        parent.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        
+        return () => {
+            parent.removeEventListener('scroll', update);
+            window.removeEventListener('resize', update);
+        };
+    }, [isTableSticky, data, columns]);
 
 
 
@@ -314,6 +291,7 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className={`w-full flex justify-center items-start p-0 font-sans ${containerClassName}`}>
+            <div ref={cardSentinelRef} className="h-px w-full absolute pointer-events-none opacity-0" style={{ top: '-1px' }} />
             <div
                 ref={cardRef}
                 className="w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col"

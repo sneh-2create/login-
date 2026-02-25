@@ -3,39 +3,52 @@ import { HorizontalTabs } from '../Atoms/HorizontalTabs';
 import { Button } from '../Atoms/Button';
 import { Tooltip } from '../Atoms/Tooltip';
 
-export interface ActionButton {
-    icon: React.ElementType;
-    onClick: () => void;
-    title: string;
-    isVisible?: boolean;
-    className?: string;
-    iconClass?: string;
-    variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-}
-
-interface PageToolbarProps {
-    tabs?: { label: string; value: string }[];
-    activeTab?: string;
-    onTabChange?: (_value: string) => void;
-    actions?: ActionButton[];
-    className?: string;
-    extraContent?: React.ReactNode;
-}
+import { PageToolbarProps } from '@od-erp/types';
 
 export const PageToolbar: React.FC<PageToolbarProps> = ({
     tabs,
     activeTab,
     onTabChange,
+    secondaryTabs,
+    secondaryActiveTab,
+    onSecondaryTabChange,
     actions,
     className,
-    extraContent
+    extraContent,
+    actionsBreakpoint = 1024,
 }) => {
     const [isSticky, setIsSticky] = React.useState(false);
     const [actionsExpanded, setActionsExpanded] = React.useState(false);
     const [isHovered, setIsHovered] = React.useState(false);
     const [sidebarWidth, setSidebarWidth] = React.useState(0);
+    const [windowWidth, setWindowWidth] = React.useState(() => window.innerWidth);
+    const [isWide, setIsWide] = React.useState(true);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const inlineContentRef = React.useRef<HTMLDivElement>(null);
     const sentinelRef = React.useRef<HTMLDivElement>(null);
     const stickyBarRef = React.useRef<HTMLDivElement>(null);
+
+    // Track window width for strict mobile hide
+    React.useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobile = windowWidth < 768;
+
+    // Track the toolbar container's own rendered width (accounts for sidebar open/close).
+    React.useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(([entry]) => {
+            setIsWide(entry.contentRect.width >= actionsBreakpoint);
+        });
+        ro.observe(el);
+        // Initial read
+        setIsWide(el.getBoundingClientRect().width >= actionsBreakpoint);
+        return () => ro.disconnect();
+    }, [actionsBreakpoint]);
 
     // Track sidebar width so sticky bar starts after sidebar
     React.useEffect(() => {
@@ -48,14 +61,20 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
         return () => ro.disconnect();
     }, []);
 
-    // Detect when toolbar sentinel scrolls past the header
+    // Detect when toolbar sentinel scrolls past the header line (64px)
     React.useEffect(() => {
         const observer = new IntersectionObserver(
             ([entry]) => {
-                const pastHeader = entry.boundingClientRect.top <= 96;
+                // We use a rootMargin of -64px. 
+                // When the sentinel (at the top of our container) is above the 64px line,
+                // it stops intersecting.
+                const pastHeader = entry.boundingClientRect.top < 80;
                 setIsSticky(!entry.isIntersecting && pastHeader);
             },
-            { threshold: [0, 0.1, 0.5, 1] }
+            { 
+                threshold: [0, 1],
+                rootMargin: '-64px 0px 0px 0px' 
+            }
         );
         if (sentinelRef.current) observer.observe(sentinelRef.current);
         return () => observer.disconnect();
@@ -86,6 +105,8 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
 
     const visibleActions = actions?.filter(btn => btn.isVisible !== false) ?? [];
     const hasTabs = !!(tabs && tabs.length > 0 && activeTab && onTabChange);
+    const hasSecondaryTabs = !!(secondaryTabs && secondaryTabs.length > 0 && secondaryActiveTab && onSecondaryTabChange);
+    const hasActions = visibleActions.length > 0 || !!extraContent;
 
     const ChevronRightIcon = () => (
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
@@ -101,61 +122,93 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
         </svg>
     );
 
+    /** Combined actions: extraContent + ActionButtons */
+    const CombinedActions = ({ small = false }: { small?: boolean }) => (
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+            {extraContent && <div className="shrink-0">{extraContent}</div>}
+            {visibleActions.length > 0 && (
+                <div className="flex items-center gap-2">
+                    {visibleActions.map((btn, i) => (
+                        <Tooltip key={i} content={btn.title} placement="bottom">
+                            <Button
+                                variant={btn.variant || 'outline'}
+                                className={`!p-0 ${small ? '!w-8 !h-8' : '!w-9 !h-9'} flex-shrink-0 ${btn.className || ''}`}
+                                onClick={btn.onClick}
+                                title={btn.title}
+                            >
+                                <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
+                            </Button>
+                        </Tooltip>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+
     return (
-        <div className="relative">
+        <div ref={containerRef} className="relative">
             {/* Sentinel — invisible anchor used to detect scroll position */}
-            <div ref={sentinelRef} className="absolute -top-1 w-full h-1 opacity-0 pointer-events-none" />
+            <div ref={sentinelRef} className="absolute top-0 w-full h-px opacity-0 pointer-events-none" />
 
-            {/* ── NON-STICKY: normal inline toolbar ───────────────────────── */}
-            {!isSticky && (
-                <>
-                    {/* Actions row — hidden on mobile, visible on md+ */}
-                    {visibleActions.length > 0 && (
-                        <div className={`hidden md:flex flex-row justify-end items-center mb-2 gap-2 ${className || ''}`}>
-                            {extraContent && <div className="shrink-0">{extraContent}</div>}
-                            <div className="flex items-center gap-2">
-                                {visibleActions.map((btn, i) => (
-                                    <Tooltip key={i} content={btn.title} placement="bottom">
-                                        <Button
-                                            variant={btn.variant || 'outline'}
-                                            className={`!p-0 !w-9 !h-9 ${btn.className || ''}`}
-                                            onClick={btn.onClick}
-                                            title={btn.title}
-                                        >
-                                            <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                        </Button>
-                                    </Tooltip>
-                                ))}
-                            </div>
-                        </div>
-                    )}
+            {/* ── NON-STICKY: normal inline toolbar (Acts as placeholder when sticky) ───── */}
+            <div 
+                ref={inlineContentRef} 
+                className={`${isSticky ? 'opacity-0 pointer-events-none select-none' : 'block'}`}
+                aria-hidden={isSticky}
+            >
+                {/* Actions Row (Desktop only) */}
+                {!isMobile && hasActions && (
+                    <div className={`flex flex-row justify-end items-center mb-2 gap-4 ${className || ''}`}>
+                        {isWide && <CombinedActions />}
+                    </div>
+                )}
 
-                    {/* Tabs row — always visible, scrollable on mobile */}
-                    {hasTabs && (
-                        <div className="w-full mb-4">
-                            <HorizontalTabs
-                                tabs={tabs!}
-                                activeTab={activeTab!}
-                                onTabChange={onTabChange!}
-                                className="px-0 mb-0"
-                                fullWidth
-                            />
-                        </div>
-                    )}
-                </>
-            )}
+                {/* Tabs row — always visible */}
+                {hasTabs && (
+                    <div className="w-full mb-1">
+                        <HorizontalTabs
+                            tabs={tabs!}
+                            activeTab={activeTab!}
+                            onTabChange={onTabChange!}
+                            className="px-0 mb-0"
+                            fullWidth
+                        />
+                    </div>
+                )}
 
-            {/* Placeholder height to prevent layout shift */}
+                {/* Secondary Tabs row */}
+                {hasSecondaryTabs && (
+                    <div className="w-full mb-4">
+                        <HorizontalTabs
+                            tabs={secondaryTabs!}
+                            activeTab={secondaryActiveTab!}
+                            onTabChange={onSecondaryTabChange!}
+                            className="px-0 mb-0"
+                            fullWidth
+                        />
+                    </div>
+                )}
+
+                {/* NARROW desktop flow: combined actions move below tabs if space is tight */}
+                {!isMobile && !isWide && hasActions && (
+                    <div className={`flex flex-row justify-end items-center mb-2 gap-2 ${className || ''}`}>
+                        <CombinedActions />
+                    </div>
+                )}
+            </div>
+
+            {/* ── STICKY: bar fixed below header ───────────────────────────── */}
             {isSticky && (
-                <div
-                    className="opacity-0 pointer-events-none"
-                    style={{ height: hasTabs ? '84px' : '44px' }}
-                />
-            )}
-
-            {/* ── STICKY: 2-row bar fixed below header ────────────────────── */}
-            {isSticky && (
                 <>
+                    <style dangerouslySetInnerHTML={{ __html: `
+                        @keyframes stickySlideUp {
+                            from { transform: translateY(20px); opacity: 0; }
+                            to { transform: translateY(0); opacity: 1; }
+                        }
+                        .sticky-animate-in {
+                            animation: stickySlideUp 0.3s ease-out forwards;
+                        }
+                    ` }} />
                     {/* Backdrop — fades in/out smoothly on hover */}
                     <div
                         className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity duration-300 ease-in-out pointer-events-none"
@@ -168,7 +221,7 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                     <div
                         ref={stickyBarRef}
                         data-sticky-header="true"
-                        className="fixed z-[9999] bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm transition-colors duration-200 hover:bg-white/90"
+                        className="fixed z-[9999] bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm hover:bg-white/90 sticky-animate-in"
                         style={{
                             top: '64px',
                             left: sidebarWidth,
@@ -177,89 +230,69 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                     >
-                    {/* ROW 1: expand toggle + actions — hidden on mobile */}
-                    <div className="hidden md:flex items-center gap-2 px-3 pb-1.5">
-
-                        {/* LEFT: expand toggle — hidden once expanded */}
-                        <div
-                            className="transition-all duration-200 overflow-hidden flex-shrink-0"
-                            style={{
-                                maxWidth: actionsExpanded ? 0 : '36px',
-                                opacity: actionsExpanded ? 0 : 1,
-                                pointerEvents: actionsExpanded ? 'none' : 'auto',
-                            }}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => setActionsExpanded(true)}
+                        {/* ROW 1: Desktop Actions Group */}
+                        {!isMobile && (
+                            <div 
+                                className={`flex items-center px-3 pb-1.5 min-h-[40px] ${actionsExpanded ? 'justify-end' : 'justify-start'}`}
                                 onMouseEnter={() => setActionsExpanded(true)}
-                                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-[var(--color-primary)] hover:bg-[var(--color-primary)] hover:text-white hover:border-[var(--color-primary)] transition-colors duration-200 cursor-pointer"
-                                title="Expand actions"
+                                onMouseLeave={() => setActionsExpanded(false)}
                             >
-                                <ChevronRightIcon />
-                            </button>
-                        </div>
+                                {hasActions && (
+                                    <>
+                                        {!actionsExpanded ? (
+                                            <Button
+                                                variant="outline"
+                                                className="!p-0 !w-8 !h-8 rounded-full bg-white shadow-md border-none transition-transform hover:scale-110"
+                                            >
+                                                <ChevronRightIcon />
+                                            </Button>
+                                        ) : (
+                                            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
+                                                <CombinedActions small />
+                                                <div className="w-[1px] h-6 bg-gray-200 mx-1" />
+                                                <Button
+                                                    variant="outline"
+                                                    className="!p-0 !w-8 !h-8 rounded-full bg-white shadow-md border-none transition-transform hover:scale-110"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActionsExpanded(false);
+                                                    }}
+                                                >
+                                                    <XIcon />
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        )}
 
-                        {/* Spacer */}
-                        <div className="flex-1" />
+                        {/* ROW 2: Tabs */}
+                        {hasTabs && (
+                            <div className="w-full">
+                                <HorizontalTabs
+                                    tabs={tabs!}
+                                    activeTab={activeTab!}
+                                    onTabChange={onTabChange!}
+                                    className="px-0 mb-0 border-b-0"
+                                    fullWidth
+                                />
+                            </div>
+                        )}
 
-                        {/* Actions — slide in from right */}
-                        <div
-                            className="flex items-center gap-2 overflow-hidden transition-all duration-300 ease-in-out"
-                            style={{
-                                maxWidth: actionsExpanded ? '600px' : 0,
-                                opacity: actionsExpanded ? 1 : 0,
-                                pointerEvents: actionsExpanded ? 'auto' : 'none',
-                            }}
-                        >
-                            {extraContent && <div className="shrink-0">{extraContent}</div>}
-                            {visibleActions.map((btn, i) => (
-                                <Tooltip key={i} content={btn.title} placement="bottom">
-                                    <Button
-                                        variant={btn.variant || 'outline'}
-                                        className={`!p-0 !w-8 !h-8 flex-shrink-0 ${btn.className || ''}`}
-                                        onClick={btn.onClick}
-                                        title={btn.title}
-                                    >
-                                        <btn.icon className={`h-4 w-4 ${btn.iconClass || ''}`} />
-                                    </Button>
-                                </Tooltip>
-                            ))}
-                        </div>
-
-                        {/* RIGHT: close/collapse — only when expanded */}
-                        <div
-                            className="transition-all duration-200 overflow-hidden flex-shrink-0"
-                            style={{
-                                maxWidth: actionsExpanded ? '36px' : 0,
-                                opacity: actionsExpanded ? 1 : 0,
-                                pointerEvents: actionsExpanded ? 'auto' : 'none',
-                            }}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => setActionsExpanded(false)}
-                                className="flex items-center justify-center w-7 h-7 rounded-full border border-gray-300 text-gray-500 hover:bg-red-50 hover:border-red-400 hover:text-red-500 transition-colors duration-200 cursor-pointer"
-                                title="Collapse actions"
-                            >
-                                <XIcon />
-                            </button>
-                        </div>
+                        {/* ROW 3: Secondary Tabs */}
+                        {hasSecondaryTabs && (
+                            <div className="w-full border-t border-gray-100">
+                                <HorizontalTabs
+                                    tabs={secondaryTabs!}
+                                    activeTab={secondaryActiveTab!}
+                                    onTabChange={onSecondaryTabChange!}
+                                    className="px-0 mb-0 border-b-0"
+                                    fullWidth
+                                />
+                            </div>
+                        )}
                     </div>
-
-                    {/* ROW 2: Horizontal tabs — full width, equal tab widths */}
-                    {hasTabs && (
-                        <div className="w-full">
-                            <HorizontalTabs
-                                tabs={tabs!}
-                                activeTab={activeTab!}
-                                onTabChange={onTabChange!}
-                                className="px-0 mb-0"
-                                fullWidth
-                            />
-                        </div>
-                    )}
-                </div>
                 </>
             )}
         </div>
