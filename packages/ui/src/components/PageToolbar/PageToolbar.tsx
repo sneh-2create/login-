@@ -32,8 +32,10 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
 }) => {
     const [isSticky, setIsSticky] = React.useState(false);
     const [actionsExpanded, setActionsExpanded] = React.useState(false);
+    const [isHovered, setIsHovered] = React.useState(false);
     const [sidebarWidth, setSidebarWidth] = React.useState(0);
     const sentinelRef = React.useRef<HTMLDivElement>(null);
+    const stickyBarRef = React.useRef<HTMLDivElement>(null);
 
     // Track sidebar width so sticky bar starts after sidebar
     React.useEffect(() => {
@@ -58,6 +60,24 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
         if (sentinelRef.current) observer.observe(sentinelRef.current);
         return () => observer.disconnect();
     }, []);
+
+    // Publish --table-sticky-top so DataTable can pin itself exactly here
+    React.useEffect(() => {
+        if (!isSticky) {
+            document.documentElement.style.setProperty('--table-sticky-top', '0');
+            return;
+        }
+        const publish = () => {
+            const el = stickyBarRef.current;
+            if (!el) return;
+            const bottom = el.getBoundingClientRect().bottom;
+            document.documentElement.style.setProperty('--table-sticky-top', `${bottom}`);
+        };
+        publish();
+        const ro = new ResizeObserver(publish);
+        if (stickyBarRef.current) ro.observe(stickyBarRef.current);
+        return () => ro.disconnect();
+    }, [isSticky]);
 
     // Collapse when toolbar scrolls back into view
     React.useEffect(() => {
@@ -135,16 +155,30 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
 
             {/* ── STICKY: 2-row bar fixed below header ────────────────────── */}
             {isSticky && (
-                <div
-                    className="fixed z-[9999] bg-white border-b border-gray-200 shadow-sm"
-                    style={{
-                        top: '64px',       // adjust to match your header height
-                        left: sidebarWidth,
-                        right: 0,
-                    }}
-                >
+                <>
+                    {/* Backdrop — fades in/out smoothly on hover */}
+                    <div
+                        className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity duration-300 ease-in-out pointer-events-none"
+                        style={{
+                            zIndex: 9998,
+                            opacity: isHovered ? 1 : 0,
+                        }}
+                    />
+
+                    <div
+                        ref={stickyBarRef}
+                        data-sticky-header="true"
+                        className="fixed z-[9999] bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm transition-colors duration-200 hover:bg-white/90"
+                        style={{
+                            top: '64px',
+                            left: sidebarWidth,
+                            right: 0,
+                        }}
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                    >
                     {/* ROW 1: expand toggle + actions — hidden on mobile */}
-                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5">
+                    <div className="hidden md:flex items-center gap-2 px-3 pb-1.5">
 
                         {/* LEFT: expand toggle — hidden once expanded */}
                         <div
@@ -226,6 +260,7 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                         </div>
                     )}
                 </div>
+                </>
             )}
         </div>
     );

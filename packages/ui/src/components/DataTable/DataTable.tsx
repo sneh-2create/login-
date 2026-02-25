@@ -54,43 +54,110 @@ export function DataTable<TData, TValue>({
         pageSize: initialItemsPerPage,
     });
 
-    // Auto-detect overflow: only constrain height when card bottom goes past viewport.
-    // This means small datasets render naturally; large ones get sticky header/footer.
+    // The card uses position:sticky once it scrolls behind the fixed header stack.
+    // PageToolbar publishes the exact bottom-Y of the sticky bar via
+    // --table-sticky-top on <html>.  DataTable reads it here — no DOM-query
+    // race conditions, works regardless of the GlobalHeader's HTML markup.
     const cardRef = useRef<HTMLDivElement>(null);
-    const [constrainedHeight, setConstrainedHeight] = React.useState<number | null>(null);
+    const [cardStyle, setCardStyle] = React.useState<React.CSSProperties>({});
 
     useLayoutEffect(() => {
+        const BOTTOM_GAP = 16;
+
+        /** Read the CSS variable set by PageToolbar (px, unitless number string). */
+        const getStickyOffset = (): number => {
+            const raw = getComputedStyle(document.documentElement)
+                .getPropertyValue('--table-sticky-top')
+                .trim();
+            const val = parseFloat(raw);
+            return isNaN(val) ? 0 : Math.max(val, 0);
+        };
+
+        /** Walk up ancestors to find the element that actually scrolls. */
+        const findScrollParent = (el: HTMLElement): HTMLElement | null => {
+            let node = el.parentElement;
+            while (node && node !== document.body) {
+                const { overflowY } = window.getComputedStyle(node);
+                if (overflowY === 'auto' || overflowY === 'scroll') return node;
+                node = node.parentElement;
+            }
+            return null;
+        };
+
         const compute = () => {
             const el = cardRef.current;
             if (!el) return;
 
-            // 1. Temporarily remove the height constraint so we can measure natural content height.
-            //    We do this in useLayoutEffect so it's synchronous — no visible flash.
-            const prevHeight = el.style.height;
-            el.style.height = '';
+            const stickyOffset = getStickyOffset();
 
-            // 2. Measure natural scrollHeight (full content) and card's stable page-top offset.
-            const naturalH = el.scrollHeight;
-            let offsetTop = 0;
-            let node: HTMLElement | null = el;
-            while (node) {
-                offsetTop += node.offsetTop;
-                node = node.offsetParent as HTMLElement | null;
+            // ── fast path: already pinned at the correct offset, nothing to do ──
+            // (avoids the style clear/restore cycle during every tbody scroll event)
+            if (
+                el.style.position === 'sticky' &&
+                el.style.top === `${stickyOffset}px` &&
+                stickyOffset > 0
+            ) {
+                // Re-check height in case the viewport resized
+                const h = Math.max(window.innerHeight - stickyOffset - BOTTOM_GAP, 200);
+                setCardStyle(prev =>
+                    prev.position === 'sticky' && prev.height === `${h}px` && prev.top === `${stickyOffset}px`
+                        ? prev
+                        : { position: 'sticky', top: `${stickyOffset}px`, height: `${h}px` }
+                );
+                return;
             }
 
-            // 3. Re-apply previous constraint immediately (before paint) to avoid flash.
-            el.style.height = prevHeight;
+            // Temporarily clear inline styles to read the natural-flow position
+            const savedPos = el.style.position;
+            const savedTop = el.style.top;
+            const savedH   = el.style.height;
+            el.style.position = '';
+            el.style.top      = '';
+            el.style.height   = '';
 
-            const available = window.innerHeight - offsetTop - 16;
-            const next = naturalH > available ? Math.max(available, 200) : null;
+            const rect = el.getBoundingClientRect();
 
-            setConstrainedHeight(prev => (prev === next ? prev : next));
+            el.style.position = savedPos;
+            el.style.top      = savedTop;
+            el.style.height   = savedH;
+
+            if (stickyOffset > 0 && rect.top <= stickyOffset + 1) {
+                // Card has scrolled into the fixed-header zone → pin + fill viewport
+                const h = Math.max(window.innerHeight - stickyOffset - BOTTOM_GAP, 200);
+                setCardStyle(prev =>
+                    prev.position === 'sticky' && prev.height === `${h}px` && prev.top === `${stickyOffset}px`
+                        ? prev
+                        : { position: 'sticky', top: `${stickyOffset}px`, height: `${h}px` }
+                );
+            } else {
+                // Natural flow — no height constraint, let the page scroll freely
+                setCardStyle(prev => (Object.keys(prev).length === 0 ? prev : {}));
+            }
+        };
+
+        // Scroll inside the card's own tbody should NOT trigger a recompute —
+        // doing so clears the card height momentarily and kills the scroll momentum.
+        const handleScroll = (e: Event) => {
+            const el = cardRef.current;
+            if (el && e.target instanceof Node && el.contains(e.target)) return;
+            compute();
         };
 
         compute();
-        window.addEventListener('resize', compute);
-        return () => window.removeEventListener('resize', compute);
+
+        window.addEventListener('resize', compute, { passive: true });
+        document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+
+        const scrollParent = findScrollParent(cardRef.current!);
+        scrollParent?.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('resize', compute);
+            document.removeEventListener('scroll', handleScroll, { capture: true });
+            scrollParent?.removeEventListener('scroll', handleScroll);
+        };
     }, [data, columns]);
+
 
 
     // Handle external pagination updates
@@ -250,7 +317,7 @@ export function DataTable<TData, TValue>({
             <div
                 ref={cardRef}
                 className="w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col"
-                style={constrainedHeight ? { height: constrainedHeight } : undefined}
+                style={Object.keys(cardStyle).length ? cardStyle : undefined}
             >
                 {/* Search Section — sticky at top */}
                 {showSearch && (
@@ -294,11 +361,11 @@ export function DataTable<TData, TValue>({
                                         return (
                                             <th
                                                 key={header.id}
-                                                className="px-6 py-3 text-left font-sans text-xs font-bold tracking-wide text-[var(--color-foreground)] border-b border-[var(--color-border)]"
+                                                className="px-6 py-3 text-center font-sans text-xs font-bold tracking-wide text-[var(--color-foreground)] border-b border-[var(--color-border)] whitespace-nowrap"
                                                 style={getHeaderStyle(column)}
                                                 onClick={enableSorting && header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
                                             >
-                                                <div className={`flex items-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-[var(--color-primary)]' : ''}`}>
+                                                <div className={`flex items-center justify-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-[var(--color-primary)]' : ''}`}>
                                                     {flexRender(column.header, header.getContext())}
                                                     {enableSorting && header.column.getCanSort() && (
                                                         <span className="ml-1">

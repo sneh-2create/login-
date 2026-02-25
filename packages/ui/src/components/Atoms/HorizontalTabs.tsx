@@ -32,7 +32,7 @@ export const HorizontalTabs: React.FC<HorizontalTabsProps> = ({
           key={tab.value}
           onClick={() => onTabChange(tab.value)}
           className={cn(
-            "flex-shrink-0 px-4 py-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 ease-in-out hover:text-primary focus:outline-none text-center",
+            "flex-shrink-0 px-4 pb-2 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors duration-200 ease-in-out hover:text-primary focus:outline-none text-center",
             fullWidth ? "md:flex-1" : "",
             activeTab === tab.value
               ? "border-primary text-primary"

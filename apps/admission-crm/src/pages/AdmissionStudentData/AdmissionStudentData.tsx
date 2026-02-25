@@ -984,7 +984,6 @@ const AdmissionStudentData = () => {
             header: head.name,
             accessorKey: head.value,
             meta: {
-                width: 150,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>,
         };
@@ -1039,7 +1038,6 @@ const AdmissionStudentData = () => {
         if (head.value === 'name') {
             baseColumn.cell = (info) => <span className="font-medium">{info.getValue() as string}</span>;
             baseColumn.meta = {
-                width: 217,
                 align: 'left' as const,
                 isBold: true,
             } as ExtendedColumnMeta<AdmissionLead>;
@@ -1051,7 +1049,6 @@ const AdmissionStudentData = () => {
                 return <Badge variant={val}>{val}</Badge>;
             };
             baseColumn.meta = {
-                width: 132,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>;
         }
@@ -1106,7 +1103,6 @@ const AdmissionStudentData = () => {
                     </div>
                 ),
                 meta: {
-                    width: 100,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1212,7 +1208,6 @@ const AdmissionStudentData = () => {
                     return <Badge variant={val}>{val}</Badge>;
                 },
                 meta: {
-                    width: 132,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1297,6 +1292,7 @@ const AdmissionStudentData = () => {
                 activeTab={selectedStage}
                 onTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
                 className="mb-4"
+                fullWidth
             />
 
             {/* View Admission (Edit Mode) */}
@@ -1336,7 +1332,7 @@ const AdmissionStudentData = () => {
                         setPageNumber(pagination.pageIndex + 1);
                         setPageSize(pagination.pageSize);
                     }}
-                    maxHeight="600px"
+                    maxHeight={undefined}
                 />
             )}
 
