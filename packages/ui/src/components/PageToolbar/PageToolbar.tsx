@@ -1,7 +1,9 @@
 import React from 'react';
+import { ChevronRight, X } from 'lucide-react';
 import { HorizontalTabs } from '../Atoms/HorizontalTabs';
 import { Button } from '../Atoms/Button';
 import { Tooltip } from '../Atoms/Tooltip';
+import { getScrollParent } from '../../utils';
 
 import { PageToolbarProps } from '@od-erp/types';
 
@@ -61,19 +63,25 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
         return () => ro.disconnect();
     }, []);
 
-    // Detect when toolbar sentinel scrolls past the header line (64px)
+    // Detect when toolbar sentinel scrolls past the header line (70px)
     React.useEffect(() => {
+        const parent = getScrollParent(containerRef.current);
+        const HEADER_HEIGHT = 70;
+
         const observer = new IntersectionObserver(
             ([entry]) => {
-                // We use a rootMargin of -64px. 
-                // When the sentinel (at the top of our container) is above the 64px line,
-                // it stops intersecting.
-                const pastHeader = entry.boundingClientRect.top < 80;
-                setIsSticky(!entry.isIntersecting && pastHeader);
+                // When using a scroll root that isn't the viewport, 
+                // the boundingClientRect is relative to the viewport.
+                // We want to stick when the element reaches the top of the root.
+                const isStickyTriggered = entry.boundingClientRect.top <= (parent === document.documentElement ? HEADER_HEIGHT : parent.getBoundingClientRect().top) + 10;
+                setIsSticky(!entry.isIntersecting && isStickyTriggered);
             },
             { 
                 threshold: [0, 1],
-                rootMargin: '-64px 0px 0px 0px' 
+                root: parent === document.documentElement ? null : parent,
+                // If parent is viewport, we need margin for header. 
+                // If parent is a scroll container starting below header, margin is 0.
+                rootMargin: parent === document.documentElement ? `-${HEADER_HEIGHT}px 0px 0px 0px` : '0px'
             }
         );
         if (sentinelRef.current) observer.observe(sentinelRef.current);
@@ -83,14 +91,25 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
     // Publish --table-sticky-top so DataTable can pin itself exactly here
     React.useEffect(() => {
         if (!isSticky) {
-            document.documentElement.style.setProperty('--table-sticky-top', '0');
+            // Use a large negative value to prevent the "Always Sticky" DataTable 
+            // from snapping to the top of the container prematurely.
+            document.documentElement.style.setProperty('--table-sticky-top', '-1000');
+            document.documentElement.style.setProperty('--table-sticky-top-px', '-1000px');
             return;
         }
         const publish = () => {
             const el = stickyBarRef.current;
             if (!el) return;
-            const bottom = el.getBoundingClientRect().bottom;
-            document.documentElement.style.setProperty('--table-sticky-top', `${bottom}`);
+            
+            const parent = getScrollParent(containerRef.current);
+            const rect = el.getBoundingClientRect();
+            const parentRect = parent.getBoundingClientRect();
+            
+            // Calculate offset relative to the scroll parent if applicable
+            const relativeBottom = parent === document.documentElement ? rect.bottom : (rect.bottom - parentRect.top);
+            
+            document.documentElement.style.setProperty('--table-sticky-top', `${relativeBottom}`);
+            document.documentElement.style.setProperty('--table-sticky-top-px', `${relativeBottom}px`);
         };
         publish();
         const ro = new ResizeObserver(publish);
@@ -107,20 +126,6 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
     const hasTabs = !!(tabs && tabs.length > 0 && activeTab && onTabChange);
     const hasSecondaryTabs = !!(secondaryTabs && secondaryTabs.length > 0 && secondaryActiveTab && onSecondaryTabChange);
     const hasActions = visibleActions.length > 0 || !!extraContent;
-
-    const ChevronRightIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 18 6-6-6-6" />
-        </svg>
-    );
-
-    const XIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-            fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-        </svg>
-    );
 
     /** Combined actions: extraContent + ActionButtons */
     const CombinedActions = ({ small = false }: { small?: boolean }) => (
@@ -200,15 +205,6 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
             {/* ── STICKY: bar fixed below header ───────────────────────────── */}
             {isSticky && (
                 <>
-                    <style dangerouslySetInnerHTML={{ __html: `
-                        @keyframes stickySlideUp {
-                            from { transform: translateY(20px); opacity: 0; }
-                            to { transform: translateY(0); opacity: 1; }
-                        }
-                        .sticky-animate-in {
-                            animation: stickySlideUp 0.3s ease-out forwards;
-                        }
-                    ` }} />
                     {/* Backdrop — fades in/out smoothly on hover */}
                     <div
                         className="fixed inset-0 backdrop-blur-sm bg-black/20 transition-opacity duration-300 ease-in-out pointer-events-none"
@@ -221,10 +217,10 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                     <div
                         ref={stickyBarRef}
                         data-sticky-header="true"
-                        className="fixed z-[9999] bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm hover:bg-white/90 sticky-animate-in"
+                        className="fixed z-[9999] bg-white/70 backdrop-blur-md border-b border-gray-200/60 shadow-sm hover:bg-white/90"
                         style={{
-                            top: '64px',
-                            left: sidebarWidth,
+                            top: '70px',
+                            left: isMobile ? 0 : sidebarWidth,
                             right: 0,
                         }}
                         onMouseEnter={() => setIsHovered(true)}
@@ -244,7 +240,7 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                                                 variant="outline"
                                                 className="!p-0 !w-8 !h-8 rounded-full bg-white shadow-md border-none transition-transform hover:scale-110"
                                             >
-                                                <ChevronRightIcon />
+                                                <ChevronRight className="h-[18px] w-[18px]" strokeWidth={2.5} />
                                             </Button>
                                         ) : (
                                             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
@@ -258,7 +254,7 @@ export const PageToolbar: React.FC<PageToolbarProps> = ({
                                                         setActionsExpanded(false);
                                                     }}
                                                 >
-                                                    <XIcon />
+                                                    <X className="h-4 w-4" strokeWidth={2.5} />
                                                 </Button>
                                             </div>
                                         )}

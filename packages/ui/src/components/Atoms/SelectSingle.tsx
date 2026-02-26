@@ -60,7 +60,10 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
         <div
             ref={containerRef}
             className={cn('relative flex flex-col min-w-0 w-full', containerClassName)}
-            {...rest}
+            {...Object.keys(rest).reduce((acc, key) => {
+                if (key !== 'className') acc[key] = (rest as any)[key];
+                return acc;
+            }, {} as any)}
         >
             {label && (
                 <label
@@ -83,10 +86,11 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 aria-label={label}
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
-                    'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all min-h-[40px] text-[var(--color-foreground)]',
+                    'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-[var(--color-foreground)]',
                     disabled && 'cursor-not-allowed opacity-50 bg-[var(--color-background)]',
                     error && !open && 'border-red-500 focus:ring-red-500',
-                    open && 'ring-1 ring-primary border-primary'
+                    open && 'ring-1 ring-primary border-primary',
+                    rest.className
                 )}
             >
                 <div className={cn('block truncate mr-2', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
@@ -107,7 +111,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                         'absolute left-0 z-[10002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-lg ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
                         placement === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
                     )}
-                    style={{ width: triggerWidth, maxWidth: triggerWidth, maxHeight: '240px', boxSizing: 'border-box' }}
+                    style={{ minWidth: triggerWidth, width: 'max-content', maxWidth: '300px', maxHeight: '240px', boxSizing: 'border-box' }}
                 >
                     {options.map((option) => {
                         const isSelected = option.value === value;
