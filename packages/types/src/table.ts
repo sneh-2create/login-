@@ -1,3 +1,5 @@
+import { ColumnDef } from '@tanstack/react-table';
+
 // Base column meta interface (matching @tanstack/react-table's ColumnMeta structure)
 export interface BaseColumnMeta {
     [key: string]: unknown;
@@ -48,4 +50,10 @@ export interface BaseDataTableProps {
     containerClassName?: string;
     // Enable sorting
     enableSorting?: boolean;
+}
+
+export interface DataTableProps<TData, TValue = any> extends BaseDataTableProps {
+    data: TData[];
+    columns: ColumnDef<TData, TValue>[];
+    getRowId?: (_row: TData) => string;
 }

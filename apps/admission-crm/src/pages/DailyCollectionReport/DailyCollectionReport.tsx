@@ -1,14 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState } from '@od-erp/ui';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, Button, ExcelTemplateEditDrawer } from '@od-erp/ui';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
-import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
+import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster, useEditExcelTemplate, useCourses } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Download, Pencil, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector } from '@od-erp/store';
-import { DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS } from '@od-erp/constants';
+import {
+    DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS,
+    DAILY_ADMISSION_COLLECTION_AVAILABLE_HEADS,
+    DAILY_ADMISSION_COLLECTION_AVAILABLE_FILTERS,
+    DAILY_ADMISSION_COLLECTION_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+} from '@od-erp/constants';
 import TemplateFilter from './components/TemplateFilter';
 
 const DailyCollectionReportPage = () => {
@@ -25,11 +31,14 @@ const DailyCollectionReportPage = () => {
     const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
     const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
-
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const permissions: string[] = useAppSelector((state: any) => state.auth.permissions) || [];
     // Queries
     const { data: feeMaster } = useFeeMaster(entityId, session);
+    const { data: courses } = useCourses(entityId, session);
     const { data: templates } = useExcelTemplates(entityId, 'dailyAdmissionCollectionReport');
     const { data: defaultTemplate } = useDefaultExcelTemplates('dailyAdmissionCollectionReport', entityType);
+    const editTemplateMutation = useEditExcelTemplate(entityId, 'dailyAdmissionCollectionReport');
 
     const payload: AdmissionDailyCollectionReportParams = useMemo(() => ({
         entity: entityId,
@@ -424,8 +433,28 @@ const DailyCollectionReportPage = () => {
             <PageToolbar
                 tabs={templates && templates.length > 0 ? templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
                 activeTab={selectedTemplate}
-                onTabChange={setSelectedTemplate}
+                onTabChange={(val) => {
+                    setSelectedTemplate(val);
+                    setEditDrawerOpen(false);
+                }}
                 actions={actionButtons}
+                extraContent={
+                    (() => {
+                        const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                        const canEdit = permissions.includes('editEntityPreferences');
+                        if (!activeTemplate?._id || !canEdit) return null;
+                        return (
+                            <Button
+                                variant="outline"
+                                onClick={() => setEditDrawerOpen(true)}
+                                title={`Edit template: ${activeTemplate.viewName}`}
+                                className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        );
+                    })()
+                }
             />
 
             {/* Collapsible Filter Card */}
@@ -468,6 +497,29 @@ const DailyCollectionReportPage = () => {
             {!isLoading && (!reportData || reportData.length === 0) && (
                 <EmptyState message="No Records Found" />
             )}
+
+            {/* Excel Template Edit Drawer */}
+            {editDrawerOpen && (() => {
+                const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                return activeTemplate ? (
+                    <ExcelTemplateEditDrawer
+                        open={editDrawerOpen}
+                        onClose={() => setEditDrawerOpen(false)}
+                        template={activeTemplate}
+                        reportDisplayName="Daily Collection Report"
+                        availableHeads={DAILY_ADMISSION_COLLECTION_AVAILABLE_HEADS}
+                        availableFilters={DAILY_ADMISSION_COLLECTION_AVAILABLE_FILTERS}
+                        sortByOptions={DAILY_ADMISSION_COLLECTION_SORT_BY_OPTIONS}
+                        defaultHeads={DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS}
+                        datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+                        paymentModes={feeMaster?.paymentMode || []}
+                        courses={courses?.map((c: any) => c.name) || []}
+                        onSave={async (payload) => {
+                            await editTemplateMutation.mutateAsync(payload as any);
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };

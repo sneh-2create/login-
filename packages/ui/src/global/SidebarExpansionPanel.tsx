@@ -262,7 +262,8 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
             {/* Backdrop for Blur Effect and Click Outside */}
             {isVisible && (
                 <div
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[55] transition-opacity duration-300"
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+                    style={{ zIndex: 99997 }}
                     onClick={onClose}
                 />
             )}
@@ -270,12 +271,12 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
             <div
                 className={`
                     fixed top-0 bottom-0 ${containerWidthClass}
-                    bg-white border-r border-[var(--sidebar-border)] shadow-[0_0_30px_rgba(0,0,0,0.1)] z-[60]
+                    bg-white border-r border-[var(--sidebar-border)] shadow-[0_0_30px_rgba(0,0,0,0.1)]
                     overflow-y-auto py-0 transition-transform duration-300 ease-in-out
                     [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
                     ${isVisible ? 'translate-x-0' : '-translate-x-full opacity-0'}
                 `}
-                style={{ left: `${leftOffset}px` }}
+                style={{ left: `${leftOffset}px`, zIndex: 99999 }}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
             >

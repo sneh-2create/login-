@@ -1,18 +1,24 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, useToast, EmptyState, PageHeader, PageToolbar, SelectSingle, DropdownMenu } from '@od-erp/ui';
+import { DataTable, useToast, EmptyState, PageHeader, PageToolbar, SelectSingle, DropdownMenu, ExcelTemplateEditDrawer, Button } from '@od-erp/ui';
 import type { ActionButton } from '@od-erp/ui';
-import { useAdmissionTransactions, useDeleteAdmissionTransaction, useExcelTemplates, useRetryAdmissionVoucher, useFeeMaster, useDefaultExcelTemplates, useSessions } from '@od-erp/query';
+import { useAdmissionTransactions, useDeleteAdmissionTransaction, useExcelTemplates, useRetryAdmissionVoucher, useFeeMaster, useDefaultExcelTemplates, useSessions, useEditExcelTemplate } from '@od-erp/query';
 import { AdmissionTransactionPayload } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Download, Printer, Trash2, Eye, SlidersHorizontal, Edit, XCircle, RotateCcw, RefreshCw, Upload, MoreVertical } from 'lucide-react';
+import { Download, Pencil, Printer, Trash2, Eye, SlidersHorizontal, Edit, XCircle, RotateCcw, RefreshCw, Upload, MoreVertical } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
 import { FilterCard } from './components/FilterCard';
 import { EditTransactionDialog } from './components/EditTransactionDialog';
 import { CancelTransactionDialog } from './components/CancelTransactionDialog';
 import { processTransactionData, extractFeeHeadNames, ProcessedTransaction } from './utils/dataProcessor';
 import * as XLSX from 'xlsx';
-import { DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS } from '@od-erp/constants';
+import {
+    DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS,
+    ADMISSION_TRANSACTION_AVAILABLE_HEADS,
+    ADMISSION_TRANSACTION_AVAILABLE_FILTERS,
+    ADMISSION_TRANSACTION_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+} from '@od-erp/constants';
 
 const AdmissionTransactionPage = () => {
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
@@ -45,6 +51,7 @@ const AdmissionTransactionPage = () => {
     
     const [selectedTemplate, setSelectedTemplate] = useState<any>({ tableHeads: DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS });
     const [showFilter, setShowFilter] = useState(false);
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
 
     // Dialog States
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -60,6 +67,7 @@ const AdmissionTransactionPage = () => {
     const { data: feeMaster } = useFeeMaster(entityId, appliedFilters.session || session);
     const { data: excelTemplates } = useExcelTemplates(entityId, 'admissionTransactionReport');
     const { data: defaultTemplate } = useDefaultExcelTemplates('admissionTransactionReport', entityType);
+    const editTemplateMutation = useEditExcelTemplate(entityId, 'admissionTransactionReport');
 
     // Payload uses APPLIED filters, not local state
     const payload: AdmissionTransactionPayload = useMemo(() => ({
@@ -559,9 +567,28 @@ const AdmissionTransactionPage = () => {
                 onTabChange={(val) => {
                     const temp = excelTemplates?.find(t => t.viewName === val);
                     setSelectedTemplate(temp || null);
+                    setEditDrawerOpen(false);
                 }}
                 actions={actionButtons}
-                extraContent={toolbarExtra}
+                extraContent={
+                    <div className="flex items-center gap-2">
+                        {toolbarExtra}
+                        {(() => {
+                            const canEdit = permissions.includes('editEntityPreferences');
+                            if (!selectedTemplate?._id || !canEdit) return null;
+                            return (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setEditDrawerOpen(true)}
+                                    title={`Edit template: ${selectedTemplate.viewName}`}
+                                    className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            );
+                        })()}
+                    </div>
+                }
             />
 
             {/* Collapsible Filter Card */}
@@ -630,6 +657,25 @@ const AdmissionTransactionPage = () => {
                     refetch();
                 }}
             />
+            {/* Excel Template Edit Drawer */}
+            {editDrawerOpen && selectedTemplate?._id && (
+                <ExcelTemplateEditDrawer
+                    open={editDrawerOpen}
+                    onClose={() => setEditDrawerOpen(false)}
+                    template={selectedTemplate}
+                    reportDisplayName="Admission Transaction"
+                    availableHeads={ADMISSION_TRANSACTION_AVAILABLE_HEADS}
+                    availableFilters={ADMISSION_TRANSACTION_AVAILABLE_FILTERS}
+                    sortByOptions={ADMISSION_TRANSACTION_SORT_BY_OPTIONS}
+                    defaultHeads={DEFAULT_ADMISSION_TRANSACTION_REPORT_HEADS}
+                    datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+                    paymentModes={feeMaster?.paymentMode || []}
+                    onSave={async (payload) => {
+                        await editTemplateMutation.mutateAsync(payload as any);
+                        setEditDrawerOpen(false);
+                    }}
+                />
+            )}
         </div>
     );
 };

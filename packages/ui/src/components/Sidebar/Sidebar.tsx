@@ -104,14 +104,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Mobile Backdrop */}
             {isMobile && isOpen && (
                 <div 
-                    className="fixed inset-0 bg-black/50 z-[59] backdrop-blur-sm transition-opacity"
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+                    style={{ zIndex: 99998 }}
                     onClick={onClose}
                 />
             )}
 
             <aside
                 className={cn(
-                    "bg-[var(--sidebar-bg)] shadow-lg transition-all duration-300 z-[60] flex flex-col fixed left-0 top-0",
+                    "bg-[var(--sidebar-bg)] shadow-lg transition-all duration-300 flex flex-col fixed left-0 top-0",
                     "border-r border-[var(--sidebar-border)]",
                     className
                 )}
@@ -119,6 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     width: sidebarWidth, 
                     height: '100vh',
                     transform: mobileTransform,
+                    zIndex: 99999,
                 }}
                 onMouseLeave={handleMouseLeave}
             >

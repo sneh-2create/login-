@@ -1,13 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdmissionLeadLog, useExcelTemplates, useDefaultExcelTemplates } from '@od-erp/query';
-import { Badge, DataTable, DropdownMenu, PageHeader, PageToolbar, ActionButton, EmptyState, useToast } from '@od-erp/ui';
+import { useAdmissionLeadLog, useExcelTemplates, useDefaultExcelTemplates, useEditExcelTemplate } from '@od-erp/query';
+import { Badge, DataTable, DropdownMenu, PageHeader, PageToolbar, ActionButton, EmptyState, useToast, ExcelTemplateEditDrawer, Button } from '@od-erp/ui';
 import { AdmissionLeadLog, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { Phone, Eye, Trash2, SlidersHorizontal, RefreshCw, PhoneIncoming, PhoneMissed, MoreVertical } from 'lucide-react';
+import { Phone, Eye, Trash2, SlidersHorizontal, RefreshCw, PhoneIncoming, PhoneMissed, MoreVertical, Pencil } from 'lucide-react';
 
 import { admissionLeadLogsService, admissionService } from '@od-erp/api-client';
-import { DEFAULT_ADMISSION_LEADS_REPORT_HEADS } from '@od-erp/constants';
+import {
+    DEFAULT_ADMISSION_LEADS_REPORT_HEADS,
+    ADMISSION_LEADS_AVAILABLE_HEADS,
+    ADMISSION_LEADS_AVAILABLE_FILTERS,
+    ADMISSION_LEADS_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+} from '@od-erp/constants';
 import { useAppSelector } from '@od-erp/store';
 import { formatPhone } from '../../utils/phoneUtils';
 import { RejectRemarkDialog } from './components/RejectRemarkDialog';
@@ -41,6 +47,7 @@ const AdmissionLeadLogs = () => {
   const [showMemberDetails, setShowMemberDetails] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
 
   // Local filter state (pending values - only committed on Apply Filters)
   const [localCounselor, setLocalCounselor] = useState<string>('');
@@ -108,6 +115,7 @@ const AdmissionLeadLogs = () => {
   // Queries
   const { data: templates } = useExcelTemplates(entityId, 'admissionLeadsReportHeads');
   const { data: defaultTemplate } = useDefaultExcelTemplates('admissionLeadsReportHeads', entityType);
+  const editTemplateMutation = useEditExcelTemplate(entityId, 'admissionLeadsReportHeads');
 
   // Construct Query Payload
   const queryPayload = useMemo(() => ({
@@ -921,8 +929,25 @@ const AdmissionLeadLogs = () => {
       <PageToolbar
         tabs={templates && templates.length > 0 ? templates.map((t: any) => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
         activeTab={selectedTemplate}
-        onTabChange={setSelectedTemplate}
+        onTabChange={(val) => { setSelectedTemplate(val); setEditDrawerOpen(false); }}
         actions={actionButtons}
+        extraContent={
+          (() => {
+            const activeTemplate = templates?.find((t: any) => t.viewName === selectedTemplate);
+            const canEdit = permissionsArray.includes('editEntityPreferences');
+            if (!activeTemplate?._id || !canEdit) return undefined;
+            return (
+              <Button
+                variant="outline"
+                onClick={() => setEditDrawerOpen(true)}
+                title={`Edit template: ${activeTemplate.viewName}`}
+                className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            );
+          })()
+        }
       />
 
       {/* Collapsible Filter Card */}
@@ -1022,6 +1047,27 @@ const AdmissionLeadLogs = () => {
         duplicateStudents={duplicateStudents}
         displayNames={displayNames}
       />
+      {/* Excel Template Edit Drawer */}
+      {editDrawerOpen && (() => {
+        const activeTemplate = templates?.find((t: any) => t.viewName === selectedTemplate);
+        return activeTemplate?._id ? (
+          <ExcelTemplateEditDrawer
+            open={editDrawerOpen}
+            onClose={() => setEditDrawerOpen(false)}
+            template={activeTemplate}
+            reportDisplayName="Admission Lead Logs"
+            availableHeads={ADMISSION_LEADS_AVAILABLE_HEADS}
+            availableFilters={ADMISSION_LEADS_AVAILABLE_FILTERS}
+            sortByOptions={ADMISSION_LEADS_SORT_BY_OPTIONS}
+            defaultHeads={DEFAULT_ADMISSION_LEADS_REPORT_HEADS}
+            datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+            onSave={async (payload) => {
+              await editTemplateMutation.mutateAsync(payload as any);
+              setEditDrawerOpen(false);
+            }}
+          />
+        ) : null;
+      })()}
     </div>
   );
 };

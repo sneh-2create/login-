@@ -1,5 +1,18 @@
 import './lord-icon-types';
 
+export type {
+    ActionButton,
+    PageToolbarProps,
+    DataTableProps,
+    Tab,
+    HorizontalTabsProps,
+    ExcelTemplateEditDrawerProps,
+    ExcelHeadOption,
+    ExcelFilterOption,
+    ExcelSortByOption,
+    ExcelFilterValueOption,
+} from '@od-erp/types';
+
 // Atoms (shared between old components + dev login components)
 export * from './components/Atoms/Title';
 export * from './components/Atoms/Card';
@@ -70,6 +83,8 @@ export * from './components/Toast/Toast';
 export * from './components/EmptyState/EmptyState';
 export * from './components/NeedHelpPanel';
 export { default as ViewDocumentsModal } from './components/ViewDocumentsModal/ViewDocumentsModal';
+export * from './components/ExcelTemplateEditDrawer/ExcelTemplateEditDrawer';
+
 
 // Utils
 export { cn } from './utils';

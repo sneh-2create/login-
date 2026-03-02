@@ -547,7 +547,6 @@ const AdmissionLeads = () => {
                         />
                     </div>
                 ),
-                size: 100,
                 enableSorting: false
             },
             {
@@ -562,25 +561,21 @@ const AdmissionLeads = () => {
                         }
                     }}
                 />,
-                size: 140
             },
             {
                 header: 'Application Number',
                 accessorKey: 'applicationNumber',
                 cell: info => <span className="font-semibold text-[var(--color-foreground)]">{info.getValue() as string || '-'}</span>,
-                size: 140
             },
             {
                 header: 'Date',
                 accessorKey: 'date',
                 cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() ? format(info.getValue() as number, 'dd-MMM-yyyy') : '-'}</span>,
-                size: 110
             },
             {
                 header: 'Name',
                 accessorKey: 'name',
                 cell: info => <span className="font-medium text-[var(--color-foreground)]">{info.getValue() as string}</span>,
-                size: 180
             },
             {
                 header: 'Phone',
@@ -592,19 +587,16 @@ const AdmissionLeads = () => {
                     }
                     return <span className="font-mono text-[var(--color-muted-foreground)]">{phone ? phone.replace(/(\d{2})\d+(\d{4})/, '$1****$2') : '-'}</span>;
                 },
-                size: 120
             },
             {
                 header: displayNames.course,
                 accessorKey: 'course',
                 cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() as string || '-'}</span>,
-                size: 100
             },
             {
                 header: displayNames.stream,
                 accessorKey: 'stream',
                 cell: info => <span className="text-[var(--color-muted-foreground)]">{info.getValue() as string || '-'}</span>,
-                size: 100
             },
             {
                 header: 'Source',
@@ -613,8 +605,7 @@ const AdmissionLeads = () => {
                     <Badge variant="error" appearance="subtle">
                         {info.getValue() as string || 'Reference'}
                     </Badge>
-                ),
-                size: 120
+                )
             }
         ],
         [permissions, selectedRows, data, displayNames]

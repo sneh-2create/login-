@@ -1,9 +1,17 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
-import { DataTable, Button, Badge, PageHeader, PageToolbar, ActionButton, NeedHelpPanel, HorizontalTabs, ActionMenu, ViewDocumentsModal, SelectSingle, Tooltip } from '@od-erp/ui';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall, useEditExcelTemplate } from '@od-erp/query';
+import { DataTable, Button, Badge, PageHeader, PageToolbar, ActionButton, NeedHelpPanel, ActionMenu, ViewDocumentsModal, SelectSingle, Tooltip, ExcelTemplateEditDrawer } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
-import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
+import {
+    ADMISSION_SEARCH_BY_OPTIONS,
+    DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS,
+    ADMISSION_APPLICATION_AVAILABLE_HEADS,
+    ADMISSION_APPLICATION_AVAILABLE_FILTERS,
+    ADMISSION_APPLICATION_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+    ADMISSION_REPORT_TYPE,
+} from '@od-erp/constants';
 
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { ColumnDef } from '@tanstack/react-table';
@@ -28,7 +36,8 @@ import {
     Mail,
     MessageCircle,
     Users,
-    Send
+    Send,
+    Pencil
 } from 'lucide-react';
 import AddApplicationDataPanel from './components/AddApplicationDataPanel';
 import FilterModal from './components/FilterModal';
@@ -125,6 +134,8 @@ const AdmissionStudentData = () => {
     const { data: templates } = useAdmissionTemplates(entityId);
     const { data: defaultTemplateData } = useDefaultAdmissionTemplate(entityId, entityType);
     const [selectedTemplate, setSelectedTemplate] = useState<string>(''); // viewName of selected template
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const editTemplateMutation = useEditExcelTemplate(entityId, ADMISSION_REPORT_TYPE);
 
     // Find the template object by viewName
     const selectedTemplateObj = useMemo(() => {
@@ -984,7 +995,6 @@ const AdmissionStudentData = () => {
             header: head.name,
             accessorKey: head.value,
             meta: {
-                width: 150,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>,
         };
@@ -1039,7 +1049,6 @@ const AdmissionStudentData = () => {
         if (head.value === 'name') {
             baseColumn.cell = (info) => <span className="font-medium">{info.getValue() as string}</span>;
             baseColumn.meta = {
-                width: 217,
                 align: 'left' as const,
                 isBold: true,
             } as ExtendedColumnMeta<AdmissionLead>;
@@ -1051,7 +1060,6 @@ const AdmissionStudentData = () => {
                 return <Badge variant={val}>{val}</Badge>;
             };
             baseColumn.meta = {
-                width: 132,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>;
         }
@@ -1106,7 +1114,6 @@ const AdmissionStudentData = () => {
                     </div>
                 ),
                 meta: {
-                    width: 100,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1212,7 +1219,6 @@ const AdmissionStudentData = () => {
                     return <Badge variant={val}>{val}</Badge>;
                 },
                 meta: {
-                    width: 132,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1286,18 +1292,33 @@ const AdmissionStudentData = () => {
                     ? templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))
                     : []}
                 activeTab={selectedTemplate}
-                onTabChange={setSelectedTemplate}
+                onTabChange={(val) => { setSelectedTemplate(val); setEditDrawerOpen(false); }}
+                secondaryTabs={tabs.map(tab => ({ label: `${tab.name} (${tab.count})`, value: tab.value }))}
+                secondaryActiveTab={selectedStage}
+                onSecondaryTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
                 actions={actionButtons}
-                extraContent={toolbarExtraContent}
+                extraContent={
+                    <div className="flex items-center gap-2">
+                        {toolbarExtraContent}
+                        {(() => {
+                            const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                            const canEdit = permissions.includes('editEntityPreferences');
+                            if (!activeTemplate?._id || !canEdit) return null;
+                            return (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setEditDrawerOpen(true)}
+                                    title={`Edit template: ${activeTemplate.viewName}`}
+                                    className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            );
+                        })()}
+                    </div>
+                }
             />
 
-            {/* Stats / Stage Tabs */}
-            <HorizontalTabs
-                tabs={tabs.map(tab => ({ label: `${tab.name} (${tab.count})`, value: tab.value }))}
-                activeTab={selectedStage}
-                onTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
-                className="mb-4"
-            />
 
             {/* View Admission (Edit Mode) */}
             <AddApplicationDataPanel
@@ -1336,7 +1357,7 @@ const AdmissionStudentData = () => {
                         setPageNumber(pagination.pageIndex + 1);
                         setPageSize(pagination.pageSize);
                     }}
-                    maxHeight="600px"
+                    maxHeight={undefined}
                 />
             )}
 
@@ -1474,6 +1495,28 @@ const AdmissionStudentData = () => {
                 onClose={() => setIsHelpPanelOpen(false)}
                 page="applicationData"
             />
+
+            {/* Excel Template Edit Drawer */}
+            {editDrawerOpen && (() => {
+                const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                return activeTemplate?._id ? (
+                    <ExcelTemplateEditDrawer
+                        open={editDrawerOpen}
+                        onClose={() => setEditDrawerOpen(false)}
+                        template={activeTemplate}
+                        reportDisplayName="Application Data"
+                        availableHeads={ADMISSION_APPLICATION_AVAILABLE_HEADS}
+                        availableFilters={ADMISSION_APPLICATION_AVAILABLE_FILTERS}
+                        sortByOptions={ADMISSION_APPLICATION_SORT_BY_OPTIONS}
+                        defaultHeads={DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS}
+                        datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+                        onSave={async (payload) => {
+                            await editTemplateMutation.mutateAsync(payload as any);
+                            setEditDrawerOpen(false);
+                        }}
+                    />
+                ) : null;
+            })()}
 
         </div>
     );

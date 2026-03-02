@@ -267,7 +267,6 @@ const AdmissionFollowUps = () => {
             {
                 header: 'S.No',
                 cell: (info) => (pageNumber - 1) * pageSize + info.row.index + 1,
-                size: 60,
             },
             {
                 header: 'Application',

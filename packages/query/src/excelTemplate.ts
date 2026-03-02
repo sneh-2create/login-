@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { excelTemplateService } from '@od-erp/api-client';
 import { ExcelTemplate } from '@od-erp/types';
 
@@ -25,3 +25,15 @@ export const useDefaultExcelTemplates = (report: string, entityType: string) => 
         enabled: !!report,
     });
 };
+
+export const useEditExcelTemplate = (entityId: string, report: string) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: Partial<ExcelTemplate> & { _id: string }) =>
+            excelTemplateService.editExcelTemplate(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['excelTemplates', entityId, report] });
+        },
+    });
+};
+
