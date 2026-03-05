@@ -51,6 +51,7 @@ export * from './components/Atoms/Toggle';
 export * from './components/Atoms/Dropdown';
 export * from './components/Atoms/HorizontalTabs';
 export * from './components/Atoms/ActionMenu';
+export * from './components/Atoms/Accordion';
 
 // Login-specific components (from dev branch)
 export * from './components/Atoms/FeatureCard';

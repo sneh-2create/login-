@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 export interface AdmissionSummaryReportParams {
     entity: string;
     session?: string[];
@@ -449,3 +451,70 @@ export interface AdmissionTemplate {
 export interface DefaultTemplateResponse {
     tableHeads: AdmissionTableHead[];
 }
+
+// --- Admission Setup Types ---
+
+export interface SetupCard {
+    id: string;
+    title: string;
+    description: string;
+    icon: ReactNode;
+    route: string;
+    permission: string;
+    linkLabel: string;
+}
+
+// --- Stage Setup Form Types ---
+export interface StageField {
+    key: string;
+    displayName: string;
+    requiredField: boolean;
+    fieldType: string;
+    sequence: number;
+    groupBy: string;
+    option: boolean;
+    options: string[];
+}
+
+export interface TxnMapping {
+    course: string;
+    stream: string;
+    amount: number;
+    headData: { admissionHead: string; headAmount: number }[];
+    amountEditable: boolean;
+    isEditableDisable: boolean;
+    disableHead: string[];
+}
+
+export interface StageFormData {
+    _id?: string;
+    stage: string;
+    sequence: number | '';
+    stageType: string;
+    checkSeats: boolean;
+    sendSMS: boolean;
+    sendWhatsAppWeb: boolean;
+    sendWhatsApp: boolean;
+    sendEmail: boolean;
+    smsTemplate: string;
+    whatsAppWebTemplate: string;
+    whatsAppTemplate: string;
+    emailTemplate: string;
+    txnRequired: boolean;
+    saveZeroAmountTransaction: boolean;
+    stageCounselor: string[];
+    fields: StageField[];
+    txnMapping: TxnMapping[];
+}
+
+export interface StageSetupFormDrawerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    editData: any | null;
+    entityId: string;
+    session: string;
+    admissionMaster: any;
+    permissions?: string[];
+}
+

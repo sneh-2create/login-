@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -19,7 +19,12 @@ interface DuplicateFieldRow {
     field: string;
 }
 
-const DuplicateFields = () => {
+interface DuplicateFieldsProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -77,6 +82,7 @@ const DuplicateFields = () => {
             });
             showToast('success', 'Duplicate Fields updated successfully');
             refetch();
+            if (onSuccess) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
@@ -147,41 +153,51 @@ const DuplicateFields = () => {
 
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="Duplicate Fields Master"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'Duplicate Fields Master' },
-                ]}
-                actionButtons={actionButtons}
-            />
+            {!isEmbedded && (
+                <PageHeader
+                    title="Duplicate Fields Master"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'Duplicate Fields Master' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
 
-            <PageToolbar
-                actions={actionButtons}
-                extraContent={
-                    canEdit ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                            <Plus size={15} /> Add Field
-                        </Button>
-                    ) : undefined
-                }
-            />
+            {!isEmbedded && (
+                <PageToolbar
+                    actions={actionButtons}
+                    extraContent={
+                        canEdit ? (
+                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
+                                <Plus size={15} /> Add Field
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            )}
 
             <EditableTable
                 columns={columns}
                 data={rows}
                 isLoading={isLoading}
                 emptyMessage="No duplicate-check fields configured yet. Click 'Add Field' to begin."
-                className="mt-2"
+                className={isEmbedded ? '' : 'mt-2'}
             />
 
-            {!isLoading && rows.length > 0 && canEdit && (
-                <div className="flex justify-end mt-3">
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2">
+            {!isLoading && canEdit && (
+                <div className="flex items-center justify-between mt-6">
+                    {isEmbedded ? (
+                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                            <Plus size={15} /> Add New Details
+                        </Button>
+                    ) : <div />}
+
+                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
                         {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        Save
+                        {isEmbedded ? 'Save & Next' : 'Save'}
                     </Button>
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -33,7 +33,12 @@ const toISODate = (d: Date): string => {
     return `${y}-${m}-${day}`;
 };
 
-const MinimumAgeMaster = () => {
+interface MinimumAgeMasterProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const MinimumAgeMaster: React.FC<MinimumAgeMasterProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -117,6 +122,7 @@ const MinimumAgeMaster = () => {
         try {
             await Promise.all(updated.map(row => admissionStudentDataService.editCourseData(row)));
             showToast('success', 'Date applied and saved for all classes successfully.');
+            if (onSuccess && isEmbedded) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to apply date');
         } finally {
@@ -196,62 +202,120 @@ const MinimumAgeMaster = () => {
         },
     ];
 
+
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="Minimum Age Master"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'Minimum Age Master' },
-                ]}
-                actionButtons={actionButtons}
-            />
+            {!isEmbedded && (
+                <PageHeader
+                    title="Minimum Age Master"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'Minimum Age Master' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
 
-            <PageToolbar
-                actions={actionButtons}
-                extraContent={
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-medium text-[var(--color-foreground)] whitespace-nowrap">
-                            Apply Same Date to All:
-                        </span>
-                        <DatePicker
-                            value={applyDate}
-                            placeholder="Choose Date"
-                            onChange={date => date && setApplyDate(toISODate(date))}
-                            containerClassName="w-44"
-                        />
-                        <Button
-                            variant="primary"
-                            onClick={applyToAll}
-                            disabled={bulkSaving || !applyDate}
-                            className="flex items-center gap-1.5 whitespace-nowrap"
-                        >
-                            {bulkSaving
-                                ? <RefreshCw size={13} className="animate-spin" />
-                                : <Save size={13} />}
-                            Apply
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={resetAll}
-                            disabled={bulkSaving}
-                            className="whitespace-nowrap"
-                        >
-                            Reset
-                        </Button>
+            {!isEmbedded && (
+                <PageToolbar
+                    actions={actionButtons}
+                    extraContent={
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-medium text-[var(--color-foreground)] whitespace-nowrap">
+                                Apply Same Date to All:
+                            </span>
+                            <DatePicker
+                                value={applyDate}
+                                placeholder="Choose Date"
+                                onChange={date => date && setApplyDate(toISODate(date))}
+                                containerClassName="w-44"
+                            />
+                            <Button
+                                variant="primary"
+                                onClick={applyToAll}
+                                disabled={bulkSaving || !applyDate}
+                                className="flex items-center gap-1.5 whitespace-nowrap"
+                            >
+                                {bulkSaving
+                                    ? <RefreshCw size={13} className="animate-spin" />
+                                    : <Save size={13} />}
+                                Apply
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={resetAll}
+                                disabled={bulkSaving}
+                                className="whitespace-nowrap"
+                            >
+                                Reset
+                            </Button>
+                        </div>
+                    }
+                />
+            )}
+
+            <div className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] ${isEmbedded ? '' : 'p-2 shadow-sm'}`}>
+                {isEmbedded && (
+                    <div className="flex items-center justify-between p-4 border-b border-[var(--color-border)] bg-slate-50/50 dark:bg-slate-900/20">
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-0.5">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted-foreground)]">
+                                    Bulk Actions
+                                </span>
+                                <span className="text-xs text-[var(--color-foreground)] font-medium">
+                                    Apply Same Date to All Classes
+                                </span>
+                            </div>
+                            <div className="h-8 w-px bg-[var(--color-border)] mx-1" />
+                            <DatePicker
+                                value={applyDate}
+                                placeholder="Choose Date"
+                                onChange={date => date && setApplyDate(toISODate(date))}
+                                containerClassName="w-40"
+                            />
+                            <Button
+                                variant="primary"
+                                onClick={applyToAll}
+                                disabled={bulkSaving || !applyDate}
+                                className="flex items-center gap-2 bg-primary hover:bg-primary/90 h-9 px-4"
+                            >
+                                {bulkSaving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                                Apply & Save Next
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={resetAll}
+                                disabled={bulkSaving}
+                                className="h-9"
+                            >
+                                Reset
+                            </Button>
+                        </div>
                     </div>
-                }
-            />
+                )}
 
-            <EditableTable
-                columns={columns}
-                data={rows}
-                isLoading={isLoading}
-                emptyMessage="No classes found. Please configure Class Master first."
-                className="mt-2"
-            />
+                <EditableTable
+                    columns={columns}
+                    data={rows}
+                    isLoading={isLoading}
+                    emptyMessage="No classes found. Please configure Class Master first."
+                    className={isEmbedded ? '' : 'mt-2'}
+                />
+            </div>
+            
+            {isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="outline" 
+                        onClick={onSuccess}
+                        className="flex items-center gap-2 px-8 border-primary text-primary hover:bg-primary/5 h-10"
+                    >
+                        Skip to Next
+                    </Button>
+                </div>
+            )}
         </div>
     );
 };

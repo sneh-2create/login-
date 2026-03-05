@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import { PageHeader, PageToolbar, ActionButton, Button, Input, EditableTable, EditableTableColumn, useToast } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save, Lock } from 'lucide-react';
@@ -11,7 +11,12 @@ interface HeadRow {
     head: string;
 }
 
-const AdmissionHead = () => {
+interface AdmissionHeadProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -70,6 +75,7 @@ const AdmissionHead = () => {
             await admissionStudentDataService.editAdmissionMaster({ entity: entityId, session, admissionHead: newHeads });
             showToast('success', 'Admission Head updated');
             refetch();
+            if (onSuccess) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
@@ -140,34 +146,38 @@ const AdmissionHead = () => {
 
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="Admission Heads"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'Admission Heads' },
-                ]}
-                actionButtons={actionButtons}
-            />
+            {!isEmbedded && (
+                <PageHeader
+                    title="Admission Heads"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'Admission Heads' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
 
-            <PageToolbar
-                actions={actionButtons}
-                extraContent={
-                    canEdit ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                            <Plus size={15} /> Add Head
-                        </Button>
-                    ) : undefined
-                }
-            />
+            {!isEmbedded && (
+                <PageToolbar
+                    actions={actionButtons}
+                    extraContent={
+                        canEdit ? (
+                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
+                                <Plus size={15} /> Add Head
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            )}
 
             <EditableTable
                 columns={columns}
                 data={rows}
                 isLoading={isLoading}
                 emptyMessage="No admission heads yet. Click 'Add Head' to begin."
-                className="mt-2"
+                className={isEmbedded ? '' : 'mt-2'}
             />
 
             {/* Token Money — matches Angular's mat-checkbox with checkFeeHead('Token Money') */}
@@ -200,11 +210,17 @@ const AdmissionHead = () => {
             )}
 
             {/* Save button — shown when there are editable rows */}
-            {!isLoading && rows.length > 0 && canEdit && (
-                <div className="flex justify-end mt-3">
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2">
+            {!isLoading && canEdit && (
+                <div className="flex items-center justify-between mt-6">
+                    {isEmbedded ? (
+                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                            <Plus size={15} /> Add New Details
+                        </Button>
+                    ) : <div />}
+
+                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
                         {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        Save
+                        {isEmbedded ? 'Save & Next' : 'Save'}
                     </Button>
                 </div>
             )}

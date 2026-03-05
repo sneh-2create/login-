@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import { PageHeader, PageToolbar, ActionButton, Button, Input, SelectSingle, EditableTable, EditableTableColumn, useToast } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save } from 'lucide-react';
@@ -13,7 +13,12 @@ interface AppNumberRow {
     suffix: string;
 }
 
-const ApplicationNumber = () => {
+interface ApplicationNumberProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -34,13 +39,17 @@ const ApplicationNumber = () => {
     useEffect(() => {
         if (admissionMaster) {
             const appNumbers: any[] = admissionMaster.applicationNumber || [];
-            setRows(appNumbers.map((r: any) => ({
-                course: r.course || '',
-                stream: r.stream || '',
-                prefix: r.prefix || '',
-                number: String(r.number ?? ''),
-                suffix: r.suffix || '',
-            })));
+            if (appNumbers.length > 0) {
+                setRows(appNumbers.map((r: any) => ({
+                    course: r.course || '',
+                    stream: r.stream || '',
+                    prefix: r.prefix || '',
+                    number: String(r.number ?? ''),
+                    suffix: r.suffix || '',
+                })));
+            } else {
+                setRows([{ course: '', stream: '', prefix: '', number: '', suffix: '' }]);
+            }
         }
     }, [admissionMaster]);
 
@@ -64,7 +73,13 @@ const ApplicationNumber = () => {
         setRows(prev => [...prev, { course: '', stream: '', prefix: '', number: '', suffix: '' }]);
     };
 
-    const removeRow = (index: number) => setRows(prev => prev.filter((_, i) => i !== index));
+    const removeRow = (index: number) => {
+        if (rows.length === 1) {
+            setRows([{ course: '', stream: '', prefix: '', number: '', suffix: '' }]);
+            return;
+        }
+        setRows(prev => prev.filter((_, i) => i !== index));
+    };
 
     const updateRow = (index: number, field: keyof AppNumberRow, value: string) => {
         setRows(prev => prev.map((row, i) => {
@@ -78,21 +93,30 @@ const ApplicationNumber = () => {
     };
 
     const handleSave = async () => {
-        for (const row of rows) {
+        const validRows = rows.filter(r => r.course || r.stream || r.number || r.prefix || r.suffix);
+        
+        if (validRows.length === 0) {
+            showToast('error', 'Please add at least one configuration');
+            return;
+        }
+
+        for (const row of validRows) {
             if (!row.course || !row.stream || !row.number) {
-                showToast('error', `${displayNames.course}, ${displayNames.stream} and Number are required`);
+                showToast('error', `${displayNames.course}, ${displayNames.stream} and Number are required for all entries`);
                 return;
             }
         }
+
         setLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
                 session,
-                applicationNumber: rows.map(r => ({ ...r, prefix: r.prefix.trim(), suffix: r.suffix.trim() })),
+                applicationNumber: validRows.map(r => ({ ...r, prefix: r.prefix.trim(), suffix: r.suffix.trim() })),
             });
             showToast('success', 'Application Number Setup saved successfully');
             refetch();
+            if (onSuccess) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
@@ -110,7 +134,7 @@ const ApplicationNumber = () => {
         },
         {
             header: <>{displayNames.course} <span className="text-red-500">*</span></>,
-            width: 200,
+            width: 220,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.course}
@@ -124,7 +148,7 @@ const ApplicationNumber = () => {
         },
         {
             header: <>{displayNames.stream} <span className="text-red-500">*</span></>,
-            width: 200,
+            width: 220,
             cell: (row, i) => row.course ? (
                 <SelectSingle
                     value={row.stream}
@@ -196,7 +220,7 @@ const ApplicationNumber = () => {
             cell: (_: AppNumberRow, i: number) => (
                 <button
                     onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     title="Remove row"
                 >
                     <Trash2 size={15} />
@@ -217,43 +241,65 @@ const ApplicationNumber = () => {
         variant: 'outline',
     }];
 
+    if (isDataLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <RefreshCw size={40} className="animate-spin text-primary opacity-20" />
+                <p className="text-sm text-[var(--color-muted-foreground)] animate-pulse">Loading configurations...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="Application Number Setup"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'Application Number Setup' },
-                ]}
-                actionButtons={actionButtons}
-            />
+            {!isEmbedded && (
+                <PageHeader
+                    title="Application Number Setup"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'Application Number Setup' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
 
-            <PageToolbar
-                actions={actionButtons}
-                extraContent={
-                    canEdit ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                            <Plus size={15} /> Add Row
-                        </Button>
-                    ) : undefined
-                }
-            />
+            {!isEmbedded && (
+                <PageToolbar
+                    actions={actionButtons}
+                    extraContent={
+                        canEdit ? (
+                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                <Plus size={15} /> Add Row
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            )}
 
             <EditableTable
                 columns={columns}
                 data={rows}
                 isLoading={isDataLoading}
                 emptyMessage="No configuration yet. Click 'Add Row' to begin."
-                className="mt-2"
+                className={isEmbedded ? '' : 'mt-2'}
+                minWidth={950}
             />
 
-            {!isDataLoading && rows.length > 0 && canEdit && (
-                <div className="flex justify-end mt-3">
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        Save
+            {!isDataLoading && canEdit && (
+                <div className="flex items-center justify-between mt-6 px-1">
+                    {isEmbedded ? (
+                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                            <Plus size={15} /> Add New Details
+                        </Button>
+                    ) : <div />}
+
+                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/95 text-white rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+                        {loading ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
+                        <span className="font-bold">
+                            {isEmbedded ? 'Save & Next' : 'Save Changes'}
+                        </span>
                     </Button>
                 </div>
             )}

@@ -9,50 +9,9 @@ import { useAdmissionStageSetup, useCourses, useQuery } from '@od-erp/query';
 import { admissionStudentDataService, communicationService, admissionService } from '@od-erp/api-client';
 import { DISPLAY_STAGE_FIELDS } from '@od-erp/constants';
 
-// ── Interfaces ────────────────────────────────────────────────────────────────
-interface StageField {
-    key: string;
-    displayName: string;
-    requiredField: boolean;
-    fieldType: string;
-    sequence: number;
-    groupBy: string;
-    option: boolean;
-    options: string[];
-}
+import type { StageField, TxnMapping, StageFormData, StageSetupFormDrawerProps } from '@od-erp/types';
 
-interface TxnMapping {
-    course: string;
-    stream: string;
-    amount: number;
-    headData: { admissionHead: string; headAmount: number }[];
-    amountEditable: boolean;
-    isEditableDisable: boolean;
-    disableHead: string[];
-}
-
-interface FormData {
-    _id?: string;
-    stage: string;
-    sequence: number | '';
-    stageType: string;
-    checkSeats: boolean;
-    sendSMS: boolean;
-    sendWhatsAppWeb: boolean;
-    sendWhatsApp: boolean;
-    sendEmail: boolean;
-    smsTemplate: string;
-    whatsAppWebTemplate: string;
-    whatsAppTemplate: string;
-    emailTemplate: string;
-    txnRequired: boolean;
-    saveZeroAmountTransaction: boolean;
-    stageCounselor: string[];
-    fields: StageField[];
-    txnMapping: TxnMapping[];
-}
-
-const defaultForm: FormData = {
+const defaultForm: StageFormData = {
     stage: '',
     sequence: '',
     stageType: 'lead',
@@ -78,17 +37,6 @@ const STAGE_TYPES = [
     { value: 'application', label: 'Application' },
 ];
 
-interface Props {
-    isOpen: boolean;
-    onClose: () => void;
-    onSuccess: () => void;
-    editData: any | null;
-    entityId: string;
-    session: string;
-    admissionMaster: any;
-    permissions?: string[];
-}
-
 // ── Communication templates hook ──────────────────────────────────────────────
 const useCommunicationTemplates = (entityId: string, channel: string, enabled: boolean) =>
     useQuery({
@@ -107,9 +55,9 @@ const useEmployeeList = (entityId: string) =>
     });
 
 // ── Main component ────────────────────────────────────────────────────────────
-const StageSetupFormDrawer = ({ isOpen, onClose, onSuccess, editData, entityId, session, admissionMaster }: Props) => {
+const StageSetupFormDrawer = ({ isOpen, onClose, onSuccess, editData, entityId, session, admissionMaster }: StageSetupFormDrawerProps) => {
     const { showToast } = useToast();
-    const [form, setForm] = useState<FormData>(defaultForm);
+    const [form, setForm] = useState<StageFormData>(defaultForm);
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -199,7 +147,7 @@ const StageSetupFormDrawer = ({ isOpen, onClose, onSuccess, editData, entityId, 
     const headOptions = admissionHead.map(h => ({ value: h, label: h }));
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-    const setField = <K extends keyof FormData>(key: K, value: FormData[K]) =>
+    const setField = <K extends keyof StageFormData>(key: K, value: StageFormData[K]) =>
         setForm(prev => ({ ...prev, [key]: value }));
 
     // ── Validation ───────────────────────────────────────────────────────────

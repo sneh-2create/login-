@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -29,7 +29,12 @@ interface TagRow {
 
 const DEFAULT_ROW: TagRow = { tag: '', colour: '#000000', label: 'positive' };
 
-const AdmissionTags = () => {
+interface AdmissionTagsProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -93,6 +98,7 @@ const AdmissionTags = () => {
             });
             showToast('success', 'Admission Tags updated');
             refetch();
+            if (onSuccess) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
@@ -204,36 +210,90 @@ const AdmissionTags = () => {
 
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="Admission Tags"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'Admission Tags' },
-                ]}
-                actionButtons={actionButtons}
+            {!isEmbedded && (
+                <PageHeader
+                    title="Admission Tags"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'Admission Tags' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
+
+            {!isEmbedded && (
+                <PageToolbar
+                    actions={actionButtons}
+                    extraContent={
+                        canEdit ? (
+                            <div className="flex items-center gap-2">
+                                {/* Copy from session — matches Angular's Copy mat-menu */}
+                                {otherSessions.length > 0 && (
+                                    <div className="relative">
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setCopyMenuOpen(v => !v)}
+                                            className="flex items-center gap-1.5"
+                                        >
+                                            <Copy size={15} /> Copy
+                                        </Button>
+                                        {copyMenuOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setCopyMenuOpen(false)} />
+                                                <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg overflow-y-auto max-h-48">
+                                                    {otherSessions.map((s: any) => (
+                                                        <button
+                                                            key={s.name}
+                                                            onClick={() => copyFromSession(s.name)}
+                                                            className="w-full text-left px-4 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-background)] transition-colors"
+                                                        >
+                                                            {s.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
+                                <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
+                                    <Plus size={15} /> Add Tag
+                                </Button>
+                            </div>
+                        ) : undefined
+                    }
+                />
+            )}
+
+            <EditableTable
+                columns={columns}
+                data={rows}
+                isLoading={isLoading}
+                emptyMessage="No admission tags configured yet. Click 'Add Tag' to begin."
+                className={isEmbedded ? '' : 'mt-2'}
             />
 
-            <PageToolbar
-                actions={actionButtons}
-                extraContent={
-                    canEdit ? (
+            {!isLoading && canEdit && (
+                <div className="flex items-center justify-between mt-6">
+                    {isEmbedded ? (
                         <div className="flex items-center gap-2">
-                            {/* Copy from session — matches Angular's Copy mat-menu */}
+                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                <Plus size={15} /> Add New Tag
+                            </Button>
                             {otherSessions.length > 0 && (
                                 <div className="relative">
                                     <Button
                                         variant="outline"
                                         onClick={() => setCopyMenuOpen(v => !v)}
-                                        className="flex items-center gap-1.5"
+                                        className="flex items-center gap-1.5 border-slate-300"
                                     >
-                                        <Copy size={15} /> Copy
+                                        <Copy size={15} /> Copy from Session
                                     </Button>
                                     {copyMenuOpen && (
                                         <>
                                             <div className="fixed inset-0 z-40" onClick={() => setCopyMenuOpen(false)} />
-                                            <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg overflow-y-auto max-h-48">
+                                            <div className="absolute left-0 bottom-full mb-1 z-50 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg overflow-y-auto max-h-48">
                                                 {otherSessions.map((s: any) => (
                                                     <button
                                                         key={s.name}
@@ -248,27 +308,12 @@ const AdmissionTags = () => {
                                     )}
                                 </div>
                             )}
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                <Plus size={15} /> Add Tag
-                            </Button>
                         </div>
-                    ) : undefined
-                }
-            />
+                    ) : <div />}
 
-            <EditableTable
-                columns={columns}
-                data={rows}
-                isLoading={isLoading}
-                emptyMessage="No admission tags configured yet. Click 'Add Tag' to begin."
-                className="mt-2"
-            />
-
-            {!isLoading && rows.length > 0 && canEdit && (
-                <div className="flex justify-end mt-3">
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2">
+                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
                         {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        Save
+                        {isEmbedded ? 'Save & Next' : 'Save'}
                     </Button>
                 </div>
             )}

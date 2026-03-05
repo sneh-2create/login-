@@ -128,3 +128,4 @@ export * from './excelTemplate';
 export * from './feeMaster';
 export * from './tabs';
 export * from './pageToolbar';
+export * from './accordion';

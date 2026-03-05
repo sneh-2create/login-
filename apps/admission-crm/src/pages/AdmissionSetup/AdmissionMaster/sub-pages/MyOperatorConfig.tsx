@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from 'react';
+import React, { useState, useEffect, type ChangeEvent } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import { PageHeader, PageToolbar, ActionButton, Button, Input, useToast } from '@od-erp/ui';
 import { RefreshCw, Save } from 'lucide-react';
@@ -19,7 +19,12 @@ const EMPTY_KEYS: MyOperatorKeys = {
     xApiKey: '',
 };
 
-const MyOperatorConfig = () => {
+interface MyOperatorConfigProps {
+    isEmbedded?: boolean;
+    onSuccess?: () => void;
+}
+
+const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
@@ -64,6 +69,7 @@ const MyOperatorConfig = () => {
             });
             showToast('success', 'My Operator Config updated successfully');
             refetch();
+            if (onSuccess) onSuccess();
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
@@ -90,61 +96,57 @@ const MyOperatorConfig = () => {
 
     return (
         <div className="w-full font-sans">
-            <PageHeader
-                title="My Operator Config"
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/dashboard' },
-                    { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master', href: '/admission/setup/master' },
-                    { label: 'My Operator Config' },
-                ]}
-                actionButtons={actionButtons}
-            />
+            {!isEmbedded && (
+                <PageHeader
+                    title="My Operator Config"
+                    breadcrumbs={[
+                        { label: 'Dashboard', href: '/dashboard' },
+                        { label: 'Admission Setup', href: '/admission/setup' },
+                        { label: 'Admission Master', href: '/admission/setup/master' },
+                        { label: 'My Operator Config' },
+                    ]}
+                    actionButtons={actionButtons}
+                />
+            )}
 
-            <PageToolbar actions={actionButtons} />
+            {!isEmbedded && <PageToolbar actions={actionButtons} />}
 
-            <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm">
+            <div className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm ${isEmbedded ? '' : 'mt-4'}`}>
                 {isLoading ? (
                     <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
                         <RefreshCw size={14} className="animate-spin" /> Loading...
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-end gap-4">
-                        {fields.map(({ key, label, placeholder }) => (
-                            <div key={key} className="flex flex-col gap-1.5">
-                                <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
-                                    {label}
-                                </label>
-                                <Input
-                                    value={keys[key]}
-                                    onChange={setField(key)}
-                                    disabled={!canEdit}
-                                    placeholder={placeholder}
-                                    className="font-mono w-48"
-                                />
-                            </div>
-                        ))}
+                    <div className="flex flex-col gap-6">
+                        <div className="flex flex-wrap items-end gap-5">
+                            {fields.map(({ key, label, placeholder }) => (
+                                <div key={key} className="flex flex-col gap-1.5 min-w-[200px] flex-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted-foreground)]">
+                                        {label}
+                                    </label>
+                                    <Input
+                                        value={keys[key]}
+                                        onChange={setField(key)}
+                                        disabled={!canEdit}
+                                        placeholder={placeholder}
+                                        className="font-mono h-10"
+                                    />
+                                </div>
+                            ))}
+                        </div>
 
                         {canEdit && (
-                            <>
-                                {/* Divider */}
-                                <div className="self-end h-9 w-px bg-[var(--color-border)] mx-1" />
-
-                                <div className="flex flex-col gap-1.5">
-                                    <label className="text-xs font-semibold uppercase tracking-wide text-transparent select-none">
-                                        Action
-                                    </label>
-                                    <Button
-                                        variant="primary"
-                                        onClick={handleSave}
-                                        disabled={loading}
-                                        className="flex items-center gap-2 h-9"
-                                    >
-                                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                                        Save
-                                    </Button>
-                                </div>
-                            </>
+                            <div className="flex justify-end pt-4 border-t border-[var(--color-border)]">
+                                <Button
+                                    variant="primary"
+                                    onClick={handleSave}
+                                    disabled={loading}
+                                    className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90 h-10"
+                                >
+                                    {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
+                                    {isEmbedded ? 'Save & Next' : 'Save'}
+                                </Button>
+                            </div>
                         )}
                     </div>
                 )}

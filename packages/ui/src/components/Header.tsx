@@ -177,53 +177,55 @@ export const Header: React.FC<HeaderProps> = ({ className, isSidebarExpanded, on
                 )}
 
                 {/* Quick Actions */}
-                <div
-                    className={cn(
-                        "relative cursor-pointer flex items-center justify-center rounded-full hover:bg-[var(--color-muted)] transition-colors",
-                        isMobile ? "w-8 h-8" : "w-10 h-10"
-                    )}
-                    onMouseEnter={() => !isMobile && setShowQuickActions(true)}
-                    onMouseLeave={() => !isMobile && setShowQuickActions(false)}
-                    onClick={() => isMobile && setShowQuickActions(!showQuickActions)}
-                >
-                    <lord-icon
-                        src={quickActionIcon}
-                        trigger="hover"
-                        colors={`primary:${iconColor},secondary:${iconColor}`}
-                        style={{ width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px' }}
-                    />
+                {!isMobile && (
+                    <div
+                        className={cn(
+                            "relative cursor-pointer flex items-center justify-center rounded-full hover:bg-[var(--color-muted)] transition-colors",
+                            isMobile ? "w-8 h-8" : "w-10 h-10"
+                        )}
+                        onMouseEnter={() => !isMobile && setShowQuickActions(true)}
+                        onMouseLeave={() => !isMobile && setShowQuickActions(false)}
+                        onClick={() => isMobile && setShowQuickActions(!showQuickActions)}
+                    >
+                        <lord-icon
+                            src={quickActionIcon}
+                            trigger="hover"
+                            colors={`primary:${iconColor},secondary:${iconColor}`}
+                            style={{ width: isMobile ? '22px' : '28px', height: isMobile ? '22px' : '28px' }}
+                        />
 
-                    {showQuickActions && (
-                        <div className="absolute top-full right-0 pt-2 w-64 z-[100]">
-                            <div className="bg-[var(--color-card)] shadow-xl rounded-lg border border-[var(--color-border)] p-4 animate-in fade-in slide-in-from-top-2 origin-top-right">
-                                <h5 className="text-sm font-bold text-[var(--color-foreground)] mb-2 border-b border-[var(--color-border)] pb-2">Quick Actions</h5>
-                                <div className="space-y-2">
-                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors">
-                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs font-bold border border-[var(--color-border)]">IS</div>
-                                        <div>
-                                            <p className="text-xs font-bold text-[var(--color-foreground)]">Institute Setup</p>
-                                            <p className="text-[10px] text-[var(--color-muted-foreground)]">Informative Details</p>
+                        {showQuickActions && (
+                            <div className="absolute top-full right-0 pt-2 w-64 z-[100]">
+                                <div className="bg-[var(--color-card)] shadow-xl rounded-lg border border-[var(--color-border)] p-4 animate-in fade-in slide-in-from-top-2 origin-top-right">
+                                    <h5 className="text-sm font-bold text-[var(--color-foreground)] mb-2 border-b border-[var(--color-border)] pb-2">Quick Actions</h5>
+                                    <div className="space-y-2">
+                                        <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors">
+                                            <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs font-bold border border-[var(--color-border)]">IS</div>
+                                            <div>
+                                                <p className="text-xs font-bold text-[var(--color-foreground)]">Institute Setup</p>
+                                                <p className="text-[10px] text-[var(--color-muted-foreground)]">Informative Details</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors">
-                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs font-bold border border-[var(--color-border)]">FS</div>
-                                        <div>
-                                            <p className="text-xs font-bold text-[var(--color-foreground)]">Fee Structure</p>
-                                            <p className="text-[10px] text-[var(--color-muted-foreground)]">Fee Details</p>
+                                        <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors">
+                                            <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs font-bold border border-[var(--color-border)]">FS</div>
+                                            <div>
+                                                <p className="text-xs font-bold text-[var(--color-foreground)]">Fee Structure</p>
+                                                <p className="text-[10px] text-[var(--color-muted-foreground)]">Fee Details</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors" onClick={() => navigate('/admission/setup')}>
-                                        <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs">AS</div>
-                                        <div>
-                                            <p className="text-xs font-bold text-[var(--color-foreground)]">Admission Setup</p>
-                                            <p className="text-[10px] text-[var(--color-muted-foreground)]">Configure Admission</p>
+                                        <div className="p-2 hover:bg-[var(--sidebar-item-active-bg)] rounded cursor-pointer flex items-center gap-2 transition-colors" onClick={() => navigate('/admission/setup')}>
+                                            <div className="w-8 h-8 rounded-full bg-[var(--sidebar-item-active-bg)] flex items-center justify-center text-[var(--color-primary)] text-xs">AS</div>
+                                            <div>
+                                                <p className="text-xs font-bold text-[var(--color-foreground)]">Admission Setup</p>
+                                                <p className="text-[10px] text-[var(--color-muted-foreground)]">Configure Admission</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Mobile Create Button */}
                 {isMobile && (

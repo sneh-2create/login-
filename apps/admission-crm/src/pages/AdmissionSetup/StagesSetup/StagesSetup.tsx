@@ -87,6 +87,7 @@ const StagesSetup = () => {
                 <span className="text-[var(--color-muted-foreground)] font-mono text-sm">{row.index + 1}</span>
             ),
             size: 70,
+            meta: { align: 'center' } as any,
         },
         {
             header: 'Stage',
@@ -95,6 +96,7 @@ const StagesSetup = () => {
                 <span className="font-semibold text-[var(--color-foreground)]">{info.getValue() as string}</span>
             ),
             size: 200,
+            meta: { align: 'center' } as any,
         },
         {
             header: 'Sequence',
@@ -103,16 +105,21 @@ const StagesSetup = () => {
                 <span className="text-[var(--color-muted-foreground)]">{info.getValue() as number}</span>
             ),
             size: 100,
+            meta: { align: 'center' } as any,
         },
         {
             header: 'Transaction Required',
             accessorKey: 'txnRequired',
             cell: info => (
-                info.getValue()
-                    ? <CheckCircle size={18} className="text-emerald-500" />
-                    : <XCircle size={18} className="text-[var(--color-muted-foreground)]" />
+                <div className="flex justify-center w-full">
+                    {info.getValue()
+                        ? <CheckCircle size={18} className="text-emerald-500" />
+                        : <XCircle size={18} className="text-[var(--color-muted-foreground)]" />
+                    }
+                </div>
             ),
             size: 130,
+            meta: { align: 'center' } as any,
         },
         {
             header: 'No. of Fields',
@@ -126,41 +133,45 @@ const StagesSetup = () => {
                 );
             },
             size: 120,
+            meta: { align: 'center' } as any,
         },
         {
             header: 'Actions',
             id: 'actions',
             cell: ({ row }) => (
-                <DropdownMenu
-                    trigger={
-                        <MoreVertical size={15} />
-                    }
-                    placement="bottom-end"
-                    usePortal={true}
-                    items={[
-                        ...((canView || canEdit) ? [{
-                            label: (
-                                <div className="flex items-center gap-2">
-                                    <Pencil size={14} className="text-primary" />
-                                    <span>Edit</span>
-                                </div>
-                            ) as any,
-                            onClick: () => handleEdit(row.original),
-                        }] : []),
-                        ...(canDelete ? [{
-                            label: (
-                                <div className="flex items-center gap-2">
-                                    <Trash2 size={14} className="text-red-500" />
-                                    <span className="text-red-500">Delete</span>
-                                </div>
-                            ) as any,
-                            onClick: () => handleDelete(row.original),
-                            disabled: deletingId === row.original._id,
-                        }] : []),
-                    ]}
-                />
+                <div className="flex justify-center w-full">
+                    <DropdownMenu
+                        trigger={
+                            <MoreVertical size={15} />
+                        }
+                        placement="bottom-end"
+                        usePortal={true}
+                        items={[
+                            ...((canView || canEdit) ? [{
+                                label: (
+                                    <div className="flex items-center gap-2">
+                                        <Pencil size={14} className="text-primary" />
+                                        <span>Edit</span>
+                                    </div>
+                                ) as any,
+                                onClick: () => handleEdit(row.original),
+                            }] : []),
+                            ...(canDelete ? [{
+                                label: (
+                                    <div className="flex items-center gap-2">
+                                        <Trash2 size={14} className="text-red-500" />
+                                        <span className="text-red-500">Delete</span>
+                                    </div>
+                                ) as any,
+                                onClick: () => handleDelete(row.original),
+                                disabled: deletingId === row.original._id,
+                            }] : []),
+                        ]}
+                    />
+                </div>
             ),
             size: 60,
+            meta: { align: 'center' } as any,
         },
     ], [canView, canEdit, canDelete, deletingId]);
 

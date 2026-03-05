@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import type { SelectSingleProps, SelectSingleOption } from '@od-erp/types';
 import { cn } from '../../utils';
@@ -25,7 +26,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     const selectId = id ?? `select-single-${Math.random().toString(36).slice(2, 9)}`;
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
-    const { placement, triggerWidth } = useDropdownPosition(triggerRef, open);
+    const { placement, triggerWidth, coords } = useDropdownPosition(triggerRef, open);
 
     const selected = options.find((o) => o.value === value);
     const displayLabel = selected ? selected.label : '';
@@ -104,15 +105,24 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                     />
                 </span>
             </button>
-            {open && !disabled && triggerWidth != null && (
+            {open && !disabled && triggerWidth != null && coords && createPortal(
                 <ul
                     role="listbox"
                     aria-activedescendant={selected ? `${selectId}-opt-${String(selected.value)}` : undefined}
                     className={cn(
-                        'absolute left-0 z-[10002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-lg ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
-                        placement === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
+                        'fixed z-[100002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-xl ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
+                        placement === 'bottom' ? 'mt-1' : 'mb-1'
                     )}
-                    style={{ minWidth: triggerWidth, width: 'max-content', maxWidth: '300px', maxHeight: '240px', boxSizing: 'border-box' }}
+                    style={{ 
+                        top: placement === 'bottom' ? triggerRef.current?.getBoundingClientRect().bottom : undefined,
+                        bottom: placement === 'top' ? (window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0)) : undefined,
+                        left: triggerRef.current?.getBoundingClientRect().left,
+                        minWidth: triggerWidth, 
+                        width: 'max-content', 
+                        maxWidth: '300px', 
+                        maxHeight: '240px', 
+                        boxSizing: 'border-box' 
+                    }}
                 >
                     {options.map((option) => {
                         const isSelected = option.value === value;
@@ -146,7 +156,8 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                             </li>
                         );
                     })}
-                </ul>
+                </ul>,
+                document.body
             )}
             {error && (
                 <p className="mt-1 text-xs text-[var(--color-error)]" role="alert">
