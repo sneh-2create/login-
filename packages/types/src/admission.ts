@@ -464,6 +464,11 @@ export interface SetupCard {
     linkLabel: string;
 }
 
+export interface SetupCardProps {
+    card: SetupCard;
+    onClick?: () => void;
+}
+
 // --- Stage Setup Form Types ---
 export interface StageField {
     key: string;

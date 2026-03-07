@@ -24,3 +24,4 @@ export * from './studentFields';
 export * from './login.config';
 export * from './theme.constants';
 export * from './stageFields';
+export * from './admission-master.config';
