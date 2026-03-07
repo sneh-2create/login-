@@ -541,9 +541,9 @@ const StageSetupFormDrawer = ({ isOpen, onClose, onSuccess, editData, entityId, 
     if (!isOpen) return null;
 
     return createPortal((
-        <div className="fixed inset-0 z-[9999] flex justify-end">
+        <div className="fixed inset-0 z-[99999] flex justify-end">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200" onClick={onClose} />
+            <div className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity duration-200" onClick={onClose} />
 
             {/* Drawer */}
             <div className="relative w-full max-w-6xl bg-[var(--color-card)] h-full shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
@@ -747,8 +747,8 @@ const StageSetupFormDrawer = ({ isOpen, onClose, onSuccess, editData, entityId, 
 
             {/* ── Copy Fields From Stage Modal ───────────────────────────────── */}
             {copyFieldsOpen && (
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setCopyFieldsOpen(false)} />
+                <div className="absolute inset-0 flex items-center justify-center z-[99999]">
+                    <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setCopyFieldsOpen(false)} />
                     <div className="relative bg-[var(--color-card)] rounded-xl shadow-2xl p-6 w-full max-w-sm z-10 animate-in zoom-in-95 duration-150">
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-base font-semibold text-[var(--color-foreground)]">Copy Fields From Stage</h3>

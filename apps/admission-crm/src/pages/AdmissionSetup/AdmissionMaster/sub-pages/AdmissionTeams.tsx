@@ -7,9 +7,11 @@ import {
     Button,
     Input,
     SelectSingle,
+    EditableTable,
+    EditableTableColumn,
     useToast,
 } from '@od-erp/ui';
-import { Plus, RefreshCw, Save, Trash2, UserPlus } from 'lucide-react';
+import { Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { useAdmissionMaster, useCounselors } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
 
@@ -109,9 +111,6 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
     const hasEmptyTeams = () =>
         teams.some(t => !t.name.trim() || !t.leadDetails.employeeName);
 
-    const hasEmptyMemberDetail = (teamIndex: number) =>
-        teams[teamIndex]?.memberDetails.some(m => !m.employeeName);
-
     const validateTeams = (): boolean => {
         for (const team of teams) {
             if (!team.name.trim()) {
@@ -166,34 +165,12 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
         ));
     };
 
-    const addMember = (teamIndex: number) => {
-        if (hasEmptyMemberDetail(teamIndex)) {
-            showToast('error', 'Please fill existing member rows before adding a new one');
-            return;
-        }
-        setTeams(prev => prev.map((t, i) => {
-            if (i !== teamIndex) return t;
-            return { ...t, memberDetails: [...t.memberDetails, { ...EMPTY_EMPLOYEE }] };
-        }));
-    };
-
     const removeMember = (teamIndex: number, memberIndex: number) => {
         setTeams(prev => prev.map((t, i) => {
             if (i !== teamIndex) return t;
             const updated = t.memberDetails.filter((_, mi) => mi !== memberIndex)
                 .filter(m => m.employeeId);
             return { ...t, memberDetails: updated };
-        }));
-    };
-
-    const onMemberChange = (empId: string, teamIndex: number, memberIndex: number) => {
-        const details = resolveEmployee(empId);
-        setTeams(prev => prev.map((t, ti) => {
-            if (ti !== teamIndex) return t;
-            const members = t.memberDetails.map((m, mi) =>
-                mi === memberIndex ? { ...details } : m
-            );
-            return { ...t, memberDetails: members };
         }));
     };
 
@@ -231,6 +208,113 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
             setLoading(false);
         }
     };
+
+    // Columns Definition
+    const columns = useMemo<EditableTableColumn<TeamRow>[]>(() => {
+        const cols: EditableTableColumn<TeamRow>[] = [
+            {
+                header: <>Team Name <span className="text-red-500">*</span></>,
+                width: '25%',
+                cell: (row, i) => (
+                    <Input
+                        value={row.name}
+                        onChange={e => onTeamNameChange(e.target.value, i)}
+                        placeholder="Enter Team Name"
+                        maxLength={90}
+                        disabled={!canEdit}
+                        className="h-10 border-gray-200"
+                        containerClassName="!m-0"
+                    />
+                ),
+            },
+            {
+                header: <>Team Lead <span className="text-red-500">*</span></>,
+                width: '25%',
+                cell: (row, i) => (
+                    <SelectSingle
+                        value={row.leadDetails.employee || ''}
+                        options={counselorOptions}
+                        placeholder="Select Team Lead"
+                        onChange={val => onLeadChange(String(val), i)}
+                        disabled={!canEdit}
+                        containerClassName="w-full relative z-[100]"
+                    />
+                ),
+            },
+            {
+                header: 'Members',
+                width: '40%',
+                cell: (row, teamIndex) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {/* Member Chips */}
+                        {row.memberDetails.filter(m => m.employee).map((member, memberIndex) => (
+                            <div key={memberIndex} className="inline-flex items-center gap-1.5 bg-red-50 text-red-800 px-2 py-1 rounded pl-1 border border-red-100/50">
+                                {/* Initial Block */}
+                                <div className="w-5 h-5 rounded bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">
+                                    {member.employeeName?.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs font-medium">{member.employeeName}</span>
+                                {canEdit && (
+                                    <button
+                                        onClick={() => removeMember(teamIndex, memberIndex)}
+                                        className="text-red-400 hover:text-red-600 ml-1"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+
+                        {/* Dropdown for adding members */}
+                        {canEdit && (
+                            <div className="min-w-[150px] relative">
+                                <SelectSingle
+                                    // Use '' so the dropdown resets to placeholder after selection
+                                    value={''}
+                                    options={getMemberOptions(row, -1)}
+                                    placeholder="Add member..."
+                                    onChange={val => {
+                                        if (!val) return;
+                                        const details = resolveEmployee(String(val));
+                                        setTeams(prev => prev.map((t, ti) => {
+                                            if (ti !== teamIndex) return t;
+                                            // Make sure we only add valid members
+                                            if (details.employee) {
+                                              return { ...t, memberDetails: [...t.memberDetails, details] };
+                                            }
+                                            return t;
+                                        }));
+                                    }}
+                                    disabled={!canEdit}
+                                    containerClassName="w-[180px] relative z-[99]"
+                                />
+                            </div>
+                        )}
+                    </div>
+                ),
+            },
+        ];
+
+        if (canEdit) {
+            cols.push({
+                header: '',
+                width: 52,
+                cell: (_, i) => (
+                    <div className="flex justify-center">
+                        <button
+                            onClick={() => removeTeam(i)}
+                            className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete team"
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                    </div>
+                ),
+            });
+        }
+        
+        return cols;
+    }, [counselorOptions, canEdit, getMemberOptions, onLeadChange, onTeamNameChange, removeMember, removeTeam, resolveEmployee]);
 
     const isDataLoading = isLoading || counselorsLoading;
 
@@ -281,122 +365,29 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
                     No teams configured yet.
                 </div>
             ) : (
-                <div className={`${isEmbedded ? '' : 'mt-3'} flex flex-col gap-4`}>
-                    {teams.map((team, teamIndex) => (
-                        <div
-                            key={teamIndex}
-                            className="rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-4 relative"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="font-semibold text-[var(--color-foreground)] flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs">
-                                        #{teamIndex + 1}
-                                    </div>
-                                    {team.name || <span className="text-[var(--color-muted-foreground)] font-normal italic">New Team</span>}
-                                </h4>
-                                {canEdit && (
-                                    <button
-                                        onClick={() => removeTeam(teamIndex)}
-                                        className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
-                                        title="Delete team"
-                                    >
-                                        <Trash2 size={13} /> Delete
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="flex flex-wrap gap-4 mb-5 pb-5 border-b border-dashed border-[var(--color-border)]">
-                                <div className="flex-1 min-w-[200px]">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted-foreground)] mb-1.5 block">
-                                        Team Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <Input
-                                        value={team.name}
-                                        onChange={e => onTeamNameChange(e.target.value, teamIndex)}
-                                        placeholder="Enter Team Name"
-                                        maxLength={90}
-                                        disabled={!canEdit}
-                                        className="h-10"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-[200px]">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-muted-foreground)] mb-1.5 block">
-                                        Team Lead <span className="text-red-500">*</span>
-                                    </label>
-                                    <SelectSingle
-                                        value={team.leadDetails.employee || ''}
-                                        options={counselorOptions}
-                                        placeholder="Select Team Lead"
-                                        onChange={val => onLeadChange(String(val), teamIndex)}
-                                        disabled={!canEdit}
-                                        containerClassName="w-full"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <div className="flex items-center justify-between mb-3">
-                                    <h5 className="text-[10px] font-bold uppercase tracking-widest text-[var(--color-foreground)]">
-                                        Team Members
-                                    </h5>
-                                    {canEdit && (
-                                        <button
-                                            onClick={() => addMember(teamIndex)}
-                                            className="flex items-center gap-1.5 text-xs text-primary font-semibold hover:opacity-80 transition-opacity"
-                                        >
-                                            <UserPlus size={14} /> Add Member
-                                        </button>
-                                    )}
-                                </div>
-
-                                {team.memberDetails.length === 0 ? (
-                                    <div className="bg-slate-50 dark:bg-slate-900/40 rounded-lg p-6 text-center border border-dashed border-slate-200 dark:border-slate-800">
-                                        <p className="text-xs text-[var(--color-muted-foreground)] italic">
-                                            No members assigned to this team yet.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {team.memberDetails.map((member, memberIndex) => (
-                                            <div key={memberIndex} className="flex items-center gap-2 group p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-background)]">
-                                                <SelectSingle
-                                                    value={member.employee || ''}
-                                                    options={getMemberOptions(team, memberIndex)}
-                                                    placeholder="Select Member"
-                                                    onChange={val => onMemberChange(String(val), teamIndex, memberIndex)}
-                                                    disabled={!canEdit}
-                                                    containerClassName="flex-1"
-                                                />
-                                                {canEdit && (
-                                                    <button
-                                                        onClick={() => removeMember(teamIndex, memberIndex)}
-                                                        className="flex items-center justify-center w-8 h-8 rounded-md text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
-                                                        title="Remove member"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <EditableTable
+                    columns={columns}
+                    data={teams}
+                    isLoading={isDataLoading}
+                    emptyMessage="No teams configured yet."
+                    className={isEmbedded ? '' : 'mt-3'}
+                    minWidth={950}
+                    showPagination={false}
+                />
             )}
 
             {!isDataLoading && canEdit && (
-                <div className="flex items-center justify-between mt-8">
-                    {isEmbedded ? (
+                <div className="flex items-center justify-between mt-6">
+                    {canEdit && (
                         <Button variant="outline" onClick={addTeam} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Team
+                            <Plus size={15} /> Add Row
                         </Button>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+                    )}
+                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-10 h-11 bg-[var(--color-green-600)] hover:bg-[var(--color-green-700)] text-white rounded-xl shadow-lg shadow-green-600/20 transition-all active:scale-[0.98]">
+                        {loading ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
+                        <span className="font-bold">
+                            {isEmbedded ? 'Save & Next' : 'Save Changes'}
+                        </span>
                     </Button>
                 </div>
             )}

@@ -89,13 +89,13 @@ const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }
 
             {!isEmbedded && <PageToolbar actions={actionButtons} />}
 
-            <div className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm ${isEmbedded ? '' : 'mt-4'}`}>
+            <div className={`${isEmbedded ? '' : 'mt-4'}`}>
                 {isLoading ? (
                     <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
                         <RefreshCw size={14} className="animate-spin" /> Loading...
                     </div>
                 ) : (
-                    <div className="flex flex-wrap items-end gap-x-6 gap-y-8">
+                    <div className="flex flex-wrap items-end gap-x-4 gap-y-4">
                         {/* Prefix */}
                         <div className="flex flex-col gap-2 min-w-[140px]">
                             <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">
@@ -160,7 +160,7 @@ const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }
             </div>
 
             {!isLoading && canEdit && (
-                <div className="flex justify-end mt-8">
+                <div className="flex justify-end mt-4">
                     <Button
                         variant="primary"
                         onClick={handleSave}

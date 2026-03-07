@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, PageToolbar, ActionButton, Button, Input, EditableTable, EditableTableColumn, useToast } from '@od-erp/ui';
-import { Plus, RefreshCw, Trash2, Save, Lock } from 'lucide-react';
+import { PageHeader, ActionButton, Button, Input, useToast, Checkbox } from '@od-erp/ui';
+import { Plus, RefreshCw, Trash2, Save, Lock, GripVertical, Edit2, Check } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
 
@@ -9,6 +9,7 @@ const TOKEN_MONEY = 'Token Money';
 
 interface HeadRow {
     head: string;
+    isEditing?: boolean;
 }
 
 interface AdmissionHeadProps {
@@ -25,6 +26,7 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
     const [rows, setRows] = useState<HeadRow[]>([]);
     const [tokenMoneyChecked, setTokenMoneyChecked] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
 
@@ -36,7 +38,7 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
         if (admissionMaster?.admissionHead) {
             const heads: string[] = admissionMaster.admissionHead;
             setTokenMoneyChecked(heads.includes(TOKEN_MONEY));
-            setRows(heads.filter(h => h !== TOKEN_MONEY).map(h => ({ head: h })));
+            setRows(heads.filter(h => h !== TOKEN_MONEY).map(h => ({ head: h, isEditing: false })));
         }
     }, [admissionMaster]);
 
@@ -48,7 +50,7 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
                 return;
             }
         }
-        setRows(prev => [...prev, { head: '' }]);
+        setRows(prev => [...prev, { head: '', isEditing: true }]);
     };
 
     const updateRow = (index: number, value: string) =>
@@ -57,6 +59,43 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
     // Matches Angular's removeAdmissionHead(ind)
     const removeRow = (index: number) =>
         setRows(prev => prev.filter((_, i) => i !== index));
+
+    const toggleEdit = (index: number, isEditing: boolean) => {
+        if (!isEditing && !rows[index].head.trim()) {
+            showToast('error', 'Head name cannot be empty');
+            return;
+        }
+        setRows((prev) =>
+            prev.map((row, i) => (i === index ? { ...row, isEditing } : row)),
+        );
+    };
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        e.dataTransfer.effectAllowed = "move";
+        setDraggingIndex(index);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+    };
+
+    const handleDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggingIndex === null || draggingIndex === index) return;
+        setRows((prev) => {
+            const newRows = [...prev];
+            const draggedItem = newRows[draggingIndex];
+            newRows.splice(draggingIndex, 1);
+            newRows.splice(index, 0, draggedItem);
+            return newRows;
+        });
+        setDraggingIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggingIndex(null);
+    };
 
     // Matches Angular's updateAdmissionMaster()
     const handleSave = async () => {
@@ -100,40 +139,6 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
         }
     };
 
-    const columns = useMemo<EditableTableColumn<HeadRow>[]>(() => [
-        {
-            header: 'S.No.',
-            width: 60,
-            cell: (_, i) => (
-                <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
-            ),
-        },
-        {
-            header: <span>Admission Head <span className="text-red-500">*</span></span>,
-            cell: (row, i) => (
-                <Input
-                    value={row.head}
-                    onChange={e => updateRow(i, e.target.value)}
-                    disabled={!canEdit}
-                    placeholder="e.g. Registration Fee, Tuition Fee"
-                />
-            ),
-        },
-        ...(canEdit ? [{
-            header: '',
-            width: 52,
-            cell: (_: HeadRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
-            ),
-        } as EditableTableColumn<HeadRow>] : []),
-    ], [rows, canEdit]);
-
     const actionButtons: ActionButton[] = [{
         icon: RefreshCw,
         onClick: () => refetch(),
@@ -145,7 +150,7 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
     }];
 
     return (
-        <div className="w-full font-sans">
+        <div className="w-full font-sans max-full mx-auto space-y-3">
             {!isEmbedded && (
                 <PageHeader
                     title="Admission Heads"
@@ -159,68 +164,197 @@ const AdmissionHead: React.FC<AdmissionHeadProps> = ({ isEmbedded = false, onSuc
                 />
             )}
 
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                <Plus size={15} /> Add Head
-                            </Button>
-                        ) : undefined
-                    }
-                />
-            )}
-
-            <EditableTable
-                columns={columns}
-                data={rows}
-                isLoading={isLoading}
-                emptyMessage="No admission heads yet. Click 'Add Head' to begin."
-                className={isEmbedded ? '' : 'mt-2'}
-            />
-
-            {/* Token Money — matches Angular's mat-checkbox with checkFeeHead('Token Money') */}
-            {!isLoading && (
-                <div className="mt-4 bg-[var(--color-background)] rounded-lg border border-[var(--color-border)] p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Lock size={14} className="text-[var(--color-muted-foreground)]" />
-                        <span className="text-xs font-semibold text-[var(--color-muted-foreground)] uppercase tracking-wide">
+            {/* Top Header Section for embedded mode */}
+            {isEmbedded && (
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-lg font-bold text-[var(--color-foreground)] m-0">
                             System Reserved Head
-                        </span>
+                        </h2>
+                        <p className="text-sm text-[var(--color-muted-foreground)] m-0 mt-1">
+                            Select the ones applicable to your process.
+                        </p>
                     </div>
-                    <label className={`flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md border transition-colors w-fit ${
-                        tokenMoneyChecked
-                            ? 'border-primary/40 bg-primary/5 text-primary'
-                            : 'border-[var(--color-border)] text-[var(--color-muted-foreground)]'
-                    } ${!canEdit ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                        <input
-                            type="checkbox"
-                            checked={tokenMoneyChecked}
-                            disabled={!canEdit}
-                            onChange={e => handleTokenMoneyToggle(e.target.checked)}
-                            className="w-4 h-4 accent-primary"
-                        />
-                        <span className="text-sm font-medium">Token Money</span>
-                    </label>
-                    <p className="text-xs text-[var(--color-muted-foreground)] mt-2">
-                        This head is system-managed and cannot be renamed or reordered.
-                    </p>
+                    {canEdit && (
+                        <Button
+                            variant="outline"
+                            onClick={addRow}
+                            className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5 px-4 h-9"
+                        >
+                            <Plus size={16} /> Add New Details
+                        </Button>
+                    )}
                 </div>
             )}
 
-            {/* Save button — shown when there are editable rows */}
-            {!isLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {isEmbedded ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Details
-                        </Button>
-                    ) : <div />}
+            {!isLoading && (
+                <div>
+                    {!isEmbedded && (
+                        <div className="flex items-center justify-between mb-4 mt-2">
+                            <div>
+                                <h2 className="text-lg font-bold text-[var(--color-foreground)] mb-1">
+                                    System Reserved Head
+                                </h2>
+                                <p className="text-sm text-[var(--color-muted-foreground)] m-0">
+                                    This head is system-managed and cannot be renamed or reordered.
+                                </p>
+                            </div>
+                            {canEdit && (
+                                <Button
+                                    variant="outline"
+                                    onClick={addRow}
+                                    className="flex items-center gap-1.5 border-primary text-primary"
+                                >
+                                    <Plus size={15} /> Add New Details
+                                </Button>
+                            )}
+                        </div>
+                    )}
 
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+                    <div className="flex flex-wrap gap-4 mt-2">
+                        <label
+                            className={`flex items-center gap-3 cursor-pointer pl-2 pr-6 py-2.5 rounded-lg border transition-colors w-54 ${
+                                tokenMoneyChecked
+                                    ? "border-primary/50 bg-primary/5 text-primary"
+                                    : "border-[var(--color-border)] text-[var(--color-muted-foreground)] bg-white dark:bg-[var(--color-background)] hover:border-primary/30"
+                            } ${!canEdit ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                            <Checkbox
+                                checked={tokenMoneyChecked}
+                                disabled={!canEdit}
+                                onChange={(checked) =>
+                                    handleTokenMoneyToggle(checked)
+                                }
+                                className="pointer-events-none"
+                                containerClassName="m-0 p-0"
+                            />
+                            <span
+                                className={`text-sm font-semibold select-none ${tokenMoneyChecked ? "text-primary" : "text-[var(--color-foreground)]"}`}
+                            >
+                                {TOKEN_MONEY}
+                            </span>
+                            <Lock size={14} className="ml-1 opacity-50" />
+                        </label>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Stages Section */}
+            <div className="pt-2">
+                {isLoading ? (
+                    <div className="flex items-center justify-center p-10 bg-white dark:bg-[var(--color-background)] rounded-lg border border-[var(--color-border)] shadow-sm">
+                        <RefreshCw size={26} className="animate-spin text-primary" />
+                    </div>
+                ) : rows.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center p-10 bg-white dark:bg-[var(--color-background)] rounded-lg border border-[var(--color-border)] shadow-sm text-center">
+                        <p className="text-[var(--color-muted-foreground)] mb-4 font-medium">
+                            No admission heads yet. Click 'Add Head' to begin.
+                        </p>
+                        {canEdit && (
+                            <Button
+                                variant="outline"
+                                onClick={addRow}
+                                className="flex items-center gap-1.5 border-primary text-primary"
+                            >
+                                <Plus size={15} /> Add Head
+                            </Button>
+                        )}
+                    </div>
+                ) : (
+                    <div className="space-y-2">
+                        {rows.map((row, i) => (
+                            <div
+                                key={i}
+                                draggable={canEdit && !row.isEditing}
+                                onDragStart={(e) => handleDragStart(e, i)}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, i)}
+                                onDragEnd={handleDragEnd}
+                                className={`flex items-center gap-3 p-2 bg-white dark:bg-[var(--color-background)] rounded-lg border shadow-sm transition-all ${row.isEditing ? "border-primary ring-1 ring-primary/20" : "border-[var(--color-border)] hover:border-[var(--color-muted-foreground)]/30"} ${draggingIndex === i ? "opacity-50 border-dashed bg-gray-50 dark:bg-[var(--color-foreground)]/5" : ""}`}
+                            >
+                                {/* Grip icon */}
+                                <div className="text-[var(--color-muted-foreground)] opacity-40 hover:opacity-100 cursor-grab active:cursor-grabbing px-2 py-2 flex-shrink-0">
+                                    <GripVertical size={20} strokeWidth={2.5} />
+                                </div>
+
+                                <div className="flex-1 flex flex-col pr-4">
+                                    <label
+                                        className={`text-[10px] font-bold uppercase tracking-widest ${row.isEditing ? "text-primary" : "text-[var(--color-muted-foreground)]/80"}`}
+                                    >
+                                        Enter Value
+                                    </label>
+                                    {row.isEditing ? (
+                                        <Input
+                                            value={row.head}
+                                            onChange={(e) => updateRow(i, e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    e.preventDefault();
+                                                    toggleEdit(i, false);
+                                                }
+                                            }}
+                                            className="w-full h-10 border-primary focus-visible:ring-primary/20 shadow-sm transition-all"
+                                            autoFocus
+                                            placeholder="e.g. Registration Fee"
+                                        />
+                                    ) : (
+                                        <span className="text-[15px] font-semibold text-[var(--color-foreground)] flex items-center">
+                                            {row.head}
+                                        </span>
+                                    )}
+                                </div>
+
+                                {canEdit && (
+                                    <div className="flex items-center gap-2 pr-2">
+                                        {row.isEditing ? (
+                                            <Button
+                                                variant="primary"
+                                                onClick={() => toggleEdit(i, false)}
+                                                className="!w-10 !h-10 !p-0 flex items-center justify-center min-w-[40px] shadow-sm"
+                                                title="Confirm edit"
+                                            >
+                                                <Check size={18} />
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => toggleEdit(i, true)}
+                                                className="!w-9 !h-9 !p-0 flex items-center justify-center min-w-[36px] text-[var(--color-muted-foreground)] hover:text-primary hover:border-primary hover:bg-transparent shadow-none transition-colors border-[var(--color-border)]"
+                                                title="Edit head"
+                                            >
+                                                <Edit2 size={15} />
+                                            </Button>
+                                        )}
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => removeRow(i)}
+                                            className="!w-9 !h-9 !p-0 flex items-center justify-center min-w-[36px] text-red-400 hover:text-red-600 hover:border-red-600 hover:bg-transparent shadow-none transition-colors border-red-400"
+                                            title="Remove head"
+                                        >
+                                            <Trash2 size={15} />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {!isLoading && canEdit && (
+                <div className="flex justify-end mt-8">
+                    <Button
+                        variant="primary"
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-10 py-2.5 h-[42px] font-medium shadow-sm transition-colors text-base"
+                    >
+                        {loading ? (
+                            <RefreshCw size={16} className="animate-spin" />
+                        ) : (
+                            <Save size={16} />
+                        )}
+                        {isEmbedded ? "Save & Next" : "Save"}
                     </Button>
                 </div>
             )}

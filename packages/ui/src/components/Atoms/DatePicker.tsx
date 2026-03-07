@@ -1,7 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { DatePickerProps } from '@od-erp/types';
 import { cn } from '../../utils';
+import { useDropdownPosition } from '../../hooks/useDropdownPosition';
 
 function getWeekdayNames(): string[] {
     const formatter = new Intl.DateTimeFormat(undefined, { weekday: 'short' });
@@ -47,7 +49,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const pickerId = id ?? `date-picker-${Math.random().toString(36).slice(2, 9)}`;
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
-    const [triggerWidth, setTriggerWidth] = useState<number | null>(null);
+    const portalRef = useRef<HTMLDivElement>(null);
+    const { placement, triggerWidth, coords } = useDropdownPosition(triggerRef, open);
 
     const valueDate = toDate(displayValue);
     const [viewDate, setViewDate] = useState<Date>(() => valueDate ?? new Date());
@@ -66,7 +69,11 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     useEffect(() => {
         if (!open) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+            const isOutsideContainer = containerRef.current && !containerRef.current.contains(e.target as Node);
+            const isOutsidePortal = portalRef.current && !portalRef.current.contains(e.target as Node);
+            if (isOutsideContainer && (portalRef.current ? isOutsidePortal : true)) {
+                setOpen(false);
+            }
         };
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setOpen(false);
@@ -84,15 +91,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     useEffect(() => {
         if (!open) {
             setView('day'); // Reset view when closed
-            setTriggerWidth(null);
-            return;
         }
-        const el = triggerRef.current;
-        if (!el) return;
-        const measure = () => setTriggerWidth(el.getBoundingClientRect().width);
-        measure();
-        const id = requestAnimationFrame(measure);
-        return () => cancelAnimationFrame(id);
     }, [open]);
 
     const year = viewDate.getFullYear();
@@ -207,10 +206,21 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 </span>
                 <ChevronDown className={cn("w-4 h-4 shrink-0 text-[var(--color-muted-foreground)] transition-transform", open && "rotate-180")} aria-hidden />
             </button>
-            {open && !disabled && triggerWidth != null && (
+            {open && !disabled && triggerWidth != null && coords && createPortal(
                 <div
-                    className="absolute top-full left-0 z-50 mt-1 overflow-hidden rounded-[var(--border-radius-md)] border border-[var(--border-color)] bg-[var(--color-white)] shadow-lg"
-                    style={{ width: triggerWidth, maxWidth: triggerWidth, boxSizing: 'border-box' }}
+                    ref={portalRef}
+                    className={cn(
+                        'fixed z-[100002] overflow-hidden rounded-[var(--border-radius-md)] border border-[var(--border-color)] bg-[var(--color-white)] shadow-lg',
+                        placement === 'bottom' ? 'mt-1' : 'mb-1'
+                    )}
+                    style={{ 
+                        top: placement === 'bottom' ? triggerRef.current?.getBoundingClientRect().bottom : undefined,
+                        bottom: placement === 'top' ? (window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0)) : undefined,
+                        left: triggerRef.current?.getBoundingClientRect().left,
+                        width: triggerWidth, 
+                        maxWidth: triggerWidth, 
+                        boxSizing: 'border-box' 
+                    }}
                 >
                     <div className="min-w-0 overflow-auto p-3" style={{ maxHeight: '300px' }}>
                     <div className="flex items-center justify-between mb-3">
@@ -323,7 +333,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                     )}
 
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
             {error && (
                 <p className="mt-1 text-xs text-[var(--color-error)]" role="alert">

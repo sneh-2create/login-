@@ -111,7 +111,7 @@ const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false,
 
             {!isEmbedded && <PageToolbar actions={actionButtons} />}
 
-            <div className={`rounded-xl border border-[var(--color-border)] bg-[var(--color-card)] p-6 shadow-sm ${isEmbedded ? '' : 'mt-4'}`}>
+            <div className={`${isEmbedded ? '' : 'mt-4'}`}>
                 {isLoading ? (
                     <div className="flex items-center gap-2 text-sm text-[var(--color-muted-foreground)]">
                         <RefreshCw size={14} className="animate-spin" /> Loading...
@@ -136,7 +136,7 @@ const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false,
                         </div>
 
                         {canEdit && (
-                            <div className="flex justify-end pt-4 border-t border-[var(--color-border)]">
+                            <div className="flex justify-end">
                                 <Button
                                     variant="primary"
                                     onClick={handleSave}

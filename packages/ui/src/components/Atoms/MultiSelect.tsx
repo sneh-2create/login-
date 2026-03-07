@@ -37,6 +37,7 @@ export const MultiSelect: React.FC<MultiSelectProps> = ({
             onChange={handleChange}
             multiple={true}
             displayMode="text"
+            usePortal={true}
         />
     );
 };

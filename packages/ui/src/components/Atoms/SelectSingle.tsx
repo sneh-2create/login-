@@ -26,6 +26,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     const selectId = id ?? `select-single-${Math.random().toString(36).slice(2, 9)}`;
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const portalRef = useRef<HTMLUListElement>(null);
     const { placement, triggerWidth, coords } = useDropdownPosition(triggerRef, open);
 
     const selected = options.find((o) => o.value === value);
@@ -38,7 +39,11 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     useEffect(() => {
         if (!open) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+            const isOutsideContainer = containerRef.current && !containerRef.current.contains(e.target as Node);
+            const isOutsidePortal = portalRef.current && !portalRef.current.contains(e.target as Node);
+            if (isOutsideContainer && (portalRef.current ? isOutsidePortal : true)) {
+                setOpen(false);
+            }
         };
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setOpen(false);
@@ -107,6 +112,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
             </button>
             {open && !disabled && triggerWidth != null && coords && createPortal(
                 <ul
+                    ref={portalRef}
                     role="listbox"
                     aria-activedescendant={selected ? `${selectId}-opt-${String(selected.value)}` : undefined}
                     className={cn(

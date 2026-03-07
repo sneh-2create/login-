@@ -235,7 +235,7 @@ const AdmissionMaster = () => {
     ];
 
     return (
-        <div className="w-full max-w-full font-sans pb-20">
+        <div className="w-full max-w-full font-sans">
             <PageHeader
                 title="Admission Setup Master"
                 breadcrumbs={[
