@@ -1,7 +1,7 @@
-import { useMemo, ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useMemo, ReactNode, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, ActionButton, PhaseTimeline, PhaseStepCard } from '@od-erp/ui';
+import { PageHeader, ActionButton, PhaseTimeline, PhaseStepCard, StepOrchestrator } from '@od-erp/ui';
 import { RefreshCw } from 'lucide-react';
 import { ADMISSION_PHASES } from '@od-erp/constants';
 import { useAdmissionMaster, useCourseList } from '@od-erp/query';
@@ -21,25 +21,60 @@ import AdmissionTeams from './sub-pages/AdmissionTeams';
 import MinimumAgeMaster from './sub-pages/MinimumAgeMaster';
 
 const AdmissionMaster = () => {
+    const navigate = useNavigate();
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     
-    const [searchParams, setSearchParams] = useSearchParams();
-    const focusedItemId = searchParams.get('step');
+    const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+    // Manual URL tracking to handle router desync in Module Federation
+    useEffect(() => {
+        const handleLocationChange = () => {
+            setCurrentPath(window.location.pathname);
+        };
+
+        // Listen for back/forward navigation
+        window.addEventListener('popstate', handleLocationChange);
+
+        // Monkey-patch pushState and replaceState to catch host router navigation
+        const originalPushState = window.history.pushState;
+        const originalReplaceState = window.history.replaceState;
+
+        window.history.pushState = function(...args) {
+            originalPushState.apply(window.history, args);
+            handleLocationChange();
+        };
+
+        window.history.replaceState = function(...args) {
+            originalReplaceState.apply(window.history, args);
+            handleLocationChange();
+        };
+
+        return () => {
+            window.removeEventListener('popstate', handleLocationChange);
+            window.history.pushState = originalPushState;
+            window.history.replaceState = originalReplaceState;
+        };
+    }, []);
+
+    // Derive focusedItemId from the actual window path to be safe
+    const focusedItemId = useMemo(() => {
+        // Path format: /admission/setup/master/:stepId
+        const parts = currentPath.split('/');
+        const masterIndex = parts.indexOf('master');
+        if (masterIndex !== -1 && parts.length > masterIndex + 1) {
+            const step = parts[masterIndex + 1];
+            return step || null;
+        }
+        return null;
+    }, [currentPath]);
 
     const { data: admissionMaster, isLoading: isMasterLoading } = useAdmissionMaster(entityId, session);
     const { data: courseList = [], isLoading: isCourseLoading } = useCourseList(entityId, session);
 
-    const updateParams = (itemId: string | null) => {
-        const newParams = new URLSearchParams(searchParams);
-        if (itemId) newParams.set('step', itemId);
-        else newParams.delete('step');
-        setSearchParams(newParams);
-    };
-
     const handleReset = () => {
-        updateParams(null);
+        navigate('/admission/setup/master', { replace: false });
     };
 
     // Helper to check if a step is "Started" (has data)
@@ -76,7 +111,7 @@ const AdmissionMaster = () => {
     };
 
     // Map of component IDs to their actual React components
-    const componentMap: Record<string, (_onSuccess: () => void) => ReactNode> = {
+    const componentMap: Record<string, (_onSuccess: (_navigateNext?: boolean) => void) => ReactNode> = {
         admissionMaster: (onSuccess) => <ApplicationNumber isEmbedded onSuccess={onSuccess} />,
         stages: (onSuccess) => <StagesMaster isEmbedded onSuccess={onSuccess} />,
         txnReceipt: (onSuccess) => <TxnReceipt isEmbedded onSuccess={onSuccess} />,
@@ -94,14 +129,17 @@ const AdmissionMaster = () => {
     const allSteps = useMemo(() => ADMISSION_PHASES.flatMap(p => p.steps), []);
     const focusedStep = useMemo(() => allSteps.find(s => s.id === focusedItemId), [allSteps, focusedItemId]);
 
-    const handleSuccess = () => {
-        if (!focusedItemId) return;
+    const handleSuccess = (navigateNext: boolean = true) => {
+        if (!focusedItemId || !navigateNext) {
+            handleReset();
+            return;
+        }
         const currentIndex = allSteps.findIndex(i => i.id === focusedItemId);
-        if (currentIndex < allSteps.length - 1) {
+        if (currentIndex !== -1 && currentIndex < allSteps.length - 1) {
             const nextItem = allSteps[currentIndex + 1];
-            updateParams(nextItem.id);
+            navigate(`/admission/setup/master/${nextItem.id}`);
         } else {
-            updateParams(null);
+            handleReset();
         }
     };
 
@@ -124,46 +162,25 @@ const AdmissionMaster = () => {
                 breadcrumbs={[
                     { label: 'Dashboard', href: '/dashboard' },
                     { label: 'Admission Setup', href: '/admission/setup' },
-                    { label: 'Admission Master' },
+                    { label: 'Admission Master', href: focusedStep ? '/admission/setup/master' : undefined },
+                    ...(focusedStep ? [{ label: focusedStep.title }] : [])
                 ]}
                 actionButtons={actionButtons}
             />
 
-            <div className="mt-4 w-full max-w-full pb-4">
+            <div className="mt-4 w-full max-w-full pb-4" key={focusedItemId || 'overview'}>
                 {focusedStep ? (
-                    /* Detail View / Focus Mode */
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="mb-6 flex items-center justify-between">
-                            <button
-                                onClick={handleReset}
-                                className="flex items-center gap-2 text-sm font-bold text-primary hover:underline"
-                            >
-                                ← Back to Overview
-                            </button>
-                            <div className="text-[10px] font-bold text-[var(--color-muted-foreground)] uppercase tracking-widest bg-[var(--color-muted)] px-3 py-1.5 rounded-full border border-[var(--color-border)]">
-                                Step {allSteps.findIndex(i => i.id === focusedItemId) + 1} of {allSteps.length}
-                            </div>
-                        </div>
-
-                        <div className="bg-[var(--color-card)] rounded-3xl border border-[var(--color-border)] shadow-xl overflow-hidden">
-                            <div className="px-8 py-6 border-b border-[var(--color-border)] bg-[var(--color-muted)]/10 flex items-center gap-6">
-                                <div className="p-4 rounded-2xl bg-[color-mix(in_srgb,var(--color-primary),transparent_90%)] text-primary border border-primary/20">
-                                    {focusedStep.icon}
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold text-[var(--color-foreground)]">
-                                        {focusedStep.title}
-                                    </h2>
-                                    <p className="text-sm text-[var(--color-muted-foreground)]">
-                                        {focusedStep.subtitle}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="p-2">
-                                {componentMap[focusedStep.id]?.(handleSuccess)}
-                            </div>
-                        </div>
-                    </div>
+                    <StepOrchestrator
+                        key={focusedStep.id}
+                        title={focusedStep.title}
+                        subtitle={focusedStep.subtitle}
+                        icon={focusedStep.icon}
+                        currentStep={allSteps.findIndex(i => i.id === focusedItemId) + 1}
+                        totalSteps={allSteps.length}
+                        onBack={handleReset}
+                    >
+                        {componentMap[focusedStep.id]?.(handleSuccess)}
+                    </StepOrchestrator>
                 ) : (
                     /* Main Phase List View - Phased Timeline */
                     <div className="space-y-4">
@@ -190,7 +207,7 @@ const AdmissionMaster = () => {
                                             subtitle={step.subtitle}
                                             icon={step.icon}
                                             isStarted={checkIsStarted(step.id)}
-                                            onAction={() => updateParams(step.id)}
+                                            onAction={() => navigate(`/admission/setup/master/${step.id}`)}
                                         />
                                     ))}
                                 </PhaseTimeline>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -10,6 +10,7 @@ import {
     EditableTable,
     EditableTableColumn,
     useToast,
+    useStepOrchestrator,
 } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useAdmissionMaster, useCourseList, useCounselors, useSources } from '@od-erp/query';
@@ -29,13 +30,10 @@ const EMPTY_ROW: CounselorMapperRow = {
     counselor: [],
 };
 
-interface CounselorMapperProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, onSuccess }) => {
+const CounselorMapper: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
@@ -50,7 +48,6 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
     const canEdit = permissions.includes('editAdmissionMaster');
 
     const [rows, setRows] = useState<CounselorMapperRow[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
     const { data: courseList = [], isLoading: coursesLoading } = useCourseList(entityId, session);
@@ -93,7 +90,7 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
     }, [admissionMaster, courseList]);
 
     // Matches Angular's addTableHeadform() — validate before adding
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.course || row.stream.length === 0) {
                 showToast('error', `Please fill ${displayNames.course} and ${displayNames.stream} before adding a new row`);
@@ -101,12 +98,12 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
             }
         }
         setRows(prev => [...prev, { ...EMPTY_ROW }]);
-    };
+    }, [rows, showToast, displayNames.course, displayNames.stream]);
 
     // Matches Angular's removeTableHead(ind)
-    const removeRow = (index: number) => setRows(prev => prev.filter((_, i) => i !== index));
+    const removeRow = useCallback((index: number) => setRows(prev => prev.filter((_, i) => i !== index)), []);
 
-    const updateRowField = <K extends keyof CounselorMapperRow>(index: number, field: K, value: CounselorMapperRow[K]) => {
+    const updateRowField = useCallback(<K extends keyof CounselorMapperRow>(index: number, field: K, value: CounselorMapperRow[K]) => {
         setRows(prev => prev.map((row, i) => {
             if (i !== index) return row;
             // When course changes, reset stream (mirrors Angular behaviour)
@@ -115,17 +112,17 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
             }
             return { ...row, [field]: value };
         }));
-    };
+    }, []);
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         for (const row of rows) {
             if (!row.course || row.stream.length === 0) {
                 showToast('error', `${displayNames.course} and ${displayNames.stream} are required on every row`);
                 return;
             }
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             const counselorMapper = rows.map(r => ({
                 course: r.course,        // Angular sends course.name string on save
@@ -140,24 +137,48 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
             });
             showToast('success', 'Counselor Mapper updated successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, displayNames.course, displayNames.stream, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Row
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, setFooterLeftActions, addRow]);
 
     const columns = useMemo<EditableTableColumn<CounselorMapperRow>[]>(() => [
         {
-            header: 'S.No.',
-            width: 60,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
+            width: 80,
             cell: (_, i) => (
                 <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
             ),
         },
         {
-            header: <>{displayNames.course} <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.course} <span className="text-red-500">*</span></span>,
             width: 200,
             cell: (row, i) => (
                 <SelectSingle
@@ -167,11 +188,12 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
                     onChange={(val) => updateRowField(i, 'course', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg"
                 />
             ),
         },
         {
-            header: <>{displayNames.stream} <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.stream} <span className="text-red-500">*</span></span>,
             width: 220,
             cell: (row, i) => row.course ? (
                 <MultiSelect
@@ -181,6 +203,7 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
                     onChange={(val) => updateRowField(i, 'stream', val as string[])}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg"
                 />
             ) : (
                 <span className="text-xs text-[var(--color-muted-foreground)] italic">
@@ -189,7 +212,7 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
             ),
         },
         {
-            header: 'Source',
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Source</span>,
             width: 220,
             cell: (row, i) => (
                 <MultiSelect
@@ -199,11 +222,12 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
                     onChange={(val) => updateRowField(i, 'source', val as string[])}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg"
                 />
             ),
         },
         {
-            header: 'Counselor',
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Counselor</span>,
             width: 260,
             cell: (row, i) => (
                 <MultiSelect
@@ -213,23 +237,28 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
                     onChange={(val) => updateRowField(i, 'counselor', val as string[])}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg"
                 />
             ),
         },
         ...(canEdit ? [{
             header: '',
-            width: 52,
+            width: 60,
             cell: (_: CounselorMapperRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
+                <div className="flex justify-center">
+                    <Button
+                        variant="soft-danger"
+                        size="icon"
+                        onClick={() => removeRow(i)}
+                        className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
+                        title="Remove row"
+                    >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
             ),
         } as EditableTableColumn<CounselorMapperRow>] : []),
-    ], [rows, courseOptions, sourceOptions, counselorOptions, displayNames, canEdit]);
+    ], [rows, courseOptions, sourceOptions, counselorOptions, displayNames, canEdit, updateRowField, removeRow]);
 
     const isDataLoading = isLoading || coursesLoading || counselorsLoading || sourcesLoading;
 
@@ -246,29 +275,28 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
     return (
         <div className="w-full font-sans">
             {!isEmbedded && (
-                <PageHeader
-                    title="Counselor Mapper"
-                    breadcrumbs={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admission Setup', href: '/admission/setup' },
-                        { label: 'Admission Master', href: '/admission/setup/master' },
-                        { label: 'Counselor Mapper' },
-                    ]}
-                    actionButtons={actionButtons}
-                />
-            )}
-
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                <Plus size={15} /> Add Row
-                            </Button>
-                        ) : undefined
-                    }
-                />
+                <>
+                    <PageHeader
+                        title="Counselor Mapper"
+                        breadcrumbs={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Setup', href: '/admission/setup' },
+                            { label: 'Admission Master', href: '/admission/setup/master' },
+                            { label: 'Counselor Mapper' },
+                        ]}
+                        actionButtons={actionButtons}
+                    />
+                    <PageToolbar
+                        actions={actionButtons}
+                        extraContent={
+                            canEdit ? (
+                                <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                    <Plus size={15} /> Add Row
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                </>
             )}
 
             <EditableTable
@@ -279,17 +307,15 @@ const CounselorMapper: React.FC<CounselorMapperProps> = ({ isEmbedded = false, o
                 className={isEmbedded ? '' : 'mt-2'}
             />
 
-            {!isDataLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {isEmbedded ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Row
-                        </Button>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+            {!isDataLoading && canEdit && !isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isDataLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

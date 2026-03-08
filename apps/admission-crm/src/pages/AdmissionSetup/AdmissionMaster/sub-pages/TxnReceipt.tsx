@@ -1,22 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, PageToolbar, ActionButton, Button, Input, useToast } from '@od-erp/ui';
+import { PageHeader, PageToolbar, ActionButton, Button, Input, useToast, useStepOrchestrator } from '@od-erp/ui';
 import { RefreshCw, Save } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
 
-interface TxnReceiptProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }) => {
+const TxnReceipt: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
-
-    const [loading, setLoading] = useState(false);
     const [prefix, setPrefix] = useState('');
     const [number, setNumber] = useState('');
     const [suffix, setSuffix] = useState('');
@@ -36,12 +31,12 @@ const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }
 
     const preview = [prefix, number, suffix].filter(Boolean).join('');
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         if (!number.trim()) {
             showToast('error', 'Transaction Receipt Number is required');
             return;
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
@@ -54,13 +49,20 @@ const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }
             });
             showToast('success', 'Transaction Receipt Setup saved successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, prefix, number, suffix, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
 
     const actionButtons: ActionButton[] = [{
         icon: RefreshCw,
@@ -159,16 +161,15 @@ const TxnReceipt: React.FC<TxnReceiptProps> = ({ isEmbedded = false, onSuccess }
                 )}
             </div>
 
-            {!isLoading && canEdit && (
-                <div className="flex justify-end mt-4">
+            {!isLoading && canEdit && !isEmbedded && (
+                <div className="flex justify-end mt-8">
                     <Button
                         variant="primary"
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90"
+                        onClick={() => handleSave()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                     >
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

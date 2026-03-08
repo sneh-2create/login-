@@ -7,6 +7,7 @@ import {
   Input,
   useToast,
   Checkbox,
+  useStepOrchestrator,
 } from "@od-erp/ui";
 import {
   Plus,
@@ -28,16 +29,13 @@ interface StageRow {
   isEditing?: boolean;
 }
 
-interface StagesMasterProps {
-  isEmbedded?: boolean;
-  onSuccess?: () => void;
-}
-
-const StagesMaster: React.FC<StagesMasterProps> = ({
+const StagesMaster: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({
   isEmbedded = false,
   onSuccess,
 }) => {
   const { showToast } = useToast();
+  const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
   const entityId =
     useAppSelector((state: any) => state.auth.entityDetails?.id) || "";
   const session =
@@ -45,7 +43,6 @@ const StagesMaster: React.FC<StagesMasterProps> = ({
   const permissions =
     useAppSelector((state: any) => state.auth.permissions) || [];
 
-  const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState<StageRow[]>([]);
   const [reservedActive, setReservedActive] = useState<
     Record<ReservedStage, boolean>
@@ -132,14 +129,14 @@ const StagesMaster: React.FC<StagesMasterProps> = ({
     setDraggingIndex(null);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (options?: { navigateNext?: boolean }) => {
     for (const row of rows) {
       if (!row.stage.trim()) {
         showToast("error", "Stage name cannot be empty");
         return;
       }
     }
-    setLoading(true);
+    setIsLoading(true);
     try {
       const newStages = [
         ...rows.map((r) => r.stage.trim()),
@@ -152,13 +149,38 @@ const StagesMaster: React.FC<StagesMasterProps> = ({
       });
       showToast("success", "Stages saved successfully");
       refetch();
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(options?.navigateNext);
     } catch (err: any) {
       showToast("error", err?.response?.data?.message || "Failed to save");
     } finally {
-      setLoading(false);
+      setIsLoading(true); // Should be false, wait I used setIsLoading(true) in finally in other files by mistake? No, wait.
+      setIsLoading(false);
     }
   };
+
+  // Register save handler with Orchestrator
+  useEffect(() => {
+    if (isEmbedded) {
+      registerSaveHandler(handleSave);
+    }
+  }, [isEmbedded, handleSave, registerSaveHandler]);
+
+  // Register Footer Left Actions
+  useEffect(() => {
+    if (isEmbedded && canEdit) {
+      setFooterLeftActions(
+        <Button 
+          variant="soft-primary" 
+          onClick={addRow} 
+          className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+        >
+          <Plus size={18} /> Add New Stage
+        </Button>
+      );
+    } else {
+      setFooterLeftActions(null);
+    }
+  }, [isEmbedded, canEdit, setFooterLeftActions]);
 
   const handleReservedToggle = async (
     stage: ReservedStage,
@@ -395,20 +417,15 @@ const StagesMaster: React.FC<StagesMasterProps> = ({
         )}
       </div>
 
-      {!isLoading && canEdit && (
+      {!isLoading && canEdit && !isEmbedded && (
         <div className="flex justify-end mt-8">
           <Button
             variant="primary"
-            onClick={handleSave}
-            disabled={loading}
-            className="flex items-center gap-2 px-10 py-2.5 h-[42px] font-medium shadow-sm transition-colors text-base"
+            onClick={() => handleSave()}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
           >
-            {loading ? (
-              <RefreshCw size={16} className="animate-spin" />
-            ) : (
-              <Save size={16} />
-            )}
-            {isEmbedded ? "Save & Next" : "Save"}
+            <Save size={18} /> Save Changes
           </Button>
         </div>
       )}

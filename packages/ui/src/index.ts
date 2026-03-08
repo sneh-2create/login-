@@ -85,6 +85,7 @@ export * from './components/EmptyState/EmptyState';
 export * from './components/SetupCard/SetupCard';
 export * from './components/PhaseSetup/PhaseTimeline';
 export * from './components/PhaseSetup/PhaseStepCard';
+export * from './components/StepOrchestrator';
 export * from './components/NeedHelpPanel';
 export { default as ViewDocumentsModal } from './components/ViewDocumentsModal/ViewDocumentsModal';
 export * from './components/ExcelTemplateEditDrawer/ExcelTemplateEditDrawer';

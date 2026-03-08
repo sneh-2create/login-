@@ -1,6 +1,6 @@
-import React, { useState, useEffect, type ChangeEvent } from 'react';
+import React, { useState, useEffect, useCallback, type ChangeEvent } from 'react';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, PageToolbar, ActionButton, Button, Input, useToast } from '@od-erp/ui';
+import { PageHeader, PageToolbar, ActionButton, Button, Input, useToast, useStepOrchestrator } from '@od-erp/ui';
 import { RefreshCw, Save } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
@@ -19,20 +19,16 @@ const EMPTY_KEYS: MyOperatorKeys = {
     xApiKey: '',
 };
 
-interface MyOperatorConfigProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false, onSuccess }) => {
+const MyOperatorConfig: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
 
     const canEdit = permissions.includes('editAdmissionMaster');
 
-    const [loading, setLoading] = useState(false);
     const [keys, setKeys] = useState<MyOperatorKeys>(EMPTY_KEYS);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
@@ -50,12 +46,12 @@ const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false,
         }
     }, [admissionMaster]);
 
-    const setField = (field: keyof MyOperatorKeys) => (e: ChangeEvent<HTMLInputElement>) =>
-        setKeys(prev => ({ ...prev, [field]: e.target.value }));
+    const setField = useCallback((field: keyof MyOperatorKeys) => (e: ChangeEvent<HTMLInputElement>) =>
+        setKeys(prev => ({ ...prev, [field]: e.target.value })), []);
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
-        setLoading(true);
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
+        setIsLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
@@ -69,13 +65,20 @@ const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false,
             });
             showToast('success', 'My Operator Config updated successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, keys, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
 
     const actionButtons: ActionButton[] = [{
         icon: RefreshCw,
@@ -135,16 +138,15 @@ const MyOperatorConfig: React.FC<MyOperatorConfigProps> = ({ isEmbedded = false,
                             ))}
                         </div>
 
-                        {canEdit && (
-                            <div className="flex justify-end">
+                        {canEdit && !isEmbedded && (
+                            <div className="flex justify-end mt-8">
                                 <Button
                                     variant="primary"
-                                    onClick={handleSave}
-                                    disabled={loading}
-                                    className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90 h-10"
+                                    onClick={() => handleSave()}
+                                    disabled={isLoading}
+                                    className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                                 >
-                                    {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                                    {isEmbedded ? 'Save & Next' : 'Save'}
+                                    <Save size={18} /> Save Changes
                                 </Button>
                             </div>
                         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -10,15 +10,16 @@ import {
     EditableTable,
     EditableTableColumn,
     useToast,
+    useStepOrchestrator,
 } from '@od-erp/ui';
-import { Plus, RefreshCw, Trash2, Save, Copy } from 'lucide-react';
+import { RefreshCw, Trash2, Save, Plus } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
 
 // Matches Angular's labelList = ['positive', 'negative']
 const LABEL_OPTIONS = [
-    { value: 'positive', label: 'POSITIVE' },
-    { value: 'negative', label: 'NEGATIVE' },
+    { value: 'positive', label: 'Positive' },
+    { value: 'negative', label: 'Negative' },
 ];
 
 interface TagRow {
@@ -29,13 +30,18 @@ interface TagRow {
 
 const DEFAULT_ROW: TagRow = { tag: '', colour: '#000000', label: 'positive' };
 
-interface AdmissionTagsProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
+// Helper to transform raw API tags (string or object) into TagRow format
+const transformTags = (tags: any[]): TagRow[] => 
+    tags.map(t =>
+        typeof t === 'string'
+            ? { tag: t, colour: '#000000', label: 'positive' }
+            : { tag: t.tag || '', colour: t.colour || '#000000', label: t.label || 'positive' }
+    );
 
-const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuccess }) => {
+const AdmissionTags: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setHeaderActions, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const sessions = useAppSelector((state: any) => state.session.sessionList) || [];
@@ -45,26 +51,18 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
     const canEdit = permissions.includes('editAdmissionMaster');
 
     const [rows, setRows] = useState<TagRow[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [copyMenuOpen, setCopyMenuOpen] = useState(false);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
 
     // Matches Angular's viewAdmissionMaster() → this.admissionTags = res.tags
     useEffect(() => {
         if (admissionMaster?.tags) {
-            setRows(
-                (admissionMaster.tags as any[]).map(t =>
-                    typeof t === 'string'
-                        ? { tag: t, colour: '#000000', label: 'positive' }
-                        : { tag: t.tag || '', colour: t.colour || '#000000', label: t.label || 'positive' }
-                )
-            );
+            setRows(transformTags(admissionMaster.tags as any[]));
         }
     }, [admissionMaster]);
 
     // Matches Angular's addAdmissionTagsform()
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.tag.trim() || !row.colour) {
                 showToast('error', 'Please fill all fields before adding a new row');
@@ -72,24 +70,24 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
             }
         }
         setRows(prev => [...prev, { ...DEFAULT_ROW }]);
-    };
+    }, [rows, showToast]);
 
     // Matches Angular's removeAdmissionTags(ind)
-    const removeRow = (index: number) =>
-        setRows(prev => prev.filter((_, i) => i !== index));
+    const removeRow = useCallback((index: number) =>
+        setRows(prev => prev.filter((_, i) => i !== index)), []);
 
-    const updateRow = (index: number, field: keyof TagRow, value: string) =>
-        setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+    const updateRow = useCallback((index: number, field: keyof TagRow, value: string) =>
+        setRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row)), []);
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         for (const row of rows) {
             if (!row.tag.trim() || !row.colour) {
                 showToast('error', 'Tag name and colour are required for every row');
                 return;
             }
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
@@ -98,29 +96,31 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
             });
             showToast('success', 'Admission Tags updated');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) {
+                onSuccess(options?.navigateNext);
+            }
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
 
     // Matches Angular's selectedSession(session) — copy tags from another session
-    const copyFromSession = async (fromSession: string) => {
-        setCopyMenuOpen(false);
+    const copyFromSession = useCallback(async (fromSession: string) => {
         const confirmed = window.confirm(`Copy tags from session "${fromSession}"? This will overwrite your current list.`);
         if (!confirmed) return;
         try {
             const res: any = await admissionStudentDataService.viewAdmissionMaster(entityId, fromSession);
             if (res?.tags) {
-                setRows(
-                    (res.tags as any[]).map((t: any) =>
-                        typeof t === 'string'
-                            ? { tag: t, colour: '#000000', label: 'positive' }
-                            : { tag: t.tag || '', colour: t.colour || '#000000', label: t.label || 'positive' }
-                    )
-                );
+                setRows(transformTags(res.tags as any[]));
                 showToast('success', `Tags copied from session "${fromSession}"`);
             } else {
                 showToast('error', 'No tags found in that session');
@@ -128,47 +128,87 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
         } catch {
             showToast('error', 'Failed to load tags from selected session');
         }
-    };
+    }, [entityId, showToast]);
+
+    // Sessions for "Copy" Select
+    const sessionOptions = useMemo(() => 
+        (sessions as any[])
+            .filter(s => s.name !== session)
+            .map(s => ({ value: s.name, label: s.name })), 
+        [sessions, session]
+    );
+    
+    // Register Header Actions (Copy Select)
+    useEffect(() => {
+        if (isEmbedded && canEdit && sessionOptions.length > 0) {
+            setHeaderActions(
+                <div className="flex items-center gap-2 min-w-[240px]">
+                    <SelectSingle
+                        value=""
+                        options={sessionOptions}
+                        placeholder="Copy From Session"
+                        onChange={(val) => copyFromSession(String(val))}
+                        className="h-9 min-w-[160px] border-[var(--color-border)] rounded-lg text-xs"
+                    />
+                </div>
+            );
+        } else {
+            setHeaderActions(null);
+        }
+    }, [isEmbedded, canEdit, sessionOptions, setHeaderActions, copyFromSession]);
+
+    // Register Footer Left Actions (Add Tag Button)
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Tag
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, addRow, setFooterLeftActions]);
 
     const columns = useMemo<EditableTableColumn<TagRow>[]>(() => [
         {
-            header: 'S.No.',
-            width: 60,
-            cell: (_, i) => (
-                <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
-            ),
-        },
-        {
-            header: <span>Tag <span className="text-red-500">*</span></span>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Tag Name <span className="text-red-500">*</span></span>,
             cell: (row, i) => (
                 <Input
                     value={row.tag}
                     onChange={e => updateRow(i, 'tag', e.target.value)}
                     disabled={!canEdit}
                     placeholder="e.g. Interested, Follow-up"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)] focus:ring-1 focus:ring-primary/20"
                 />
             ),
         },
         {
-            header: <span>Colour <span className="text-red-500">*</span></span>,
-            width: 140,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Tag Colour <span className="text-red-500">*</span></span>,
+            width: 160,
             cell: (row, i) => (
-                <div className="flex items-center gap-2">
-                    <input
-                        type="color"
-                        value={row.colour}
-                        disabled={!canEdit}
-                        onChange={e => updateRow(i, 'colour', e.target.value)}
-                        className="w-8 h-8 rounded cursor-pointer border border-[var(--color-border)] bg-transparent p-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Pick tag colour"
-                    />
-                    <span className="text-xs font-mono text-[var(--color-muted-foreground)]">{row.colour}</span>
-                </div>
+                <label className="flex items-center gap-3 p-1.5 border border-[var(--color-border)] rounded-lg bg-[var(--color-card)] h-10 transition-all hover:border-primary/30 cursor-pointer group relative overflow-hidden">
+                    <div className="relative w-7 h-7 shrink-0 rounded-md overflow-hidden border border-[var(--color-border)] shadow-sm">
+                        <input
+                            type="color"
+                            value={row.colour}
+                            disabled={!canEdit}
+                            onChange={e => updateRow(i, 'colour', e.target.value)}
+                            className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer border-none bg-transparent p-0 disabled:cursor-not-allowed"
+                            title="Pick tag colour"
+                        />
+                    </div>
+                    <span className="text-xs font-mono text-[var(--color-foreground)] uppercase tracking-tighter group-hover:text-primary transition-colors">{row.colour}</span>
+                </label>
             ),
         },
         {
-            header: 'Label',
-            width: 160,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Label Type</span>,
+            width: 180,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.label}
@@ -177,93 +217,66 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
                     onChange={val => updateRow(i, 'label', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         ...(canEdit ? [{
             header: '',
-            width: 52,
-            cell: (_: TagRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
+            width: 60,
+            cell: (_, i) => (
+                <div className="flex justify-center">
+                    <Button
+                        variant="soft-danger"
+                        size="icon"
+                        onClick={() => removeRow(i)}
+                        className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
+                        title="Remove row"
+                    >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
             ),
         } as EditableTableColumn<TagRow>] : []),
-    ], [rows, canEdit]);
+    ], [canEdit, updateRow, removeRow]);
 
-    const actionButtons: ActionButton[] = [{
+    const actionButtons: ActionButton[] = useMemo(() => [{
         icon: RefreshCw,
         onClick: () => refetch(),
-        title: 'Refresh',
+        title: 'Refresh Data',
         className: 'text-primary hover:bg-primary/10',
         isVisible: true,
         iconClass: isLoading ? 'animate-spin' : '',
         variant: 'outline',
-    }];
-
-    // Sessions for "Copy" menu — matches Angular's mat-menu with session list
-    const otherSessions = (sessions as any[]).filter(s => s.name !== session);
+    }], [refetch, isLoading]);
 
     return (
         <div className="w-full font-sans">
             {!isEmbedded && (
-                <PageHeader
-                    title="Admission Tags"
-                    breadcrumbs={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admission Setup', href: '/admission/setup' },
-                        { label: 'Admission Master', href: '/admission/setup/master' },
-                        { label: 'Admission Tags' },
-                    ]}
-                    actionButtons={actionButtons}
-                />
-            )}
-
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <div className="flex items-center gap-2">
-                                {/* Copy from session — matches Angular's Copy mat-menu */}
-                                {otherSessions.length > 0 && (
-                                    <div className="relative">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setCopyMenuOpen(v => !v)}
-                                            className="flex items-center gap-1.5"
-                                        >
-                                            <Copy size={15} /> Copy
-                                        </Button>
-                                        {copyMenuOpen && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setCopyMenuOpen(false)} />
-                                                <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg overflow-y-auto max-h-48">
-                                                    {otherSessions.map((s: any) => (
-                                                        <button
-                                                            key={s.name}
-                                                            onClick={() => copyFromSession(s.name)}
-                                                            className="w-full text-left px-4 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-background)] transition-colors"
-                                                        >
-                                                            {s.name}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                                <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                    <Plus size={15} /> Add Tag
-                                </Button>
-                            </div>
-                        ) : undefined
-                    }
-                />
+                <>
+                    <PageHeader
+                        title="Admission Tags"
+                        breadcrumbs={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Setup', href: '/admission/setup' },
+                            { label: 'Admission Master', href: '/admission/setup/master' },
+                            { label: 'Admission Tags' },
+                        ]}
+                        actionButtons={actionButtons}
+                    />
+                    <PageToolbar
+                        actions={actionButtons}
+                        extraContent={
+                            canEdit ? (
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                        <Plus size={15} /> Add Tag
+                                    </Button>
+                                </div>
+                            ) : undefined
+                        }
+                    />
+                </>
             )}
 
             <EditableTable
@@ -274,46 +287,15 @@ const AdmissionTags: React.FC<AdmissionTagsProps> = ({ isEmbedded = false, onSuc
                 className={isEmbedded ? '' : 'mt-2'}
             />
 
-            {!isLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {isEmbedded ? (
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                                <Plus size={15} /> Add New Tag
-                            </Button>
-                            {otherSessions.length > 0 && (
-                                <div className="relative">
-                                    <Button
-                                        variant="outline"
-                                        onClick={() => setCopyMenuOpen(v => !v)}
-                                        className="flex items-center gap-1.5 border-slate-300"
-                                    >
-                                        <Copy size={15} /> Copy from Session
-                                    </Button>
-                                    {copyMenuOpen && (
-                                        <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setCopyMenuOpen(false)} />
-                                            <div className="absolute left-0 bottom-full mb-1 z-50 min-w-[180px] rounded-lg border border-[var(--color-border)] bg-[var(--color-card)] shadow-lg overflow-y-auto max-h-48">
-                                                {otherSessions.map((s: any) => (
-                                                    <button
-                                                        key={s.name}
-                                                        onClick={() => copyFromSession(s.name)}
-                                                        className="w-full text-left px-4 py-2 text-sm text-[var(--color-foreground)] hover:bg-[var(--color-background)] transition-colors"
-                                                    >
-                                                        {s.name}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+            {canEdit && !isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

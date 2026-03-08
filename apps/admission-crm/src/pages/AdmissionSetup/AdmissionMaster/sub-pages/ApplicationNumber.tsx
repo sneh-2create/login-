@@ -1,6 +1,17 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, PageToolbar, ActionButton, Button, Input, SelectSingle, EditableTable, EditableTableColumn, useToast } from '@od-erp/ui';
+import {
+    PageHeader,
+    PageToolbar,
+    ActionButton,
+    Button,
+    Input,
+    SelectSingle,
+    EditableTable,
+    EditableTableColumn,
+    useToast,
+    useStepOrchestrator,
+} from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useAdmissionMaster, useCourseList } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
@@ -13,15 +24,12 @@ interface AppNumberRow {
     suffix: string;
 }
 
-interface ApplicationNumberProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = false, onSuccess }) => {
+const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
-    const session = useAppSelector((state: any) => state.session.academicSession) || '';
+    const session = useAppSelector((state: any) => state.auth.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
     const entityPreferences = useAppSelector((state: any) => state.auth.entityDetails?.entityPreferences) || {};
 
@@ -30,7 +38,6 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
         stream: entityPreferences.displayNames?.find((item: any) => item.value === 'stream')?.name || 'Stream',
     }), [entityPreferences]);
 
-    const [loading, setLoading] = useState(false);
     const [rows, setRows] = useState<AppNumberRow[]>([]);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
@@ -63,7 +70,7 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
     const getStreamOptions = (courseName: string) =>
         (courseList.find((c: any) => c.name === courseName)?.stream || []).map((s: string) => ({ value: s, label: s }));
 
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.course || !row.stream || !row.number) {
                 showToast('error', 'Please fill all required fields before adding a new row');
@@ -71,17 +78,17 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
             }
         }
         setRows(prev => [...prev, { course: '', stream: '', prefix: '', number: '', suffix: '' }]);
-    };
+    }, [rows, showToast]);
 
-    const removeRow = (index: number) => {
+    const removeRow = useCallback((index: number) => {
         if (rows.length === 1) {
             setRows([{ course: '', stream: '', prefix: '', number: '', suffix: '' }]);
             return;
         }
         setRows(prev => prev.filter((_, i) => i !== index));
-    };
+    }, [rows]);
 
-    const updateRow = (index: number, field: keyof AppNumberRow, value: string) => {
+    const updateRow = useCallback((index: number, field: keyof AppNumberRow, value: string) => {
         setRows(prev => prev.map((row, i) => {
             if (i !== index) return row;
             if (field === 'course') {
@@ -90,9 +97,9 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
             }
             return { ...row, [field]: value };
         }));
-    };
+    }, [courseList]);
 
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         const validRows = rows.filter(r => r.course || r.stream || r.number || r.prefix || r.suffix);
         
         if (validRows.length === 0) {
@@ -107,7 +114,7 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
             }
         }
 
-        setLoading(true);
+        setIsLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
@@ -116,24 +123,48 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
             });
             showToast('success', 'Application Number Setup saved successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, displayNames, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Details
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, addRow, setFooterLeftActions]);
 
     const columns = useMemo<EditableTableColumn<AppNumberRow>[]>(() => [
         {
-            header: 'S.No.',
-            width: 60,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
+            width: 80,
             cell: (_, i) => (
                 <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
             ),
         },
         {
-            header: <>{displayNames.course} <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.course} <span className="text-red-500">*</span></span>,
             width: 220,
             cell: (row, i) => (
                 <SelectSingle
@@ -143,11 +174,12 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                     onChange={(val) => updateRow(i, 'course', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         {
-            header: <>{displayNames.stream} <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.stream} <span className="text-red-500">*</span></span>,
             width: 220,
             cell: (row, i) => row.course ? (
                 <SelectSingle
@@ -157,15 +189,16 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                     onChange={(val) => updateRow(i, 'stream', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ) : (
-                <span className="text-xs text-[var(--color-muted-foreground)] italic">
+                <div className="h-10 flex items-center px-3 border border-[var(--color-border)] rounded-lg bg-[var(--color-muted)/20] text-xs text-[var(--color-muted-foreground)] italic">
                     Select {displayNames.course} first
-                </span>
+                </div>
             ),
         },
         {
-            header: 'Prefix',
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Prefix</span>,
             width: 140,
             cell: (row, i) => (
                 <Input
@@ -173,12 +206,12 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                     onChange={e => updateRow(i, 'prefix', e.target.value)}
                     disabled={!canEdit}
                     placeholder="e.g. APP"
-                    className="font-mono"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)] font-mono"
                 />
             ),
         },
         {
-            header: <>Number <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Number <span className="text-red-500">*</span></span>,
             width: 140,
             cell: (row, i) => (
                 <Input
@@ -186,12 +219,12 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                     onChange={e => updateRow(i, 'number', e.target.value)}
                     disabled={!canEdit}
                     placeholder="e.g. 1001"
-                    className="font-mono"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)] font-mono"
                 />
             ),
         },
         {
-            header: 'Suffix',
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Suffix</span>,
             width: 140,
             cell: (row, i) => (
                 <Input
@@ -199,12 +232,12 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                     onChange={e => updateRow(i, 'suffix', e.target.value)}
                     disabled={!canEdit}
                     placeholder="e.g. 2024"
-                    className="font-mono"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)] font-mono"
                 />
             ),
         },
         {
-            header: 'Preview',
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Preview</span>,
             cell: (row) => {
                 const preview = [row.prefix, row.number, row.suffix].filter(Boolean).join('');
                 return (
@@ -216,18 +249,22 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
         },
         ...(canEdit ? [{
             header: '',
-            width: 52,
-            cell: (_: AppNumberRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
+            width: 60,
+            cell: (_, i) => (
+                <div className="flex justify-center">
+                    <Button
+                        variant="soft-danger"
+                        size="icon"
+                        onClick={() => removeRow(i)}
+                        className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
+                        title="Remove row"
+                    >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
             ),
         } as EditableTableColumn<AppNumberRow>] : []),
-    ], [rows, courseOptions, displayNames, canEdit]);
+    ], [rows, courseOptions, displayNames, canEdit, updateRow, removeRow]);
 
     const isDataLoading = isLoading || coursesLoading;
 
@@ -253,29 +290,30 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
     return (
         <div className="w-full font-sans">
             {!isEmbedded && (
-                <PageHeader
-                    title="Application Number Setup"
-                    breadcrumbs={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admission Setup', href: '/admission/setup' },
-                        { label: 'Admission Master', href: '/admission/setup/master' },
-                        { label: 'Application Number Setup' },
-                    ]}
-                    actionButtons={actionButtons}
-                />
-            )}
-
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                                <Plus size={15} /> Add Row
-                            </Button>
-                        ) : undefined
-                    }
-                />
+                <>
+                    <PageHeader
+                        title="Application Number Setup"
+                        breadcrumbs={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Setup', href: '/admission/setup' },
+                            { label: 'Admission Master', href: '/admission/setup/master' },
+                            { label: 'Application Number Setup' },
+                        ]}
+                        actionButtons={actionButtons}
+                    />
+                    <PageToolbar
+                        actions={actionButtons}
+                        extraContent={
+                            canEdit ? (
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                        <Plus size={15} /> Add Row
+                                    </Button>
+                                </div>
+                            ) : undefined
+                        }
+                    />
+                </>
             )}
 
             <EditableTable
@@ -287,19 +325,15 @@ const ApplicationNumber: React.FC<ApplicationNumberProps> = ({ isEmbedded = fals
                 minWidth={950}
             />
 
-            {!isDataLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6 px-1">
-                    {isEmbedded ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Details
-                        </Button>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/95 text-white rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
-                        {loading ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                        <span className="font-bold">
-                            {isEmbedded ? 'Save & Next' : 'Save Changes'}
-                        </span>
+            {!isDataLoading && canEdit && !isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

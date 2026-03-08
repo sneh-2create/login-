@@ -97,6 +97,7 @@ export * from './datePicker';
 export * from './timePicker';
 export * from './monthPicker';
 export * from './yearPicker';
+export * from './setup';
 export * from './loader';
 export * from './spinner';
 export * from './progressBar';

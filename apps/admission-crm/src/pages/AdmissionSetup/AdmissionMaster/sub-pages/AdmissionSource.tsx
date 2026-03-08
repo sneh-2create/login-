@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
-import { PageHeader, ActionButton, Button, Input, useToast, Checkbox } from '@od-erp/ui';
+import { PageHeader, ActionButton, Button, Input, useToast, Checkbox, useStepOrchestrator } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save, GripVertical, Edit2, Check } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
 import { admissionStudentDataService } from '@od-erp/api-client';
@@ -12,20 +12,18 @@ interface SourceRow {
     isEditing?: boolean;
 }
 
-interface AdmissionSourceProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
 
-const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, onSuccess }) => {
+
+const AdmissionSource: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
 
     const [rows, setRows] = useState<SourceRow[]>([]);
     const [referenceChecked, setReferenceChecked] = useState(false);
-    const [loading, setLoading] = useState(false);
     const [referenceLoading, setReferenceLoading] = useState(false);
     const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
@@ -44,7 +42,7 @@ const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, o
     }, [admissionMaster]);
 
     // Matches Angular's addSourceform()
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.source.trim()) {
                 showToast('error', 'Please fill all source names before adding a new row');
@@ -52,7 +50,7 @@ const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, o
             }
         }
         setRows(prev => [...prev, { source: '', isEditing: true }]);
-    };
+    }, [rows, showToast]);
 
     const updateRow = (index: number, value: string) =>
         setRows(prev => prev.map((row, i) => i === index ? { ...row, source: value } : row));
@@ -99,14 +97,14 @@ const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, o
     };
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         for (const row of rows) {
             if (!row.source.trim()) {
                 showToast('error', 'Source name cannot be empty');
                 return;
             }
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             const newSources = [
                 ...rows.map(r => r.source.trim()),
@@ -115,13 +113,37 @@ const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, o
             await admissionStudentDataService.editAdmissionMaster({ entity: entityId, session, source: newSources });
             showToast('success', 'Admission Source updated');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, referenceChecked, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Source
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, setFooterLeftActions, addRow]);
 
     // Matches Angular's checkSource('Reference', isChecked) — immediate save on toggle
     const handleReferenceToggle = async (checked: boolean) => {
@@ -345,20 +367,15 @@ const AdmissionSource: React.FC<AdmissionSourceProps> = ({ isEmbedded = false, o
                 )}
             </div>
 
-            {!isLoading && canEdit && (
+            {!isLoading && canEdit && !isEmbedded && (
                 <div className="flex justify-end mt-8">
                     <Button
                         variant="primary"
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-10 py-2.5 h-[42px] font-medium shadow-sm transition-colors text-base"
+                        onClick={() => handleSave()}
+                        disabled={isLoading}
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                     >
-                        {loading ? (
-                            <RefreshCw size={16} className="animate-spin" />
-                        ) : (
-                            <Save size={16} />
-                        )}
-                        {isEmbedded ? "Save & Next" : "Save"}
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

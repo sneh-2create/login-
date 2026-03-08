@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -9,6 +9,7 @@ import {
     EditableTable,
     EditableTableColumn,
     useToast,
+    useStepOrchestrator,
 } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useAdmissionMaster } from '@od-erp/query';
@@ -19,22 +20,17 @@ interface DuplicateFieldRow {
     field: string;
 }
 
-interface DuplicateFieldsProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, onSuccess }) => {
+const DuplicateFields: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
 
-    // Matches Angular's checkPermission('editAdmissionMaster')
     const canEdit = permissions.includes('editAdmissionMaster');
 
     const [rows, setRows] = useState<DuplicateFieldRow[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
 
@@ -48,7 +44,7 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
     }, [admissionMaster]);
 
     // Matches Angular's addDuplicateForm() — validate all rows filled before adding
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.field) {
                 showToast('error', 'Please select a field before adding a new row');
@@ -56,24 +52,24 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
             }
         }
         setRows(prev => [...prev, { field: '' }]);
-    };
+    }, [rows, showToast]);
 
     // Matches Angular's removeSource(ind)
-    const removeRow = (index: number) =>
-        setRows(prev => prev.filter((_, i) => i !== index));
+    const removeRow = useCallback((index: number) =>
+        setRows(prev => prev.filter((_, i) => i !== index)), []);
 
-    const updateRow = (index: number, value: string) =>
-        setRows(prev => prev.map((row, i) => i === index ? { field: value } : row));
+    const updateRow = useCallback((index: number, value: string) =>
+        setRows(prev => prev.map((row, i) => i === index ? { field: value } : row)), []);
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         for (const row of rows) {
             if (!row.field) {
                 showToast('error', 'Please select a field for every row before saving');
                 return;
             }
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             await admissionStudentDataService.editAdmissionMaster({
                 entity: entityId,
@@ -82,13 +78,37 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
             });
             showToast('success', 'Duplicate Fields updated successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Details
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, setFooterLeftActions, addRow]);
 
     // Set of currently chosen field values across all rows
     const selectedValues = useMemo(
@@ -107,14 +127,14 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
 
     const columns = useMemo<EditableTableColumn<DuplicateFieldRow>[]>(() => [
         {
-            header: 'S.No.',
-            width: 60,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
+            width: 80,
             cell: (_, i) => (
                 <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
             ),
         },
         {
-            header: <><span>Field</span> <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Field <span className="text-red-500">*</span></span>,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.field}
@@ -123,23 +143,28 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
                     onChange={(val) => updateRow(i, String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         ...(canEdit ? [{
             header: '',
-            width: 52,
+            width: 60,
             cell: (_: DuplicateFieldRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
+                <div className="flex justify-center">
+                    <Button
+                        variant="soft-danger"
+                        size="icon"
+                        onClick={() => removeRow(i)}
+                        className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
+                        title="Remove row"
+                    >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
             ),
         } as EditableTableColumn<DuplicateFieldRow>] : []),
-    ], [rows, canEdit, selectedValues]);
+    ], [rows, canEdit, buildOptions, updateRow, removeRow]);
 
     const actionButtons: ActionButton[] = [{
         icon: RefreshCw,
@@ -154,29 +179,28 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
     return (
         <div className="w-full font-sans">
             {!isEmbedded && (
-                <PageHeader
-                    title="Duplicate Fields Master"
-                    breadcrumbs={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admission Setup', href: '/admission/setup' },
-                        { label: 'Admission Master', href: '/admission/setup/master' },
-                        { label: 'Duplicate Fields Master' },
-                    ]}
-                    actionButtons={actionButtons}
-                />
-            )}
-
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                <Plus size={15} /> Add Field
-                            </Button>
-                        ) : undefined
-                    }
-                />
+                <>
+                    <PageHeader
+                        title="Duplicate Fields Master"
+                        breadcrumbs={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Setup', href: '/admission/setup' },
+                            { label: 'Admission Master', href: '/admission/setup/master' },
+                            { label: 'Duplicate Fields Master' },
+                        ]}
+                        actionButtons={actionButtons}
+                    />
+                    <PageToolbar
+                        actions={actionButtons}
+                        extraContent={
+                            canEdit ? (
+                                <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                    <Plus size={15} /> Add Field
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                </>
             )}
 
             <EditableTable
@@ -187,17 +211,15 @@ const DuplicateFields: React.FC<DuplicateFieldsProps> = ({ isEmbedded = false, o
                 className={isEmbedded ? '' : 'mt-2'}
             />
 
-            {!isLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {isEmbedded ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Details
-                        </Button>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+            {!isLoading && canEdit && !isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

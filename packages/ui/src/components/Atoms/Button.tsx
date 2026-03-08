@@ -23,12 +23,14 @@ export const Button: React.FC<ButtonProps> = ({
         danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
         'outline-muted': "border border-[var(--color-border)] bg-transparent hover:bg-[var(--color-muted)] text-[var(--color-foreground)] shadow-none",
         'soft-primary': "border border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary),transparent_95%)] text-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary),transparent_90%)]",
+        'soft-danger': "border border-red-200 bg-red-50 text-red-500 hover:bg-red-100 hover:text-red-600 focus:ring-red-500",
     };
 
-    const sizes = {
+    const sizes: Record<string, string> = {
         sm: "h-8 px-3 text-xs",
         md: "h-10 px-4 py-2 text-sm",
-        lg: "h-12 px-8 text-base"
+        lg: "h-12 px-8 text-base",
+        icon: "h-10 w-10 p-0",
     };
 
     return (

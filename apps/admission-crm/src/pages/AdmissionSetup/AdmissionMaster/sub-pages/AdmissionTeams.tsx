@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -10,6 +10,7 @@ import {
     EditableTable,
     EditableTableColumn,
     useToast,
+    useStepOrchestrator,
 } from '@od-erp/ui';
 import { Plus, RefreshCw, Save, Trash2, X } from 'lucide-react';
 import { useAdmissionMaster, useCounselors } from '@od-erp/query';
@@ -47,13 +48,10 @@ const EMPTY_TEAM = (): TeamRow => ({
 
 // ── Component ──────────────────────────────────────────────────────────────
 
-interface AdmissionTeamsProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
-
-const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onSuccess }) => {
+const AdmissionTeams: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
@@ -62,7 +60,6 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
     const canEdit = permissions.includes('editAdmissionMaster');
 
     const [teams, setTeams] = useState<TeamRow[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
     const { data: counselorList = [], isLoading: counselorsLoading } = useCounselors(entityId, 'counselor');
@@ -136,18 +133,18 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
     };
 
     // Actions
-    const addTeam = () => {
+    const addTeam = useCallback(() => {
         if (hasEmptyTeams()) {
             showToast('error', 'Please complete existing teams (name + lead) before adding a new one');
             return;
         }
         setTeams(prev => [...prev, EMPTY_TEAM()]);
-    };
+    }, [teams, showToast]);
 
-    const removeTeam = (index: number) => {
+    const removeTeam = useCallback((index: number) => {
         if (!window.confirm('Are you sure you want to delete this team?')) return;
         setTeams(prev => prev.filter((_, i) => i !== index));
-    };
+    }, []);
 
     const onTeamNameChange = (value: string, index: number) => {
         if (isDuplicateName(value, index)) {
@@ -185,9 +182,9 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
     };
 
     // Save
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         if (!validateTeams()) return;
-        setLoading(true);
+        setIsLoading(true);
         try {
             const filteredTeams = teams.map(t => ({
                 name: t.name,
@@ -201,63 +198,88 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
             });
             showToast('success', 'Teams updated successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, teams, refetch, onSuccess, setIsLoading, showToast, validateTeams]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addTeam} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Team
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, setFooterLeftActions, addTeam]);
 
     // Columns Definition
     const columns = useMemo<EditableTableColumn<TeamRow>[]>(() => {
         const cols: EditableTableColumn<TeamRow>[] = [
             {
-                header: <>Team Name <span className="text-red-500">*</span></>,
-                width: '25%',
+                header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Team Name <span className="text-red-500">*</span></span>,
+                width: '20%',
                 cell: (row, i) => (
                     <Input
                         value={row.name}
                         onChange={e => onTeamNameChange(e.target.value, i)}
-                        placeholder="Enter Team Name"
+                        placeholder="Team Name"
                         maxLength={90}
                         disabled={!canEdit}
-                        className="h-10 border-gray-200"
+                        className="h-10 border-[var(--color-border)] rounded-lg"
                         containerClassName="!m-0"
                     />
                 ),
             },
             {
-                header: <>Team Lead <span className="text-red-500">*</span></>,
+                header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Team Lead <span className="text-red-500">*</span></span>,
                 width: '25%',
                 cell: (row, i) => (
                     <SelectSingle
                         value={row.leadDetails.employee || ''}
                         options={counselorOptions}
-                        placeholder="Select Team Lead"
+                        placeholder="Select Lead"
                         onChange={val => onLeadChange(String(val), i)}
                         disabled={!canEdit}
-                        containerClassName="w-full relative z-[100]"
+                        containerClassName="w-full relative z-[50]"
+                        className="h-10 border-[var(--color-border)] rounded-lg"
                     />
                 ),
             },
             {
-                header: 'Members',
-                width: '40%',
+                header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Members</span>,
+                width: '50%',
                 cell: (row, teamIndex) => (
                     <div className="flex flex-wrap items-center gap-2">
                         {/* Member Chips */}
                         {row.memberDetails.filter(m => m.employee).map((member, memberIndex) => (
-                            <div key={memberIndex} className="inline-flex items-center gap-1.5 bg-red-50 text-red-800 px-2 py-1 rounded pl-1 border border-red-100/50">
+                            <div key={memberIndex} className="inline-flex items-center gap-1.5 bg-primary/5 text-primary px-2 py-1 rounded pl-1 border border-primary/10">
                                 {/* Initial Block */}
-                                <div className="w-5 h-5 rounded bg-orange-500 text-white flex items-center justify-center text-[10px] font-bold">
+                                <div className="w-5 h-5 rounded bg-primary text-white flex items-center justify-center text-[10px] font-bold">
                                     {member.employeeName?.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="text-xs font-medium">{member.employeeName}</span>
                                 {canEdit && (
                                     <button
                                         onClick={() => removeMember(teamIndex, memberIndex)}
-                                        className="text-red-400 hover:text-red-600 ml-1"
+                                        className="text-primary/40 hover:text-primary ml-1"
                                     >
                                         <X size={12} />
                                     </button>
@@ -298,16 +320,18 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
         if (canEdit) {
             cols.push({
                 header: '',
-                width: 52,
+                width: 60,
                 cell: (_, i) => (
                     <div className="flex justify-center">
-                        <button
+                        <Button
+                            variant="soft-danger"
+                            size="icon"
                             onClick={() => removeTeam(i)}
-                            className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
                             title="Delete team"
                         >
-                            <Trash2 size={15} />
-                        </button>
+                            <Trash2 size={16} />
+                        </Button>
                     </div>
                 ),
             });
@@ -376,18 +400,15 @@ const AdmissionTeams: React.FC<AdmissionTeamsProps> = ({ isEmbedded = false, onS
                 />
             )}
 
-            {!isDataLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {canEdit && (
-                        <Button variant="outline" onClick={addTeam} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add Row
-                        </Button>
-                    )}
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-10 h-11 bg-[var(--color-green-600)] hover:bg-[var(--color-green-700)] text-white rounded-xl shadow-lg shadow-green-600/20 transition-all active:scale-[0.98]">
-                        {loading ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
-                        <span className="font-bold">
-                            {isEmbedded ? 'Save & Next' : 'Save Changes'}
-                        </span>
+            {!isDataLoading && canEdit && !isEmbedded && (
+                <div className="flex justify-end mt-8">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isDataLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}

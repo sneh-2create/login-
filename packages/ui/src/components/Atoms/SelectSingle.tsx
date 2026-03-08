@@ -90,7 +90,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 disabled={disabled}
                 aria-expanded={open}
                 aria-haspopup="listbox"
-                aria-label={label}
+                aria-label={typeof label === 'string' ? label : undefined}
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
                     'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-[var(--color-foreground)]',
@@ -101,7 +101,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 )}
             >
                 <div className={cn('block truncate mr-2', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
-                    {displayLabel || placeholder}
+                    {selected ? selected.label : placeholder}
                 </div>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronDown

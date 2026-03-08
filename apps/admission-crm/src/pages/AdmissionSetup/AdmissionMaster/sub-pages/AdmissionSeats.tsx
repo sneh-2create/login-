@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useAppSelector } from '@od-erp/store';
 import {
     PageHeader,
@@ -10,6 +10,7 @@ import {
     EditableTable,
     EditableTableColumn,
     useToast,
+    useStepOrchestrator,
 } from '@od-erp/ui';
 import { Plus, RefreshCw, Trash2, Save } from 'lucide-react';
 import { useAdmissionMaster, useCourseList, useFeeMasterData } from '@od-erp/query';
@@ -25,13 +26,12 @@ interface SeatRow {
 
 const EMPTY_ROW: SeatRow = { course: '', stream: '', category: '', oldNew: '', total: '' };
 
-interface AdmissionSeatsProps {
-    isEmbedded?: boolean;
-    onSuccess?: () => void;
-}
 
-const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onSuccess }) => {
+
+const AdmissionSeats: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmbedded?: boolean }> = ({ isEmbedded = false, onSuccess }) => {
     const { showToast } = useToast();
+    const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
+
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
@@ -49,7 +49,6 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
     const canEdit = permissions.includes('editAdmissionMaster');
 
     const [rows, setRows] = useState<SeatRow[]>([]);
-    const [loading, setLoading] = useState(false);
 
     const { data: admissionMaster, isLoading, refetch } = useAdmissionMaster(entityId, session);
     const { data: courseList = [], isLoading: coursesLoading } = useCourseList(entityId, session);
@@ -84,7 +83,7 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
     const oldNewOptions = useMemo(() => oldNewList.map(o => ({ value: o, label: o })), [oldNewList]);
 
     // Matches Angular's addTableHeadform()
-    const addRow = () => {
+    const addRow = useCallback(() => {
         for (const row of rows) {
             if (!row.course || !row.stream || !row.category || !row.oldNew || !row.total) {
                 showToast('error', 'Please fill all fields before adding a new row');
@@ -92,12 +91,13 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
             }
         }
         setRows(prev => [...prev, { ...EMPTY_ROW }]);
-    };
+    }, [rows, showToast]);
 
     // Matches Angular's removeTableHead(ind)
-    const removeRow = (index: number) => setRows(prev => prev.filter((_, i) => i !== index));
+    const removeRow = useCallback((index: number) => 
+        setRows(prev => prev.filter((_, i) => i !== index)), []);
 
-    const updateRow = (index: number, field: keyof SeatRow, value: string) => {
+    const updateRow = useCallback((index: number, field: keyof SeatRow, value: string) => {
         setRows(prev => prev.map((row, i) => {
             if (i !== index) return row;
             // When course changes, reset stream (matches Angular's stream dependency on course.stream)
@@ -107,20 +107,20 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
             }
             return { ...row, [field]: value };
         }));
-    };
+    }, [courseList]);
 
     // Matches Angular's updateAdmissionMaster()
-    const handleSave = async () => {
+    const handleSave = useCallback(async (options?: { navigateNext?: boolean }) => {
         for (const row of rows) {
             if (!row.course || !row.stream || !row.category || !row.oldNew || !row.total) {
                 showToast('error', `${displayNames.course}, ${displayNames.stream}, ${displayNames.category}, ${displayNames.oldNew} and Seats are all required`);
                 return;
             }
         }
-        setLoading(true);
+        setIsLoading(true);
         try {
             const seatsPayload = rows.map(r => ({
-                course: r.course,    // Angular sends course.name string on save
+                course: r.course,
                 stream: r.stream,
                 category: r.category,
                 oldNew: r.oldNew,
@@ -133,25 +133,48 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
             });
             showToast('success', 'Seats Setting updated successfully');
             refetch();
-            if (onSuccess) onSuccess();
+            if (onSuccess) onSuccess(options?.navigateNext);
         } catch (err: any) {
             showToast('error', err?.response?.data?.message || 'Failed to save');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
-    };
+    }, [entityId, session, rows, displayNames, refetch, onSuccess, setIsLoading, showToast]);
+
+    // Register save handler with Orchestrator
+    useEffect(() => {
+        if (isEmbedded) {
+            registerSaveHandler(handleSave);
+        }
+    }, [isEmbedded, handleSave, registerSaveHandler]);
+
+    // Register Footer Left Actions
+    useEffect(() => {
+        if (isEmbedded && canEdit) {
+            setFooterLeftActions(
+                <Button 
+                    variant="soft-primary" 
+                    onClick={addRow} 
+                    className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
+                >
+                    <Plus size={18} /> Add New Details
+                </Button>
+            );
+        } else {
+            setFooterLeftActions(null);
+        }
+    }, [isEmbedded, canEdit, addRow, setFooterLeftActions]);
 
     const columns = useMemo<EditableTableColumn<SeatRow>[]>(() => [
         {
-            header: 'S.No.',
-            width: 60,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
+            width: 80,
             cell: (_, i) => (
                 <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
             ),
         },
         {
-            header: <>{displayNames.course} <span className="text-red-500">*</span></>,
-            width: 200,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.course} <span className="text-red-500">*</span></span>,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.course}
@@ -160,12 +183,12 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                     onChange={(val) => updateRow(i, 'course', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         {
-            header: <>{displayNames.stream} <span className="text-red-500">*</span></>,
-            width: 180,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.stream} <span className="text-red-500">*</span></span>,
             cell: (row, i) => row.course ? (
                 <SelectSingle
                     value={row.stream}
@@ -174,16 +197,17 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                     onChange={(val) => updateRow(i, 'stream', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ) : (
-                <span className="text-xs text-[var(--color-muted-foreground)] italic">
+                <div className="h-10 flex items-center px-3 border border-[var(--color-border)] rounded-lg bg-[var(--color-muted)/20] text-xs text-[var(--color-muted-foreground)] italic">
                     Select {displayNames.course} first
-                </span>
+                </div>
             ),
         },
         {
-            header: <>{displayNames.category} <span className="text-red-500">*</span></>,
-            width: 180,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.category} <span className="text-red-500">*</span></span>,
+            width: 200,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.category}
@@ -192,12 +216,13 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                     onChange={(val) => updateRow(i, 'category', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         {
-            header: <>{displayNames.oldNew} <span className="text-red-500">*</span></>,
-            width: 160,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.oldNew} <span className="text-red-500">*</span></span>,
+            width: 180,
             cell: (row, i) => (
                 <SelectSingle
                     value={row.oldNew}
@@ -206,11 +231,12 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                     onChange={(val) => updateRow(i, 'oldNew', String(val))}
                     disabled={!canEdit}
                     containerClassName="w-full"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)]"
                 />
             ),
         },
         {
-            header: <>Seats <span className="text-red-500">*</span></>,
+            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Seats <span className="text-red-500">*</span></span>,
             width: 140,
             cell: (row, i) => (
                 <Input
@@ -219,24 +245,28 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                     onChange={e => updateRow(i, 'total', e.target.value)}
                     disabled={!canEdit}
                     placeholder="e.g. 60"
-                    className="font-mono"
+                    className="h-10 border-[var(--color-border)] rounded-lg bg-[var(--color-card)] font-mono"
                 />
             ),
         },
         ...(canEdit ? [{
             header: '',
-            width: 52,
-            cell: (_: SeatRow, i: number) => (
-                <button
-                    onClick={() => removeRow(i)}
-                    className="flex items-center justify-center w-8 h-8 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                    title="Remove row"
-                >
-                    <Trash2 size={15} />
-                </button>
+            width: 60,
+            cell: (_, i) => (
+                <div className="flex justify-center">
+                    <Button
+                        variant="soft-danger"
+                        size="icon"
+                        onClick={() => removeRow(i)}
+                        className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100"
+                        title="Remove row"
+                    >
+                        <Trash2 size={16} />
+                    </Button>
+                </div>
             ),
         } as EditableTableColumn<SeatRow>] : []),
-    ], [rows, courseOptions, categoryOptions, oldNewOptions, displayNames, canEdit]);
+    ], [rows, courseOptions, categoryOptions, oldNewOptions, displayNames, canEdit, updateRow, removeRow]);
 
     const isDataLoading = isLoading || coursesLoading || feeMasterLoading;
 
@@ -253,29 +283,30 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
     return (
         <div className="w-full font-sans">
             {!isEmbedded && (
-                <PageHeader
-                    title="Seats Setting"
-                    breadcrumbs={[
-                        { label: 'Dashboard', href: '/dashboard' },
-                        { label: 'Admission Setup', href: '/admission/setup' },
-                        { label: 'Admission Master', href: '/admission/setup/master' },
-                        { label: 'Seats Setting' },
-                    ]}
-                    actionButtons={actionButtons}
-                />
-            )}
-
-            {!isEmbedded && (
-                <PageToolbar
-                    actions={actionButtons}
-                    extraContent={
-                        canEdit ? (
-                            <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5">
-                                <Plus size={15} /> Add Row
-                            </Button>
-                        ) : undefined
-                    }
-                />
+                <>
+                    <PageHeader
+                        title="Seats Setting"
+                        breadcrumbs={[
+                            { label: 'Dashboard', href: '/dashboard' },
+                            { label: 'Admission Setup', href: '/admission/setup' },
+                            { label: 'Admission Master', href: '/admission/setup/master' },
+                            { label: 'Seats Setting' },
+                        ]}
+                        actionButtons={actionButtons}
+                    />
+                    <PageToolbar
+                        actions={actionButtons}
+                        extraContent={
+                            canEdit ? (
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                        <Plus size={15} /> Add Row
+                                    </Button>
+                                </div>
+                            ) : undefined
+                        }
+                    />
+                </>
             )}
 
             <EditableTable
@@ -286,17 +317,15 @@ const AdmissionSeats: React.FC<AdmissionSeatsProps> = ({ isEmbedded = false, onS
                 className={isEmbedded ? '' : 'mt-2'}
             />
 
-            {!isDataLoading && canEdit && (
-                <div className="flex items-center justify-between mt-6">
-                    {isEmbedded ? (
-                        <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                            <Plus size={15} /> Add New Details
-                        </Button>
-                    ) : <div />}
-
-                    <Button variant="primary" onClick={handleSave} disabled={loading} className="flex items-center gap-2 px-8 bg-primary hover:bg-primary/90">
-                        {loading ? <RefreshCw size={14} className="animate-spin" /> : <Save size={15} />}
-                        {isEmbedded ? 'Save & Next' : 'Save'}
+            {canEdit && !isEmbedded && (
+                <div className="mt-8 flex justify-end">
+                    <Button 
+                        variant="primary" 
+                        onClick={() => handleSave()} 
+                        disabled={isDataLoading} 
+                        className="flex items-center gap-2 px-10 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                    >
+                        <Save size={18} /> Save Changes
                     </Button>
                 </div>
             )}
