@@ -1,13 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-    variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-    size?: 'sm' | 'md' | 'lg';
-    isLoading?: boolean;
-    leftIcon?: React.ReactNode;
-    rightIcon?: React.ReactNode;
-}
+import { ButtonProps } from '@od-erp/types';
 
 export const Button: React.FC<ButtonProps> = ({
     children,
@@ -27,7 +20,9 @@ export const Button: React.FC<ButtonProps> = ({
         secondary: "bg-[var(--color-muted)] text-[var(--color-foreground)] hover:bg-[var(--color-border)] focus:ring-[var(--color-muted-foreground)]",
         outline: "border border-[var(--color-primary)] bg-transparent hover:bg-[var(--color-muted)] text-[var(--color-foreground)]",
         ghost: "hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)] text-[var(--color-muted-foreground)]",
-        danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500"
+        danger: "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+        'outline-muted': "border border-[var(--color-border)] bg-transparent hover:bg-[var(--color-muted)] text-[var(--color-foreground)] shadow-none",
+        'soft-primary': "border border-[var(--color-primary)] bg-[color-mix(in_srgb,var(--color-primary),transparent_95%)] text-[var(--color-primary)] hover:bg-[color-mix(in_srgb,var(--color-primary),transparent_90%)]",
     };
 
     const sizes = {

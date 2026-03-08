@@ -523,3 +523,33 @@ export interface StageSetupFormDrawerProps {
     permissions?: string[];
 }
 
+
+export interface AdmissionStep {
+    id: string;
+    title: string;
+    subtitle: string;
+    icon: ReactNode;
+    permission: string;
+    component: (_onSuccess: () => void) => ReactNode;
+}
+
+export interface AdmissionPhase {
+    id: string;
+    phaseNumber: number;
+    title: string;
+    steps: AdmissionStep[];
+}
+
+export interface PhaseTimelineProps {
+    title: string;
+    phaseNumber: number;
+    children: ReactNode;
+}
+
+export interface PhaseStepCardProps {
+    title: string;
+    subtitle: string;
+    icon: ReactNode;
+    isStarted: boolean;
+    onAction: () => void;
+}
