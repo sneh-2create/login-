@@ -269,7 +269,7 @@ const AdmissionTags: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; is
                         extraContent={
                             canEdit ? (
                                 <div className="flex items-center gap-2">
-                                    <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
+                                    <Button variant="soft-primary" onClick={addRow} className="flex items-center gap-1.5 border-primary/30 text-primary hover:bg-primary/5 px-4 h-9 font-bold rounded-lg shadow-sm">
                                         <Plus size={15} /> Add Tag
                                     </Button>
                                 </div>
@@ -283,7 +283,6 @@ const AdmissionTags: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; is
                 columns={columns}
                 data={rows}
                 isLoading={isLoading}
-                emptyMessage="No admission tags configured yet. Click 'Add Tag' to begin."
                 className={isEmbedded ? '' : 'mt-2'}
             />
 

@@ -190,29 +190,6 @@ const AdmissionSource: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
                 />
             )}
 
-            {/* Top Header Section for embedded mode */}
-            {isEmbedded && (
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-lg font-bold text-[var(--color-foreground)] m-0">
-                            System Reserved Source
-                        </h2>
-                        <p className="text-sm text-[var(--color-muted-foreground)] m-0 mt-1">
-                            Select the ones applicable to your process.
-                        </p>
-                    </div>
-                    {canEdit && (
-                        <Button
-                            variant="outline"
-                            onClick={addRow}
-                            className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5 px-4 h-9"
-                        >
-                            <Plus size={16} /> Add New Details
-                        </Button>
-                    )}
-                </div>
-            )}
-
             {!isLoading && (
                 <div>
                     {!isEmbedded && (
@@ -266,7 +243,7 @@ const AdmissionSource: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
             )}
 
             {/* Custom Stages Section */}
-            <div className="pt-2">
+            <div>
                 {isLoading ? (
                     <div className="flex items-center justify-center p-10 bg-white dark:bg-[var(--color-background)] rounded-lg border border-[var(--color-border)] shadow-sm">
                         <RefreshCw size={26} className="animate-spin text-primary" />
@@ -334,30 +311,33 @@ const AdmissionSource: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
                                     <div className="flex items-center gap-2 pr-2">
                                         {row.isEditing ? (
                                             <Button
-                                                variant="primary"
+                                                variant="soft-primary"
+                                                size="icon"
                                                 onClick={() => toggleEdit(i, false)}
-                                                className="!w-10 !h-10 !p-0 flex items-center justify-center min-w-[40px] shadow-sm"
+                                                className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-primary/10 text-primary"
                                                 title="Confirm edit"
                                             >
                                                 <Check size={18} />
                                             </Button>
                                         ) : (
                                             <Button
-                                                variant="outline"
+                                                variant="soft-primary"
+                                                size="icon"
                                                 onClick={() => toggleEdit(i, true)}
-                                                className="!w-9 !h-9 !p-0 flex items-center justify-center min-w-[36px] text-[var(--color-muted-foreground)] hover:text-primary hover:border-primary hover:bg-transparent shadow-none transition-colors border-[var(--color-border)]"
+                                                className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-primary/10 text-primary"
                                                 title="Edit source"
                                             >
                                                 <Edit2 size={15} />
                                             </Button>
                                         )}
                                         <Button
-                                            variant="outline"
+                                            variant="soft-danger"
+                                            size="icon"
                                             onClick={() => removeRow(i)}
-                                            className="!w-9 !h-9 !p-0 flex items-center justify-center min-w-[36px] text-red-400 hover:text-red-600 hover:border-red-600 hover:bg-transparent shadow-none transition-colors border-red-400"
+                                            className="rounded-lg transition-all duration-200 border-none shadow-none hover:bg-red-100 text-red-500"
                                             title="Remove source"
                                         >
-                                            <Trash2 size={15} />
+                                            <Trash2 size={16} />
                                         </Button>
                                     </div>
                                 )}

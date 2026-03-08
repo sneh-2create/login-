@@ -20,6 +20,9 @@ import MyOperatorConfig from './sub-pages/MyOperatorConfig';
 import AdmissionTeams from './sub-pages/AdmissionTeams';
 import MinimumAgeMaster from './sub-pages/MinimumAgeMaster';
 
+// Consolidated Phase View
+import AdmissionMasterPhaseView from './AdmissionMasterPhaseView';
+
 const AdmissionMaster = () => {
     const navigate = useNavigate();
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
@@ -170,17 +173,21 @@ const AdmissionMaster = () => {
 
             <div className="mt-4 w-full max-w-full pb-4" key={focusedItemId || 'overview'}>
                 {focusedStep ? (
-                    <StepOrchestrator
-                        key={focusedStep.id}
-                        title={focusedStep.title}
-                        subtitle={focusedStep.subtitle}
-                        icon={focusedStep.icon}
-                        currentStep={allSteps.findIndex(i => i.id === focusedItemId) + 1}
-                        totalSteps={allSteps.length}
-                        onBack={handleReset}
-                    >
-                        {componentMap[focusedStep.id]?.(handleSuccess)}
-                    </StepOrchestrator>
+                    focusedStep.id === 'admissionMaster' ? (
+                        <AdmissionMasterPhaseView onBack={handleReset} />
+                    ) : (
+                        <StepOrchestrator
+                            key={focusedStep.id}
+                            title={focusedStep.title}
+                            subtitle={focusedStep.subtitle}
+                            icon={focusedStep.icon}
+                            currentStep={allSteps.findIndex(i => i.id === focusedItemId) + 1}
+                            totalSteps={allSteps.length}
+                            onBack={handleReset}
+                        >
+                            {componentMap[focusedStep.id]?.(handleSuccess)}
+                        </StepOrchestrator>
+                    )
                 ) : (
                     /* Main Phase List View - Phased Timeline */
                     <div className="space-y-4">

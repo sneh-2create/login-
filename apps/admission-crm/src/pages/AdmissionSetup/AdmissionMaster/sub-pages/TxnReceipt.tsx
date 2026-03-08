@@ -108,7 +108,7 @@ const TxnReceipt: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmb
                                 onChange={e => setPrefix(e.target.value)}
                                 disabled={!canEdit}
                                 placeholder="e.g. ADM"
-                                className="font-mono h-11"
+                                className="font-mono h-10"
                                 maxLength={100}
                             />
                         </div>
@@ -123,7 +123,7 @@ const TxnReceipt: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmb
                                 onChange={e => setNumber(e.target.value)}
                                 disabled={!canEdit}
                                 placeholder="e.g. 1001"
-                                className="font-mono h-11"
+                                className="font-mono h-10"
                                 maxLength={100}
                             />
                         </div>
@@ -138,7 +138,7 @@ const TxnReceipt: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmb
                                 onChange={e => setSuffix(e.target.value)}
                                 disabled={!canEdit}
                                 placeholder="e.g. 2024"
-                                className="font-mono h-11"
+                                className="font-mono h-10"
                                 maxLength={100}
                             />
                         </div>
@@ -149,10 +149,10 @@ const TxnReceipt: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; isEmb
                         {/* Preview */}
                         <div className="flex flex-col gap-2">
                             <label className="text-xs font-semibold uppercase tracking-wide text-[var(--color-muted-foreground)]">Preview</label>
-                            <span className={`inline-flex items-center h-11 px-6 rounded-lg font-mono text-sm font-bold tracking-wide transition-all ${
+                            <span className={`inline-flex items-center h-10 rounded-lg font-mono text-sm font-bold tracking-wide transition-all ${
                                 preview
-                                    ? 'bg-primary/10 text-primary border border-primary/25 shadow-sm'
-                                    : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)] border border-[var(--color-border)]'
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'
                             }`}>
                                 {preview || '—'}
                             </span>

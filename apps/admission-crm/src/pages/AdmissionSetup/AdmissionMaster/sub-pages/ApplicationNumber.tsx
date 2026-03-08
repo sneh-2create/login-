@@ -29,7 +29,7 @@ const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void
     const { registerSaveHandler, setFooterLeftActions, setIsLoading } = useStepOrchestrator();
 
     const entityId = useAppSelector((state: any) => state.auth.entityDetails?.id) || '';
-    const session = useAppSelector((state: any) => state.auth.academicSession) || '';
+    const session = useAppSelector((state: any) => state.session.academicSession) || '';
     const permissions = useAppSelector((state: any) => state.auth.permissions) || [];
     const entityPreferences = useAppSelector((state: any) => state.auth.entityDetails?.entityPreferences) || {};
 
@@ -60,7 +60,7 @@ const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void
         }
     }, [admissionMaster]);
 
-    const canEdit = permissions.includes('viewAdmissionMaster');
+    const canEdit = permissions.includes('editAdmissionMaster');
 
     const courseOptions = useMemo(() =>
         courseList.map((c: any) => ({ value: c.name, label: c.name })),
@@ -157,13 +157,6 @@ const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void
 
     const columns = useMemo<EditableTableColumn<AppNumberRow>[]>(() => [
         {
-            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
-            width: 80,
-            cell: (_, i) => (
-                <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
-            ),
-        },
-        {
             header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">{displayNames.course} <span className="text-red-500">*</span></span>,
             width: 220,
             cell: (row, i) => (
@@ -241,7 +234,7 @@ const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void
             cell: (row) => {
                 const preview = [row.prefix, row.number, row.suffix].filter(Boolean).join('');
                 return (
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-md font-mono text-xs font-semibold ${preview ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'}`}>
+                    <span className={`inline-flex items-center py-1 rounded-md font-mono text-xs font-semibold ${preview ? 'bg-primary/10 text-primary' : 'bg-[var(--color-muted)] text-[var(--color-muted-foreground)]'}`}>
                         {preview || '—'}
                     </span>
                 );
@@ -320,7 +313,6 @@ const ApplicationNumber: React.FC<{ onSuccess: (_navigateNext?: boolean) => void
                 columns={columns}
                 data={rows}
                 isLoading={isDataLoading}
-                emptyMessage="No configuration yet. Click 'Add Row' to begin."
                 className={isEmbedded ? '' : 'mt-2'}
                 minWidth={950}
             />

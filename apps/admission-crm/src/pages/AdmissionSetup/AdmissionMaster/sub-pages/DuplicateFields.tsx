@@ -102,7 +102,7 @@ const DuplicateFields: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
                     onClick={addRow} 
                     className="flex items-center gap-2 border-primary/30 text-primary hover:bg-primary/5 font-bold rounded-md transition-all shadow-sm"
                 >
-                    <Plus size={18} /> Add New Details
+                    <Plus size={18} /> Add New Field
                 </Button>
             );
         } else {
@@ -126,13 +126,6 @@ const DuplicateFields: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
         }));
 
     const columns = useMemo<EditableTableColumn<DuplicateFieldRow>[]>(() => [
-        {
-            header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">S.No.</span>,
-            width: 80,
-            cell: (_, i) => (
-                <span className="text-[var(--color-muted-foreground)] text-xs font-mono">{i + 1}</span>
-            ),
-        },
         {
             header: <span className="text-xs font-bold text-[var(--color-muted-foreground)] uppercase tracking-wider">Field <span className="text-red-500">*</span></span>,
             cell: (row, i) => (
@@ -194,9 +187,9 @@ const DuplicateFields: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
                         actions={actionButtons}
                         extraContent={
                             canEdit ? (
-                                <Button variant="outline" onClick={addRow} className="flex items-center gap-1.5 border-primary text-primary hover:bg-primary/5">
-                                    <Plus size={15} /> Add Field
-                                </Button>
+                            <Button variant="soft-primary" onClick={addRow} className="flex items-center gap-1.5 border-primary/30 text-primary hover:bg-primary/5 px-4 h-9 font-bold rounded-lg shadow-sm">
+                                <Plus size={15} /> Add Field
+                            </Button>
                             ) : undefined
                         }
                     />
@@ -207,7 +200,6 @@ const DuplicateFields: React.FC<{ onSuccess: (_navigateNext?: boolean) => void; 
                 columns={columns}
                 data={rows}
                 isLoading={isLoading}
-                emptyMessage="No duplicate-check fields configured yet. Click 'Add Field' to begin."
                 className={isEmbedded ? '' : 'mt-2'}
             />
 
