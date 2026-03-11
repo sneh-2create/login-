@@ -1,16 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useSourceWiseReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, Tooltip } from '@od-erp/ui';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, SelectSingle, DatePicker, Button } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, Printer, RefreshCw } from 'lucide-react';
+import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as xlsx from 'xlsx';
 import { SourceWiseReportData } from '@od-erp/types';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { format } from 'date-fns';
 
 const SourceWiseReport = () => {
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<SourceWiseReportData[]>([]);
 
     // Filters
@@ -19,12 +18,13 @@ const SourceWiseReport = () => {
     const [selectedSource, setSelectedSource] = useState<string>('');
     const [selectedCounselor, setSelectedCounselor] = useState<string>('');
     const [loading, setLoading] = useState(false);
+    const [showFilter, setShowFilter] = useState(false);
 
     // Metadata
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const entityName = useAppSelector((state) => state.session.entityName) || 'Okie Dokie';
-    
+
     const user = useAppSelector((state) => state.auth.user) as any;
     const permissions = useAppSelector((state) => state.auth.permissions) || [];
 
@@ -162,7 +162,7 @@ const SourceWiseReport = () => {
             header: 'S.No',
             cell: info => {
                 const val = info.getValue() as number;
-                return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                return val === 0 ? '' : <span className="text-[var(--color-foreground)]">{info.row.index + 1}</span>;
             }
         },
         {
@@ -170,7 +170,7 @@ const SourceWiseReport = () => {
             header: 'Source',
             cell: info => {
                 const val = info.getValue() as string;
-                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
             }
         },
         {
@@ -206,7 +206,7 @@ const SourceWiseReport = () => {
     });
 
     const handleExport = () => {
-        setExportLoading(true);
+
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
@@ -235,7 +235,7 @@ const SourceWiseReport = () => {
 
             xlsx.utils.sheet_add_aoa(ws, dataRows, { origin: { r: tableStartRow + 1, c: 0 } });
 
-             // Footer / Signatures
+            // Footer / Signatures
             const signatureRow = tableStartRow + 1 + dataRows.length + 4;
             addExcelReportFooter(ws, signatureRow);
 
@@ -244,8 +244,6 @@ const SourceWiseReport = () => {
 
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -255,73 +253,75 @@ const SourceWiseReport = () => {
         window.open('/admission/print/sourceWiseReport', '_blank');
     };
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleSearch,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: loading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(data && data.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
-        <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col mb-6 gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Source Wise Report</h1>
-                        <Breadcrumb
-                            items={[
-                                { label: 'Dashboard', href: '/dashboard' },
-                                { label: 'Admission Reports', href: '/admission/reports' },
-                                { label: 'Source Wise Report' }
-                            ]}
-                        />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Tooltip content="Refresh" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                                onClick={handleSearch}
-                            >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                            </Button>
-                        </Tooltip>
+        <div className="w-full max-w-full font-sans">
+            <PageHeader
+                title="Source Wise Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: 'Source Wise Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                        {data.length > 0 && (
-                            <>
-                                <Tooltip content="Export to Excel" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handleExport}
-                                        isLoading={exportLoading}
-                                    >
-                                        <Download className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Print" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handlePrint}
-                                    >
-                                        <Printer className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                            </>
-                        )}
-                    </div>
-                </div>
+            <PageToolbar
+                actions={actionButtons}
+            />
 
-                {/* Filters */}
-                <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
-                    <div className="flex flex-col md:flex-row gap-4 items-end">
+            {/* Collapsible Filters */}
+            {showFilter && (
+                <div className="bg-[var(--color-card)] rounded-lg shadow mb-3 border border-[var(--color-border)] p-4">
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-end">
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Source</label>
-                            <Dropdown
+                            <SelectSingle
+                                label="Select Source"
                                 value={selectedSource}
                                 onChange={(val) => setSelectedSource(val as string)}
                                 options={sourceOptions}
                                 placeholder="Select Source"
-                                className="w-full"
+                                containerClassName="w-full"
                             />
                         </div>
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
                             <DatePicker
+                                label='Start Date'
                                 value={startDate ? new Date(startDate) : undefined}
                                 onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
                                 maxDate={endDate ? new Date(endDate) : undefined}
@@ -329,8 +329,8 @@ const SourceWiseReport = () => {
                             />
                         </div>
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
                             <DatePicker
+                                label='End Date'
                                 value={endDate ? new Date(endDate) : undefined}
                                 onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
                                 minDate={startDate ? new Date(startDate) : undefined}
@@ -338,46 +338,48 @@ const SourceWiseReport = () => {
                             />
                         </div>
                         <div className="w-full md:w-1/4">
-                            <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                            <Dropdown
+                            <SelectSingle
+                                label="Select Counselor"
                                 options={counselorOptions}
                                 value={selectedCounselor}
                                 onChange={(val) => setSelectedCounselor(val as string)}
                                 placeholder="Select Counselor"
                                 disabled={!isAdmissionAdmin && !isLead}
-                                className="w-full"
+                                containerClassName="w-full"
                             />
                         </div>
                         <div className="w-full md:w-auto">
                             <Button
                                 variant="primary"
-                                onClick={handleSearch}
+                                onClick={() => {
+                                    handleSearch();
+                                    setShowFilter(false);
+                                }}
                                 isLoading={loading}
                                 className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white border-transparent"
                             >
-                                Go <span className="ml-1">→</span>
+                                Apply
                             </Button>
                         </div>
                     </div>
                 </div>
+            )}
 
-                {/* Data Table */}
-                {data.length > 0 && (
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={data}
-                            isLoading={loading}
-                            showSearch={true}
-                        />
-                    </div>
-                )}
-                {!loading && data.length === 0 && (
-                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                    </div>
-                )}
-            </div>
+            {/* Data Table */}
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
+                </div>
+            )}
+
+            {!loading && data.length === 0 && (
+                <EmptyState message="No Records Found" />
+            )}
         </div>
     );
 };

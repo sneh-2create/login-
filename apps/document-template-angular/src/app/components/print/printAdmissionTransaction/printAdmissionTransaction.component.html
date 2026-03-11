@@ -1,0 +1,20 @@
+<!-- Print toolbar (hidden when printing) -->
+<div class="print-toolbar hiddenPrint">
+    <button class="btn-print" type="button" (click)="printReceipt()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">🖨️ Print</span>
+        <span *ngIf="isLoading">Please wait...</span>
+    </button>
+</div>
+
+<!-- Loading spinner -->
+<div class="loader-overlay" *ngIf="isLoading">
+    <div class="loader-box">
+        <div class="spinner"></div>
+        <p>Preparing receipt...</p>
+    </div>
+</div>
+
+<!-- Rendered receipt -->
+<div class="printReceipt" id="printPage">
+    <section #container></section>
+</div>

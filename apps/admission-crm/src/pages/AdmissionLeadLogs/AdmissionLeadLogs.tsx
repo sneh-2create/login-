@@ -1,12 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAdmissionLeadLog, useExcelTemplates, useDefaultExcelTemplates } from '@od-erp/query';
-import { Button, Breadcrumb, Card, DataTable, Dropdown, DatePicker, Toggle, HorizontalTabs, Tooltip } from '@od-erp/ui';
+import { useAdmissionLeadLog, useExcelTemplates, useDefaultExcelTemplates, useEditExcelTemplate } from '@od-erp/query';
+import { Badge, DataTable, DropdownMenu, PageHeader, PageToolbar, ActionButton, EmptyState, useToast, ExcelTemplateEditDrawer, Button } from '@od-erp/ui';
 import { AdmissionLeadLog, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
-import { Phone, Eye, Trash2, SlidersHorizontal, RefreshCw, X, PhoneIncoming, PhoneMissed } from 'lucide-react';
+import { Phone, Eye, Trash2, SlidersHorizontal, RefreshCw, PhoneIncoming, PhoneMissed, MoreVertical, Pencil } from 'lucide-react';
 
 import { admissionLeadLogsService, admissionService } from '@od-erp/api-client';
+import {
+    DEFAULT_ADMISSION_LEADS_REPORT_HEADS,
+    ADMISSION_LEADS_AVAILABLE_HEADS,
+    ADMISSION_LEADS_AVAILABLE_FILTERS,
+    ADMISSION_LEADS_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+} from '@od-erp/constants';
 import { useAppSelector } from '@od-erp/store';
 import { formatPhone } from '../../utils/phoneUtils';
 import { RejectRemarkDialog } from './components/RejectRemarkDialog';
@@ -14,6 +21,8 @@ import { TagSelectionDialog } from './components/TagSelectionDialog';
 import { FollowUpDialog } from './components/FollowUpDialog';
 import { NegativeRemarkDialog } from './components/NegativeRemarkDialog';
 import { DuplicateNumbersDialog } from './components/DuplicateNumbersDialog';
+import { TemplateFilter } from './components/TemplateFilter';
+import { EditForm } from './components/EditForm';
 
 interface Tag {
   _id: string;
@@ -24,11 +33,11 @@ interface Tag {
 
 const AdmissionLeadLogs = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  // State for Filters
+  // State for Filters (committed values - drive the API query)
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const pageSizeOptions = [10, 25, 50, 100];
+  const pageSize = 10;
   const [selectedCounselor, setSelectedCounselor] = useState<string>('');
   const [startDate, setStartDate] = useState<number | undefined>(undefined);
   const [endDate, setEndDate] = useState<number | undefined>(undefined);
@@ -38,6 +47,16 @@ const AdmissionLeadLogs = () => {
   const [showMemberDetails, setShowMemberDetails] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+
+  // Local filter state (pending values - only committed on Apply Filters)
+  const [localCounselor, setLocalCounselor] = useState<string>('');
+  const [localStartDate, setLocalStartDate] = useState<number | undefined>(undefined);
+  const [localEndDate, setLocalEndDate] = useState<number | undefined>(undefined);
+  const [localSource, setLocalSource] = useState<string>('');
+  const [localStatus, setLocalStatus] = useState<string[]>(['pending']);
+  const [localCallStatus, setLocalCallStatus] = useState<string>('');
+  const [localShowMemberDetails, setLocalShowMemberDetails] = useState(false);
 
   // State for Edit Form
   const [selectedLead, setSelectedLead] = useState<AdmissionLeadLog | null>(null);
@@ -96,6 +115,7 @@ const AdmissionLeadLogs = () => {
   // Queries
   const { data: templates } = useExcelTemplates(entityId, 'admissionLeadsReportHeads');
   const { data: defaultTemplate } = useDefaultExcelTemplates('admissionLeadsReportHeads', entityType);
+  const editTemplateMutation = useEditExcelTemplate(entityId, 'admissionLeadsReportHeads');
 
   // Construct Query Payload
   const queryPayload = useMemo(() => ({
@@ -137,12 +157,6 @@ const AdmissionLeadLogs = () => {
       return processedItem;
     });
   }, [reportData]);
-
-  // Pagination calculations
-  const totalCount = reportData?.count || 0;
-  const startNumber = ((pageNumber - 1) * pageSize) + 1;
-  const lastNumber = Math.min(pageNumber * pageSize, totalCount);
-  const disableNext = processedData.length < pageSize;
 
   // Load admission master, counselors, and courses
   useEffect(() => {
@@ -253,45 +267,35 @@ const AdmissionLeadLogs = () => {
     }
   }, []);
 
-  // Status options based on source
-  const statusOptions = useMemo(() => {
-    const baseOptions = [{ label: 'All Status', value: '' }];
-    if (selectedSource === 'visit') {
-      return [
-        ...baseOptions,
-        { label: 'Pending', value: 'pending' },
-        { label: 'Re Visit', value: 'duplicate' },
-        { label: 'New Visit', value: 'converted' }
-      ];
+  // Sync local filter state whenever the filter panel is opened
+  useEffect(() => {
+    if (showFilter) {
+      setLocalCounselor(selectedCounselor);
+      setLocalStartDate(startDate);
+      setLocalEndDate(endDate);
+      setLocalSource(selectedSource);
+      setLocalStatus(selectedStatus);
+      setLocalCallStatus(selectedCallStatus);
+      setLocalShowMemberDetails(showMemberDetails);
     }
-    return [
-      ...baseOptions,
-      { label: 'Pending', value: 'pending' },
-      { label: 'Duplicate', value: 'duplicate' },
-      { label: 'Converted', value: 'converted' },
-      { label: 'Rejected', value: 'rejected' }
-    ];
-  }, [selectedSource]);
-
-  const sourceOptions = [
-    { label: 'All Sources', value: '' },
-    { label: 'Visit', value: 'visit' },
-    { label: 'MyOperator', value: 'myOperator' }
-  ];
-
-  const callStatusOptions = [
-    { label: 'All Call Status', value: '' },
-    { label: 'Received', value: 'received' },
-    { label: 'Missed', value: 'missed' },
-    { label: 'Transferred', value: 'transferred' },
-    { label: 'No Receiver', value: 'noReceiver' },
-    { label: 'Call Not Picked', value: 'callNotPicked' }
-  ];
+  }, [showFilter]);
 
   // Handlers
   const handleSearch = () => {
     setPageNumber(1);
     refetch();
+  };
+
+  const handleApplyFilters = () => {
+    setSelectedCounselor(localCounselor);
+    setStartDate(localStartDate);
+    setEndDate(localEndDate);
+    setSelectedSource(localSource);
+    setSelectedStatus(localStatus);
+    setSelectedCallStatus(localCallStatus);
+    setShowMemberDetails(localShowMemberDetails);
+    setPageNumber(1);
+    setShowFilter(false);
   };
 
   const handleRefresh = () => {
@@ -311,23 +315,44 @@ const AdmissionLeadLogs = () => {
     } else {
       setSelectedTemplate('default');
     }
+    // Also reset local filter state
+    setLocalCounselor('');
+    setLocalStartDate(undefined);
+    setLocalEndDate(undefined);
+    setLocalSource('');
+    setLocalStatus(['pending']);
+    setLocalCallStatus('');
+    setLocalShowMemberDetails(false);
   };
 
-
-
-  const handlePageSizeChange = (newSize: string | number | (string | number)[]) => {
-    const size = Array.isArray(newSize) ? newSize[0] : newSize;
-    setPageSize(Number(size));
-    setPageNumber(1);
-  };
+  const actionButtons: ActionButton[] = [
+    {
+      icon: SlidersHorizontal,
+      onClick: () => setShowFilter(!showFilter),
+      title: 'Filter',
+      className: 'text-primary hover:bg-primary/10 hover:text-primary',
+      isVisible: true,
+      variant: 'outline'
+    },
+    {
+      icon: RefreshCw,
+      onClick: () => { handleRefresh(); handleSearch(); },
+      title: 'Refresh',
+      className: 'text-primary hover:bg-primary/10 hover:text-primary',
+      isVisible: true,
+      iconClass: isLoading ? 'animate-spin' : '',
+      variant: 'outline'
+    }
+  ];
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete?')) {
       try {
         await admissionLeadLogsService.deleteAdmissionLeadLogs(id);
         refetch();
-      } catch (error) {
+      } catch (error: any) {
         console.error('Delete failed', error);
+        showToast('error', error?.response?.data?.message || 'Failed to delete lead');
       }
     }
   };
@@ -349,8 +374,9 @@ const AdmissionLeadLogs = () => {
       if (course) setStreams(course.stream || []);
 
       setShowEditForm(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('View failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to load lead details');
     }
   };
 
@@ -363,9 +389,10 @@ const AdmissionLeadLogs = () => {
         applicationNumber: phone,
         myOperatorId: myOperatorId
       });
-      alert('Call Initiated');
-    } catch (error) {
+      showToast('success', 'Call Initiated');
+    } catch (error: any) {
       console.error('Call failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to initiate call');
     }
   };
 
@@ -382,7 +409,7 @@ const AdmissionLeadLogs = () => {
 
     // Validation
     if (!editFormData.name || !editFormData.course || !editFormData.stream) {
-      alert('Please fill all required fields');
+      showToast('warning', 'Please fill all required fields');
       return;
     }
 
@@ -397,12 +424,13 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.editAdmissionLeadLogs(updatedLead);
-      alert('Lead updated successfully');
+      showToast('success', 'Lead updated successfully');
       setShowEditForm(false);
       setSelectedLead(null);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Edit failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to update lead');
     }
   };
 
@@ -419,12 +447,13 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.editAdmissionLeadLogs(updatedLead);
-      alert('Call status updated');
+      showToast('success', 'Call status updated');
       setShowEditForm(false);
       setSelectedLead(null);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to update call status');
     }
   };
 
@@ -441,13 +470,14 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.editAdmissionLeadLogs(updatedLead);
-      alert('Lead rejected successfully');
+      showToast('success', 'Lead rejected successfully');
       setShowRejectDialog(false);
       setShowEditForm(false);
       setSelectedLead(null);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Reject failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to reject lead');
     }
   };
 
@@ -468,8 +498,9 @@ const AdmissionLeadLogs = () => {
       await admissionLeadLogsService.editAdmissionLeadLogs(updatedLead);
       setConvertingLead(updatedLead);
       setShowTagDialog(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Save before convert failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to save lead before converting');
     }
   };
 
@@ -499,7 +530,7 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.convertAdmissionLeadLog(formData);
-      alert('Lead converted successfully');
+      showToast('success', 'Lead converted successfully');
       setShowFollowUpDialog(false);
       setShowEditForm(false);
       setConvertingLead(null);
@@ -510,6 +541,7 @@ const AdmissionLeadLogs = () => {
         await checkDuplicates(convertingLead.phone);
       } else {
         console.error('Convert failed', error);
+        showToast('error', error?.response?.data?.message || 'Failed to convert lead');
       }
     }
   };
@@ -526,7 +558,7 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.convertAdmissionLeadLog(formData);
-      alert('Lead converted successfully');
+      showToast('success', 'Lead converted successfully');
       setShowNegativeDialog(false);
       setShowEditForm(false);
       setConvertingLead(null);
@@ -537,6 +569,7 @@ const AdmissionLeadLogs = () => {
         await checkDuplicates(convertingLead.phone);
       } else {
         console.error('Convert failed', error);
+        showToast('error', error?.response?.data?.message || 'Failed to convert lead');
       }
     }
   };
@@ -555,8 +588,9 @@ const AdmissionLeadLogs = () => {
         setDuplicateStudents(result.data);
         setShowDuplicateDialog(true);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Duplicate check failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to check for duplicates');
     }
   };
 
@@ -572,14 +606,15 @@ const AdmissionLeadLogs = () => {
       };
 
       await admissionLeadLogsService.convertAdmissionLeadLog(formData);
-      alert('Lead marked as duplicate');
+      showToast('success', 'Lead marked as duplicate');
       setShowDuplicateDialog(false);
       setShowEditForm(false);
       setConvertingLead(null);
       setSelectedTag(null);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Mark duplicate failed', error);
+      showToast('error', error?.response?.data?.message || 'Failed to mark as duplicate');
     }
   };
 
@@ -592,6 +627,12 @@ const AdmissionLeadLogs = () => {
 
   const handleNavigateToDetails = (row: AdmissionLeadLog) => {
     if (!row.studentData) return;
+
+    const studentId = row.studentData._id;
+    if (!studentId) {
+      showToast('error', 'Student record not found');
+      return;
+    }
 
     // Save filter state
     const filterState = {
@@ -606,7 +647,7 @@ const AdmissionLeadLogs = () => {
     };
 
     localStorage.setItem('filterObjectData', JSON.stringify(filterState));
-    navigate(`/admission/studentDataDetails/${row.studentData}?tab=timeline`);
+    navigate(`/admission/student-data/${studentId}`, { state: { from: 'admissionLeadLogs' } });
   };
 
   // Dynamic Columns from Template
@@ -619,17 +660,7 @@ const AdmissionLeadLogs = () => {
     } else if (defaultTemplate) {
       tableHeads = defaultTemplate.tableHeads;
     } else {
-      // Fallback columns
-      tableHeads = [
-        { value: 'name', name: 'Name', seqNo: 1 },
-        { value: 'course', name: displayNames.course, seqNo: 2 },
-        { value: 'stream', name: displayNames.stream, seqNo: 3 },
-        { value: 'phone', name: 'Phone', seqNo: 4 },
-        { value: 'status', name: 'Status', seqNo: 5 },
-        { value: 'source', name: 'Source', seqNo: 6 },
-        { value: 'date', name: 'Date', seqNo: 7 },
-        { value: 'counselorName', name: 'Counselor', seqNo: 8 }
-      ];
+      tableHeads = DEFAULT_ADMISSION_LEADS_REPORT_HEADS;
     }
 
     const generatedColumns: ColumnDef<AdmissionLeadLog>[] = [
@@ -689,8 +720,8 @@ const AdmissionLeadLogs = () => {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span
-                  className="text-primary cursor-pointer font-medium"
-                  onClick={() => handleView(info.row.original._id)}
+                  className={`font-medium ${permissions.peerToPeerCallForAdmission ? 'text-primary cursor-pointer' : 'text-gray-800'}`}
+                  onClick={permissions.peerToPeerCallForAdmission ? () => handleClickToCall(info.getValue() as string) : undefined}
                 >
                   {formatPhone(info.getValue() as string, !permissions.viewAdmissionPhoneNumber)}
                 </span>
@@ -713,24 +744,23 @@ const AdmissionLeadLogs = () => {
           cell: info => {
             const status = (info.getValue() as string).toLowerCase();
             const row = info.row.original;
-            let displayStatus = status.toUpperCase();
+            let displayStatus = status;
 
             if (row.source === 'visit') {
-              if (status === 'duplicate') displayStatus = 'RE VISIT';
-              else if (status === 'converted') displayStatus = 'NEW VISIT';
+              if (status === 'duplicate') displayStatus = 're visit';
+              else if (status === 'converted') displayStatus = 'new visit';
             }
 
-            let colorClass = 'bg-gray-100 text-gray-800';
-            if (status === 'pending') colorClass = 'bg-red-100 text-red-800';
-            else if (status === 'duplicate') colorClass = 'bg-orange-100 text-orange-800';
-            else if (status === 'converted') colorClass = 'bg-green-100 text-green-800';
-            else if (status === 'rejected') colorClass = 'bg-primary text-primary';
+            // Map status to Badge variant
+            const variantMap: Record<string, 'warning' | 'success' | 'error' | 'info' | 'default'> = {
+              pending: 'warning',
+              duplicate: 'default',
+              converted: 'success',
+              rejected: 'error'
+            };
+            const variant = variantMap[status] ?? 'default';
 
-            return (
-              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${colorClass}`}>
-                {displayStatus}
-              </span>
-            );
+            return <Badge variant={variant}>{displayStatus}</Badge>;
           }
         });
       } else if (head.value === 'callTimestamp') {
@@ -841,390 +871,146 @@ const AdmissionLeadLogs = () => {
     generatedColumns.push({
       id: 'actions',
       header: 'Action',
-      cell: info => (
-        <div className="flex gap-2">
-          {permissions.viewAdmissionLeadLogs && (
-            <Button variant="ghost" size="sm" onClick={() => handleView(info.row.original._id)}>
-              <Eye size={16} className="text-primary" />
-            </Button>
-          )}
-          {permissions.deleteAdmissionLeadLogs && (
-            <Button variant="ghost" size="sm" onClick={() => handleDelete(info.row.original._id)}>
-              <Trash2 size={16} className="text-red-500" />
-            </Button>
-          )}
-        </div>
-      )
+      cell: info => {
+        const row = info.row.original;
+        const items = [
+          ...(permissions.viewAdmissionLeadLogs ? [{
+            key: 'view',
+            label: (
+              <span className="flex items-center gap-2">
+                <Eye size={14} className="text-primary" /> View
+              </span>
+            ),
+            onClick: () => handleView(row._id)
+          }] : []),
+          ...(permissions.deleteAdmissionLeadLogs ? [{
+            key: 'delete',
+            label: (
+              <span className="flex items-center gap-2 text-red-500">
+                <Trash2 size={14} /> Delete
+              </span>
+            ),
+            onClick: () => handleDelete(row._id)
+          }] : [])
+        ];
+
+        if (items.length === 0) return null;
+
+        return (
+          <DropdownMenu
+            trigger={
+              <button className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700">
+                <MoreVertical size={16} />
+              </button>
+            }
+            items={items}
+            placement="bottom-end"
+            usePortal
+          />
+        );
+      }
     });
 
     return generatedColumns;
   }, [templates, selectedTemplate, defaultTemplate, pageNumber, pageSize, permissions]);
 
   return (
-    <div className="w-full max-w-full font-sans pb-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Admission Lead Logs</h1>
-          <Breadcrumb
-            items={[
-              { label: 'Dashboard', href: '/dashboard' },
-              { label: 'Admission', href: '/admission' },
-              { label: 'Admission Lead Logs' }
-            ]}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
+    <div className="w-full max-w-full font-sans">
+      <PageHeader
+        title="Admission Lead Logs"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Admission Reports', href: '/admission' },
+          { label: 'Admission Lead Logs' }
+        ]}
+        actionButtons={actionButtons}
+      />
 
-          <Tooltip content="Filter" placement="bottom">
-            <Button
-              variant="outline"
-              className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-orange-50 border-orange-200 text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
-              onClick={() => setShowFilter(!showFilter)}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </Tooltip>
-
-          <Tooltip content="Refresh" placement="bottom">
-            <Button
-              variant="outline"
-              className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-              onClick={() => { handleRefresh(); handleSearch(); }}
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            </Button>
-          </Tooltip>
-        </div>
-      </div>
+      <PageToolbar
+        tabs={templates && templates.length > 0 ? templates.map((t: any) => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
+        activeTab={selectedTemplate}
+        onTabChange={(val) => { setSelectedTemplate(val); setEditDrawerOpen(false); }}
+        actions={actionButtons}
+        extraContent={
+          (() => {
+            const activeTemplate = templates?.find((t: any) => t.viewName === selectedTemplate);
+            const canEdit = permissionsArray.includes('editEntityPreferences');
+            if (!activeTemplate?._id || !canEdit) return undefined;
+            return (
+              <Button
+                variant="outline"
+                onClick={() => setEditDrawerOpen(true)}
+                title={`Edit template: ${activeTemplate.viewName}`}
+                className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            );
+          })()
+        }
+      />
 
       {/* Collapsible Filter Card */}
       {showFilter && (
-        <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
-            {/* Counselor Dropdown - For Admin or Team Lead */}
-            {(permissions.isAdmissionAdmin || isLead) && (
-              <div className="w-full">
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Counselor</label>
-                <Dropdown
-                  value={selectedCounselor}
-                  onChange={(val) => setSelectedCounselor(val as string)}
-                  options={counselorOptions}
-                  placeholder="Select Counselor"
-                  className="w-full"
-                />
-                {/* Show Members Toggle - Only for Team Lead */}
-                {isLead && (
-                  <div className="mt-2">
-                    <Toggle
-                      label="Show Member Details"
-                      checked={showMemberDetails}
-                      onChange={(e) => setShowMemberDetails(e.target.checked)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="w-full">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
-              <DatePicker
-                value={startDate ? new Date(startDate) : null}
-                onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
-                maxDate={endDate ? new Date(endDate) : undefined}
-                className="w-full"
-              />
-            </div>
-            <div className="w-full">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
-              <DatePicker
-                value={endDate ? new Date(endDate) : null}
-                onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
-                minDate={startDate ? new Date(startDate) : undefined}
-                className="w-full"
-              />
-            </div>
-            <div className="w-full">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Source</label>
-              <Dropdown
-                value={selectedSource}
-                onChange={(val) => setSelectedSource(val as string)}
-                options={sourceOptions}
-                placeholder="Select Source"
-                className="w-full"
-              />
-            </div>
-            <div className="w-full">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Status (Multi-select)</label>
-              <Dropdown
-                value={selectedStatus}
-                onChange={(val) => {
-                  if (Array.isArray(val)) {
-                    setSelectedStatus(val as string[]);
-                  } else if (val) {
-                    setSelectedStatus([val as string]);
-                  } else {
-                    setSelectedStatus([]);
-                  }
-                }}
-                options={statusOptions}
-                placeholder="Select Status"
-                className="w-full"
-                multiple
-              />
-            </div>
-            <div className="w-full">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Call Status</label>
-              <Dropdown
-                value={selectedCallStatus}
-                onChange={(val) => setSelectedCallStatus(val as string)}
-                options={callStatusOptions}
-                placeholder="Select Call Status"
-                className="w-full"
-              />
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <Button variant="primary" onClick={() => { handleSearch(); setShowFilter(false); }} isLoading={isLoading}>
-              Apply Filters
-            </Button>
-          </div>
-        </div>
+        <TemplateFilter
+          isAdmissionAdmin={permissions.isAdmissionAdmin}
+          isLead={isLead}
+          userName={userName}
+          isLoading={isLoading}
+          localCounselor={localCounselor}
+          localStartDate={localStartDate}
+          localEndDate={localEndDate}
+          localSource={localSource}
+          localStatus={localStatus}
+          localCallStatus={localCallStatus}
+          localShowMemberDetails={localShowMemberDetails}
+          setLocalCounselor={setLocalCounselor}
+          setLocalStartDate={setLocalStartDate}
+          setLocalEndDate={setLocalEndDate}
+          setLocalSource={setLocalSource}
+          setLocalStatus={setLocalStatus}
+          setLocalCallStatus={setLocalCallStatus}
+          setLocalShowMemberDetails={setLocalShowMemberDetails}
+          counselorOptions={counselorOptions}
+          onApply={handleApplyFilters}
+        />
       )}
 
       {/* Edit Form */}
       {showEditForm && selectedLead && (
-        <Card className="mb-6 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Lead Details</h2>
-            <button onClick={() => setShowEditForm(false)} className="text-gray-400 hover:text-gray-600">
-              <X size={20} />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Date</label>
-              <p className="text-sm">{new Date(selectedLead.date).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Phone</label>
-              <div className="flex items-center gap-2">
-                <p className="text-sm">{formatPhone(selectedLead.phone, !permissions.viewAdmissionPhoneNumber)}</p>
-                {permissions.peerToPeerCallForAdmission && (
-                  <Phone
-                    size={14}
-                    className="cursor-pointer text-primary"
-                    onClick={() => handleClickToCall(selectedLead.phone)}
-                  />
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Source</label>
-              <p className="text-sm">{selectedLead.source}</p>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Counselor</label>
-              <p className="text-sm">{selectedLead.counselorName}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Name *</label>
-              <input
-                type="text"
-                value={editFormData.name}
-                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">DOB</label>
-              <DatePicker
-                value={editFormData.dob ? new Date(editFormData.dob) : null}
-                onChange={(date) => setEditFormData({ ...editFormData, dob: date?.getTime() })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.course} *</label>
-              <Dropdown
-                value={editFormData.course}
-                onChange={(val) => handleCourseChange(val as string)}
-                options={courseList.map(c => ({ label: c.name, value: c.name }))}
-                placeholder={`Select ${displayNames.course}`}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">{displayNames.stream} *</label>
-              <Dropdown
-                value={editFormData.stream}
-                onChange={(val) => setEditFormData({ ...editFormData, stream: val as string })}
-                options={streams.map(s => ({ label: s, value: s }))}
-                placeholder={`Select ${displayNames.stream}`}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Email</label>
-              <input
-                type="email"
-                value={editFormData.email}
-                onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
-
-          {selectedLead.callDetails && (
-            <div className="mb-4 p-4 bg-gray-50 rounded">
-              <h3 className="font-semibold mb-2">Call Info</h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <label className="text-xs text-gray-500">Call Timestamp</label>
-                  <p>{new Date(selectedLead.callDetails.callTimestamp).toLocaleString()}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Call Duration</label>
-                  <p>{selectedLead.callDetails.callDuration}</p>
-                </div>
-                <div>
-                  <label className="text-xs text-gray-500">Call Status</label>
-                  <p className="uppercase">{selectedLead.callDetails.callStatus}</p>
-                </div>
-                {selectedLead.callDetails.callRecordingLink && (
-                  <div>
-                    <label className="text-xs text-gray-500">Recording</label>
-                    <a
-                      href={selectedLead.callDetails.callRecordingLink.replace('http://', 'https://')}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      Download
-                    </a>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {selectedLead.tags && selectedLead.tags.length > 0 && (
-            <div className="mb-4">
-              <label className="text-xs font-semibold text-gray-500 mb-2 block">Tags</label>
-              <div className="flex gap-2 flex-wrap">
-                {selectedLead.tags.map((tag, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {selectedLead.remark && (
-            <div className="mb-4">
-              <label className="text-xs font-semibold text-gray-500 mb-1 block">Remark</label>
-              <p className="text-sm">{selectedLead.remark}</p>
-            </div>
-          )}
-
-          <div className="flex justify-end gap-2">
-            {permissions.convertAdmissionLeadLogs && selectedLead.status !== 'rejected' && selectedLead.status !== 'converted' && (
-              <Button variant="outline" className="border-primary text-primary" onClick={handleCallNotPicked}>
-                Call Not Picked
-              </Button>
-            )}
-            {permissions.convertAdmissionLeadLogs && selectedLead.status !== 'rejected' && (
-              <Button variant="outline" className="border-red-500 text-red-500" onClick={() => setShowRejectDialog(true)}>
-                Reject
-              </Button>
-            )}
-            {permissions.convertAdmissionLeadLogs && selectedLead.status !== 'converted' && (
-              <Button variant="outline" className="border-green-500 text-green-500" onClick={handleConvertClick}>
-                Convert
-              </Button>
-            )}
-            {permissions.editAdmissionLeadLogs && (
-              <Button onClick={handleEdit}>
-                Edit
-              </Button>
-            )}
-          </div>
-        </Card>
-      )}
-
-      {templates && templates.length > 0 && (
-        <HorizontalTabs
-          tabs={templates.map((t: any) => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-          activeTab={selectedTemplate}
-          onTabChange={setSelectedTemplate}
-          className="px-4 mb-3"
+        <EditForm
+          lead={selectedLead}
+          formData={editFormData}
+          courseList={courseList}
+          streams={streams}
+          permissions={permissions}
+          displayNames={displayNames}
+          onFormDataChange={setEditFormData}
+          onCourseChange={handleCourseChange}
+          onClose={() => setShowEditForm(false)}
+          onEdit={handleEdit}
+          onCallNotPicked={handleCallNotPicked}
+          onReject={() => setShowRejectDialog(true)}
+          onConvert={handleConvertClick}
+          onClickToCall={handleClickToCall}
         />
       )}
 
       {/* Table */}
       {reportData && reportData.data && reportData.data.length > 0 && (
-        <div className="bg-white rounded-lg shadow mb-4 border border-gray-200">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="font-semibold text-gray-700">Report Data</h3>
-          </div>
-
           <div className="w-full max-w-full overflow-x-auto">
             <DataTable
               columns={columns}
               data={processedData || []}
               isLoading={isLoading}
-              showSearch={false}
-              showPagination={false}
+              showSearch={true}
+              showPagination={true}
             />
           </div>
-
-          <div className="p-4 border-t border-gray-200 flex justify-between items-center shrink-0 bg-gray-50">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">
-                Showing {processedData.length > 0 ? startNumber : 0}-{lastNumber} of {totalCount} records
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Page size:</span>
-                <Dropdown
-                  value={pageSize.toString()}
-                  onChange={handlePageSizeChange}
-                  options={pageSizeOptions.map(size => ({ label: size.toString(), value: size.toString() }))}
-                  className="w-20 h-8 text-xs"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
-                disabled={pageNumber === 1 || isLoading}
-              >
-                Previous
-              </Button>
-              <span className="text-sm text-gray-700">
-                Page {pageNumber} {totalCount ? `of ${Math.ceil(totalCount / pageSize)}` : ''}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPageNumber(p => p + 1)}
-                disabled={isLoading || disableNext}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </div>
       )}
 
       {!isLoading && (!reportData || !reportData.data || reportData.data.length === 0) && (
-        <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-          <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-        </div>
+        <EmptyState message="No Records Found" />
       )}
 
       {/* Dialogs */}
@@ -1261,6 +1047,27 @@ const AdmissionLeadLogs = () => {
         duplicateStudents={duplicateStudents}
         displayNames={displayNames}
       />
+      {/* Excel Template Edit Drawer */}
+      {editDrawerOpen && (() => {
+        const activeTemplate = templates?.find((t: any) => t.viewName === selectedTemplate);
+        return activeTemplate?._id ? (
+          <ExcelTemplateEditDrawer
+            open={editDrawerOpen}
+            onClose={() => setEditDrawerOpen(false)}
+            template={activeTemplate}
+            reportDisplayName="Admission Lead Logs"
+            availableHeads={ADMISSION_LEADS_AVAILABLE_HEADS}
+            availableFilters={ADMISSION_LEADS_AVAILABLE_FILTERS}
+            sortByOptions={ADMISSION_LEADS_SORT_BY_OPTIONS}
+            defaultHeads={DEFAULT_ADMISSION_LEADS_REPORT_HEADS}
+            datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+            onSave={async (payload) => {
+              await editTemplateMutation.mutateAsync(payload as any);
+              setEditDrawerOpen(false);
+            }}
+          />
+        ) : null;
+      })()}
     </div>
   );
 };

@@ -5,10 +5,10 @@ import { Loader2 } from 'lucide-react';
 interface AnalyticsSidebarProps {
     entities: any[];
     selectedEntities: string[];
-    onEntityChange: (entityId: string, checked: boolean) => void;
-    onSelectAll: (checked: boolean) => void;
+    onEntityChange: (_entityId: string, _checked: boolean) => void;
+    onSelectAll: (_checked: boolean) => void;
     preFilledSeats: boolean;
-    onPreFilledSeatsChange: (checked: boolean) => void;
+    onPreFilledSeatsChange: (_checked: boolean) => void;
     isLoading?: boolean;
 }
 

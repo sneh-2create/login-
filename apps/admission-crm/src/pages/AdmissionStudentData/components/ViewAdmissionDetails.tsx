@@ -206,31 +206,31 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
     if (!studentId) return null;
 
     if (isLoading) {
-        return <div className="p-8 text-center bg-white rounded shadow text-gray-500">Loading student details...</div>;
+        return <div className="p-8 text-center bg-[var(--color-card)] rounded shadow text-[var(--color-muted-foreground)]">Loading student details...</div>;
     }
 
     if (!student) {
-        return <div className="p-8 text-center bg-white rounded shadow text-gray-500">Student not found.</div>;
+        return <div className="p-8 text-center bg-[var(--color-card)] rounded shadow text-[var(--color-muted-foreground)]">Student not found.</div>;
     }
 
     return (
         <div className="w-full mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
             {/* Header */}
-            <div className="bg-white p-4 rounded-t-lg border-b border-gray-200">
+            <div className="bg-[var(--color-card)] p-4 rounded-t-lg border-b border-[var(--color-border)]">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-800">
+                        <h2 className="text-2xl font-bold text-[var(--color-foreground)]">
                             {formData.applicationNumber || 'Application No'}
                         </h2>
-                        <div className="text-gray-500 mt-1 font-medium">{formData.currentStage || 'Data Requested'}</div>
+                        <div className="text-[var(--color-muted-foreground)] mt-1 font-medium">{formData.currentStage || 'Data Requested'}</div>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white p-4 rounded-b-lg shadow-sm border border-t-0 border-gray-200">
+            <div className="bg-[var(--color-card)] p-4 rounded-b-lg shadow-sm border border-t-0 border-[var(--color-border)]">
 
                 {/* Top Section */}
                 <div className="flex flex-col lg:flex-row gap-6 mb-8">
@@ -292,7 +292,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                     </div>
 
                     {/* Right Action Card */}
-                    <div className="w-full lg:w-80 bg-gray-50 p-4 rounded-lg border border-gray-200 flex flex-col gap-4 h-fit">
+                    <div className="w-full lg:w-80 bg-[var(--color-background)] p-4 rounded-lg border border-[var(--color-border)] flex flex-col gap-4 h-fit">
 
 
 
@@ -372,7 +372,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                 {/* Personal Details Section */}
                 {/* Core Details (Always Visible) */}
                 <div className="mb-8 border-b pb-6">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-4">Core Details</h3>
+                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Core Details</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
                         <Input
                             label="Primary Mobile (Student) *"
@@ -390,7 +390,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                 {/* Dynamic Fields Section */}
                 {Object.entries(groupedFields).map(([groupName, fields]) => (
                     <div key={groupName} className="mb-8 border-b pb-6">
-                        <h3 className="text-lg font-semibold text-gray-700 mb-4">{groupName}</h3>
+                        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">{groupName}</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
                             {fields.map((field) => (
                                 <div key={field.value}>
@@ -416,7 +416,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                 ))}
 
                 <div className="flex justify-end mb-4">
-                    <span className="text-sm font-medium text-gray-500">Age As on is: {formData.age || '-'}</span>
+                    <span className="text-sm font-medium text-[var(--color-muted-foreground)]">Age As on is: {formData.age || '-'}</span>
                 </div>
 
                 {/* Footer Actions */}
@@ -434,7 +434,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                         <div className="relative">
                             <button
                                 onClick={() => setShowPrintMenu(!showPrintMenu)}
-                                className='p-2 rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50'
+                                className='p-2 rounded-full border border-primary text-primary hover:bg-primary/10'
                                 title="Print Options"
                             >
                                 <Printer size={20} />
@@ -449,9 +449,9 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                                     ></div>
 
                                     {/* Dropdown Menu */}
-                                    <div className="absolute bottom-full mb-2 right-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[70] overflow-hidden">
+                                    <div className="absolute bottom-full mb-2 right-0 w-56 bg-[var(--color-card)] rounded-lg shadow-xl border border-[var(--color-border)] z-[70] overflow-hidden">
                                         <button
-                                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-3 text-gray-700 transition-colors"
+                                            className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-background)] flex items-center gap-3 text-[var(--color-foreground)] transition-colors"
                                             onClick={() => {
                                                 if (studentId) {
                                                     const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
@@ -491,11 +491,11 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                                                 setShowPrintMenu(false);
                                             }}
                                         >
-                                            <Printer size={16} className="text-gray-400" />
+                                            <Printer size={16} className="text-[var(--color-muted-foreground)]" />
                                             <span className="font-medium">Print Admission Form</span>
                                         </button>
                                         <button
-                                            className="w-full text-left px-4 py-3 text-sm hover:bg-gray-50 flex items-center gap-3 text-gray-700 border-t border-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full text-left px-4 py-3 text-sm hover:bg-[var(--color-background)] flex items-center gap-3 text-[var(--color-foreground)] border-t border-[var(--color-border)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             onClick={() => {
                                                 console.log('Print Timeline Clicked. Data:', timelineData);
                                                 if (studentId) {
@@ -526,7 +526,7 @@ const ViewAdmissionDetails = ({ studentId, onClose }: ViewAdmissionDetailsProps)
                                             <Printer size={16} className="text-[#1e429f]" />
                                             <div className="flex flex-col">
                                                 <span className="font-medium">Print Timeline</span>
-                                                {!timelineData && <span className="text-[10px] text-gray-400">Loading data...</span>}
+                                                {!timelineData && <span className="text-[10px] text-[var(--color-muted-foreground)]">Loading data...</span>}
                                             </div>
                                         </button>
                                     </div>

@@ -16,13 +16,14 @@ const StudentDataDetails = () => {
     
     // Get navigation context
     const from = (location.state as any)?.from || 'studentData';
+    const initialTab = (location.state as any)?.initialTab || 'Admission Form';
     
     // Redux state
     const entityId = useAppSelector((state) => state.auth.entityDetails?.id) || '';
     const session = useAppSelector((state) => state.session.academicSession) || '';
     
     // Local state
-    const [selectedItem, setSelectedItem] = useState('Admission Form');
+    const [selectedItem, setSelectedItem] = useState(initialTab);
     
     // Fetch student data
     const { data: student, isLoading } = useViewAdmissionStudentData(id || '');
@@ -51,15 +52,15 @@ const StudentDataDetails = () => {
     };
     
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-[var(--color-background)]">
             {/* Header with Right-Aligned Back Button */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="bg-[var(--color-card)] border-b border-[var(--color-border)] px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold text-[var(--color-foreground)]">
                             {student?.applicationNumber || 'Student Details'}
                         </h1>
-                        <p className="text-sm text-gray-500">Student Information & Application Status</p>
+                        <p className="text-sm text-[var(--color-muted-foreground)]">Student Information & Application Status</p>
                     </div>
                     <Button
                         variant="outline"
@@ -77,7 +78,7 @@ const StudentDataDetails = () => {
                 <div className="flex items-center justify-center h-64">
                     <div className="text-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                        <p className="text-gray-600">Loading student details...</p>
+                        <p className="text-[var(--color-muted-foreground)]">Loading student details...</p>
                     </div>
                 </div>
             )}

@@ -107,13 +107,13 @@ const BankDetailsModal = ({ isOpen, onClose, student }: BankDetailsModalProps) =
 
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh] overflow-hidden">
                 <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-xl font-semibold text-gray-800 flex items-center">
+                    <h2 className="text-xl font-semibold text-[var(--color-foreground)] flex items-center">
                         <Landmark className="mr-2 h-5 w-5 text-blue-600" />
                         Bank Details of {student.name}-{student.applicationNumber}
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                         <X size={24} />
                     </button>
                 </div>
@@ -163,7 +163,7 @@ const BankDetailsModal = ({ isOpen, onClose, student }: BankDetailsModalProps) =
                     </div>
                 </div>
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">
+                <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-2">
                     <Button variant="outline" onClick={onClose}>
                         Close
                     </Button>

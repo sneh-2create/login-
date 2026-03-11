@@ -12,6 +12,7 @@ interface SidebarExpansionPanelProps {
     onMouseLeave: () => void;
     leftOffset?: number;
     onClose?: () => void;
+    isMobile?: boolean;
 }
 
 
@@ -123,7 +124,8 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     onMouseEnter,
     onMouseLeave,
     leftOffset = 100,
-    onClose
+    onClose,
+    isMobile=false
 }) => {
     if (!item || !item.submenu) return null;
 
@@ -248,17 +250,20 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
     // Use 2 columns if:
     // 1. Estimated height exceeds viewport (PRIMARY trigger)
     // 2. OR more than 10 leaf items (SECONDARY trigger)
-    const shouldUseMultiColumn = estimatedHeight > MAX_SINGLE_COLUMN_HEIGHT || leafCount > 10;
+    // 3. AND NOT Mobile
+    const shouldUseMultiColumn = !isMobile && (estimatedHeight > MAX_SINGLE_COLUMN_HEIGHT || leafCount > 10);
 
     // Layout Logic: Dynamic column based on item count
-    const containerWidthClass = shouldUseMultiColumn ? 'w-[640px]' : 'w-[320px]';
+    // On mobile, use full width up to a max, or fixed sidebar width
+    const containerWidthClass = isMobile ? 'w-[280px]' : (shouldUseMultiColumn ? 'w-[640px]' : 'w-[320px]');
 
     return (
         <>
             {/* Backdrop for Blur Effect and Click Outside */}
             {isVisible && (
                 <div
-                    className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[55] transition-opacity duration-300"
+                    className="fixed inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
+                    style={{ zIndex: 99997 }}
                     onClick={onClose}
                 />
             )}
@@ -266,17 +271,17 @@ export const SidebarExpansionPanel: React.FC<SidebarExpansionPanelProps> = ({
             <div
                 className={`
                     fixed top-0 bottom-0 ${containerWidthClass}
-                    bg-white border-r border-[var(--sidebar-border)] shadow-[0_0_30px_rgba(0,0,0,0.1)] z-[60]
+                    bg-white border-r border-[var(--sidebar-border)] shadow-[0_0_30px_rgba(0,0,0,0.1)]
                     overflow-y-auto py-0 transition-transform duration-300 ease-in-out
                     [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full
                     ${isVisible ? 'translate-x-0' : '-translate-x-full opacity-0'}
                 `}
-                style={{ left: `${leftOffset}px` }}
+                style={{ left: `${leftOffset}px`, zIndex: 99999 }}
                 onMouseEnter={onMouseEnter}
                 onMouseLeave={onMouseLeave}
             >
                 {/* Header with Title and Close */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm">
+                <div className={`flex items-center justify-between ${isMobile ? 'px-2 py-3' : 'p-4'} border-b border-gray-100 bg-gray-50/50 sticky top-0 z-10 backdrop-blur-sm`}>
                     <div className="flex items-center gap-3">
                         {/* Optional Icon */}
                         {/* Header Icon */}

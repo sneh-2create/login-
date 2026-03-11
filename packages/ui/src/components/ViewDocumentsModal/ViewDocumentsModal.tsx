@@ -162,18 +162,18 @@ const ViewDocumentsModal = ({
 
         return (
             <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative">
+                <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-md mx-4 p-6 relative">
                     <button
                         onClick={() => {
                             setIsUploadModalOpen(false);
                             setValidationError('');
                         }}
-                        className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                        className="absolute top-4 right-4 text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]"
                     >
                         <X size={20} />
                     </button>
 
-                    <h3 className="text-lg font-semibold text-gray-800 mb-6 text-center">
+                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-6 text-center">
                         Upload {uploadDocLabel} Here
                     </h3>
 
@@ -182,7 +182,7 @@ const ViewDocumentsModal = ({
                             type="file"
                             accept="image/jpeg,image/jpg,image/png,application/pdf"
                             onChange={handleFileChange}
-                            className="block w-full text-sm text-slate-500
+                            className="block w-full text-sm text-[var(--color-muted-foreground)]
                                 file:mr-4 file:py-2 file:px-4
                                 file:rounded-full file:border-0
                                 file:text-sm file:font-semibold
@@ -191,7 +191,7 @@ const ViewDocumentsModal = ({
                             "
                         />
                         {selectedFile && (
-                            <p className="text-sm text-gray-600">Selected: {selectedFile.name}</p>
+                            <p className="text-sm text-[var(--color-muted-foreground)]">Selected: {selectedFile.name}</p>
                         )}
                         
                         {validationError && (
@@ -215,19 +215,19 @@ const ViewDocumentsModal = ({
 
     // Content component
     const content = (
-        <div className={inline ? "space-y-3" : "p-6 overflow-y-auto flex-1 bg-gray-50"}>
+        <div className={inline ? "space-y-3" : "p-6 overflow-y-auto flex-1 bg-[var(--color-background)]"}>
             <div className="space-y-3">
                 {documents.map((doc, index) => (
                     <div 
                         key={doc.key} 
-                        className={inline ? "bg-white rounded-lg py-2 flex items-center justify-between hover:shadow-md transition-shadow" : "bg-white rounded-lg px-6 py-4 flex items-center justify-between hover:shadow-md transition-shadow"}
+                        className={inline ? "bg-[var(--color-card)] rounded-lg py-2 flex items-center justify-between hover:shadow-md transition-shadow" : "bg-[var(--color-card)] rounded-lg px-6 py-4 flex items-center justify-between hover:shadow-md transition-shadow"}
                     >
                         {/* Left: Serial Number + Document Name */}
                         <div className="flex items-center gap-4 flex-1">
                             <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-semibold text-sm flex-shrink-0">
                                 {index + 1}
                             </div>
-                            <span className="text-gray-900 font-medium text-base">
+                            <span className="text-[var(--color-foreground)] font-medium text-base">
                                 {doc.label}
                             </span>
                         </div>
@@ -306,15 +306,15 @@ const ViewDocumentsModal = ({
     // Modal mode - render with modal wrapper
     return (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[85vh] flex flex-col">
                 {/* Header */}
                 <div className="flex justify-between items-center px-6 py-4 border-b">
-                    <h2 className="text-xl font-bold text-gray-900">
+                    <h2 className="text-xl font-bold text-[var(--color-foreground)]">
                         {entityName ? `Documents for ${entityName}` : 'Student Documents'}
                     </h2>
                     <button 
                         onClick={onClose} 
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
+                        className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
                     >
                         <X size={24} />
                     </button>
@@ -323,10 +323,10 @@ const ViewDocumentsModal = ({
                 {content}
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t bg-white rounded-b-lg flex justify-end">
+                <div className="px-6 py-4 border-t bg-[var(--color-card)] rounded-b-lg flex justify-end">
                     <button
                         onClick={onClose}
-                        className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
+                        className="px-6 py-2 bg-[var(--color-background)] hover:bg-[var(--color-border)] text-[var(--color-foreground)] font-medium rounded-lg transition-colors"
                     >
                         Close
                     </button>

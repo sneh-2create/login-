@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Dropdown, useToast } from '@od-erp/ui';
+import { Button, SelectSingle, TextArea, useToast } from '@od-erp/ui';
 import { AdmissionFollowUp } from '@od-erp/types';
 import { format } from 'date-fns';
 import { admissionFollowUpService } from '@od-erp/api-client';
@@ -170,21 +170,17 @@ export const EditFollowUpDialog = ({
                         <div className="border-b border-gray-100"></div>
 
                         <div className="flex justify-between items-center">
-                            <span className="text-gray-500 text-sm">Status</span>
-                            <div className="w-1/2">
-                                <Dropdown
+                             <span className="text-gray-500 text-sm">Status</span>
+                             <div className="w-1/2">
+                                <SelectSingle
                                     value={status}
                                     onChange={(val) => setStatus(val as string)}
                                     options={[
                                         { label: 'Pending', value: 'pending' },
                                         { label: 'Completed', value: 'completed' }
                                     ]}
-                                    className={`!h-8 text-sm ${
-                                        status === 'completed' 
-                                        ? '!bg-green-100 !text-green-700 !border-green-200 font-bold' 
-                                        : '!bg-red-100 !text-red-700 !border-red-200 font-bold'
-                                    }`}
                                     error={errors.status}
+                                    containerClassName="w-full"
                                 />
                             </div>
                         </div>
@@ -193,14 +189,13 @@ export const EditFollowUpDialog = ({
                         <div className="flex justify-between items-start pt-2">
                              <span className="text-gray-500 text-sm mt-2">Completion Remark</span>
                              <div className="w-1/2">
-                                <textarea
+                                <TextArea
                                     value={completionRemark}
-                                    onChange={(e) => setCompletionRemark(e.target.value)}
-                                    className="w-full text-sm text-gray-900 font-medium border-none focus:ring-0 resize-none bg-transparent text-right placeholder-gray-300"
+                                    onChange={(val) => setCompletionRemark(val)}
                                     placeholder="Enter remark..."
                                     rows={2}
+                                    error={errors.completionRemark}
                                 />
-                                {errors.completionRemark && <span className="text-xs text-red-500 text-right block mt-1">{errors.completionRemark}</span>}
                              </div>
                         </div>
                         <div className="border-b border-gray-100"></div>
@@ -209,19 +204,11 @@ export const EditFollowUpDialog = ({
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end gap-3 p-6 border-t border-gray-100 bg-white rounded-b-lg flex-shrink-0">
+            <div className="flex justify-end gap-3 px-3 py-2 border-t border-gray-100 bg-white rounded-b-lg flex-shrink-0">
                 <Button 
-                    variant="outline" 
-                    onClick={() => onOpenChange(false)} 
-                    disabled={loading}
-                    className="bg-gray-100 border-1 text-gray-700 font-semibold px-6 hover:bg-gray-200 h-10"
-                >
-                    Close
-                </Button>
-                <Button 
+                    variant="primary"
                     onClick={handleSubmit} 
                     isLoading={loading}
-                    className="bg-[#F05929] hover:bg-[#d94a1e] text-white font-semibold px-6 h-10 border-none"
                 >
                     Save Changes
                 </Button>

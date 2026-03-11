@@ -55,12 +55,12 @@ const StageProgressIndicator = ({ stages, currentStage }: StageProgressIndicator
                                     transition-all duration-300
                                     ${isCompleted
                                         ? 'bg-primary/10 border-primary/20' 
-                                        : 'bg-gray-100 border-gray-200'
+                                        : 'bg-[var(--color-background)] border-[var(--color-border)]'
                                     }
                                 `}
                             >
                                 {/* Stage Name */}
-                                <span className={`text-sm font-medium ${isCompleted ? 'text-primary' : 'text-gray-600'}`}>
+                                <span className={`text-sm font-medium ${isCompleted ? 'text-primary' : 'text-[var(--color-muted-foreground)]'}`}>
                                     {stageName}
                                 </span>
                                 
@@ -70,7 +70,7 @@ const StageProgressIndicator = ({ stages, currentStage }: StageProgressIndicator
                                         w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
                                         ${isCompleted
                                             ? 'bg-primary text-white' 
-                                            : 'bg-white text-gray-500 border border-gray-300'
+                                            : 'bg-[var(--color-card)] text-[var(--color-muted-foreground)] border border-[var(--color-border)]'
                                         }
                                     `}
                                 >
@@ -85,7 +85,7 @@ const StageProgressIndicator = ({ stages, currentStage }: StageProgressIndicator
                             
                             {/* Separator Line - matches Angular .stepPillSeprator */}
                             {!isLast && (
-                                <div className="h-0.5 w-6 bg-gray-300 mx-0" />
+                                <div className="h-0.5 w-6 bg-[var(--color-border)] mx-0" />
                             )}
                         </div>
                     );

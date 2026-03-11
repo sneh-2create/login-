@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, MultiSelect, DatePicker } from '@od-erp/ui';
 import { useSessions, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { ArrowRight } from 'lucide-react';
 
 interface TemplateFilterProps {
     startDate: number;
@@ -65,14 +64,14 @@ const TemplateFilter = (props: TemplateFilterProps) => {
     };
 
     return (
-        <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 mb-6 animate-in slide-in-from-top-2 relative z-10">
+        <div className="bg-[var(--color-card)] p-3 rounded-lg shadow-sm border border-[var(--color-border)] mb-6 animate-in slide-in-from-top-2 relative z-10">
             
             {/* Section 1: Date and Status */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">Date and Status Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-2 tracking-wider border-b border-[var(--color-border)] pb-1">Date and Status Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Start Date</label>
                     <DatePicker 
+                        label='Start Date'
                         value={new Date(localStartDate)}
                         onChange={(date) => date && setLocalStartDate(date.getTime())}
                         maxDate={new Date(localEndDate)}
@@ -80,8 +79,8 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">End Date</label>
                     <DatePicker 
+                        label='End Date'
                         value={new Date(localEndDate)}
                         onChange={(date) => date && setLocalEndDate(date.getTime())}
                         minDate={new Date(localStartDate)}
@@ -89,21 +88,21 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Payment Mode</label>
-                    <Dropdown
+                    <SelectSingle
+                        label="Select Payment Mode"
                         value={localPaymentMode}
                         onChange={(val) => setLocalPaymentMode(val as string)}
                         options={[
                             { label: 'All Payment Modes', value: '' },
                             ...props.paymentModeList.map(mode => ({ label: mode, value: mode }))
                         ]}
-                        className="w-full"
+                        containerClassName="w-full"
                         placeholder="Select Payment Mode"
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Status</label>
-                    <Dropdown
+                    <SelectSingle
+                        label="Select Status"
                         value={localStatus}
                         onChange={(val) => setLocalStatus(val as string)}
                         options={[
@@ -111,35 +110,33 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                             { label: 'Confirmed', value: 'confirmed' },
                             { label: 'Cancelled', value: 'cancelled' }
                         ]}
-                        className="w-full"
+                        containerClassName="w-full"
                         placeholder="Select Status"
                     />
                 </div>
             </div>
 
             {/* Section 2: Class Information */}
-            <h3 className="text-sm font-semibold text-gray-500 mb-2 tracking-wider border-b pb-1">{displayNames.course} Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <h3 className="text-sm font-semibold text-[var(--color-foreground)] mb-2 tracking-wider border-b border-[var(--color-border)] pb-1">{displayNames.course} Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-6 mb-2 md:mb-6">
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select {displayNames.course}</label>
-                    <Dropdown
-                        multiple
+                    <MultiSelect
+                        label={`Select ${displayNames.course}`}
                         value={localCourses}
                         onChange={(val) => setLocalCourses(val as string[])}
                         options={courses?.map(c => ({ label: c.name, value: c.name })) || []}
                         placeholder={`All ${displayNames.course}`}
-                        className="w-full"
+                        containerClassName="w-full"
                     />
                 </div>
                 <div>
-                    <label className="text-sm font-medium text-gray-700 mb-1.5 block">Select Session</label>
-                    <Dropdown
-                        multiple
+                    <MultiSelect
+                        label="Select Session"
                         value={localSessions}
                         onChange={(val) => setLocalSessions(val as string[])}
                         options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
                         placeholder="Select Sessions"
-                        className="w-full"
+                        containerClassName="w-full"
                     />
                 </div>
             </div>
@@ -151,7 +148,7 @@ const TemplateFilter = (props: TemplateFilterProps) => {
                     onClick={handleApply}
                     className="px-8 h-10 font-medium"
                 >
-                    Go <ArrowRight className="w-4 h-4 ml-2" />
+                    Apply Filters
                 </Button>
             </div>
         </div>

@@ -15,4 +15,8 @@ export class AdmissionApiService {
     viewAdmissionTransactionList(entityId: string, session: string, studentId: string): Observable<any> {
         return this._api.get(`/admission/transactions?entity=${entityId}&session=${session}&student=${studentId}`);
     }
+
+    viewAdmissionTransaction(transactionId: string): Observable<any> {
+        return this._api.get(`/admission/transaction/${transactionId}`);
+    }
 }

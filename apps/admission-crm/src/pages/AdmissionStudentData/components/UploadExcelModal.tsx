@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@od-erp/ui';
 import { X, Upload } from 'lucide-react';
 
 interface UploadExcelModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onUpload: (file: File) => void;
+    onUpload: (_file: File) => void;
     isLoading?: boolean;
 }
 
@@ -27,18 +27,18 @@ const UploadExcelModal = ({ isOpen, onClose, onUpload, isLoading }: UploadExcelM
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-md mx-4">
                 <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-xl font-semibold text-gray-800">Upload Excel</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <h2 className="text-xl font-semibold text-[var(--color-foreground)]">Upload Excel</h2>
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                         <X size={24} />
                     </button>
                 </div>
 
                 <div className="p-6 flex flex-col items-center justify-center space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 w-full text-center hover:bg-gray-50 transition-colors">
-                        <Upload className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                        <p className="text-sm text-gray-600 mb-2">Drag and drop your Excel file here, or click to browse</p>
+                    <div className="border-2 border-dashed border-[var(--color-border)] rounded-lg p-8 w-full text-center hover:bg-[var(--color-background)] transition-colors">
+                        <Upload className="h-12 w-12 text-[var(--color-muted-foreground)] mx-auto mb-2" />
+                        <p className="text-sm text-[var(--color-muted-foreground)] mb-2">Drag and drop your Excel file here, or click to browse</p>
                         <input
                             type="file"
                             accept=".xlsx, .xls"
@@ -60,7 +60,7 @@ const UploadExcelModal = ({ isOpen, onClose, onUpload, isLoading }: UploadExcelM
                         </div>
                     )}
 
-                    <div className="text-xs text-gray-500 text-center w-full">
+                    <div className="text-xs text-[var(--color-muted-foreground)] text-center w-full">
                         <p>Supported formats: .xlsx, .xls</p>
                         <a href="#" className="text-blue-600 hover:underline">Download Sample Template</a>
                     </div>

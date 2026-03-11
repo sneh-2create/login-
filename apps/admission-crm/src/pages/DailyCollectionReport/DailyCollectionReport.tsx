@@ -1,14 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
-import { DataTable, Button, Breadcrumb, HorizontalTabs, Tooltip } from '@od-erp/ui';
+import { DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, Button, ExcelTemplateEditDrawer } from '@od-erp/ui';
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
-import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster } from '@od-erp/query';
+import { useDailyCollectionReport, useExcelTemplates, useDefaultExcelTemplates, useFeeMaster, useEditExcelTemplate, useCourses } from '@od-erp/query';
 import { AdmissionDailyCollectionReportParams, AdmissionTransaction, TableHead } from '@od-erp/types';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Download, Pencil, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAppSelector } from '@od-erp/store';
-import { DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS } from '@od-erp/constants';
+import {
+    DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS,
+    DAILY_ADMISSION_COLLECTION_AVAILABLE_HEADS,
+    DAILY_ADMISSION_COLLECTION_AVAILABLE_FILTERS,
+    DAILY_ADMISSION_COLLECTION_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+} from '@od-erp/constants';
 import TemplateFilter from './components/TemplateFilter';
 
 const DailyCollectionReportPage = () => {
@@ -25,11 +31,14 @@ const DailyCollectionReportPage = () => {
     const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
     const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string>('default');
-
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const permissions: string[] = useAppSelector((state: any) => state.auth.permissions) || [];
     // Queries
     const { data: feeMaster } = useFeeMaster(entityId, session);
+    const { data: courses } = useCourses(entityId, session);
     const { data: templates } = useExcelTemplates(entityId, 'dailyAdmissionCollectionReport');
     const { data: defaultTemplate } = useDefaultExcelTemplates('dailyAdmissionCollectionReport', entityType);
+    const editTemplateMutation = useEditExcelTemplate(entityId, 'dailyAdmissionCollectionReport');
 
     const payload: AdmissionDailyCollectionReportParams = useMemo(() => ({
         entity: entityId,
@@ -182,12 +191,12 @@ const DailyCollectionReportPage = () => {
             if (head.value === 'fatherName') accessor = 'studentData.fatherName';
             if (head.value === 'phone' || head.value === 'studentMobile') accessor = 'studentData.phone';
             if (head.value === 'paymentDetailsPaymentMode' || head.value === 'payMode') accessor = 'paymentDetails.paymentMode';
-            if (head.value === 'paymentDetailsRefId' || head.value === 'refNo') accessor = 'paymentDetails.transactionId'; 
-            if (head.value === 'paymentDetailsDate' || head.value === 'chequeDate') accessor = 'paymentDetails.date'; 
-            if (head.value === 'paymentDetailsBankName' || head.value === 'bankName') accessor = 'paymentDetails.bankAccount'; 
+            if (head.value === 'paymentDetailsRefId' || head.value === 'refNo') accessor = 'paymentDetails.transactionId';
+            if (head.value === 'paymentDetailsDate' || head.value === 'chequeDate') accessor = 'paymentDetails.date';
+            if (head.value === 'paymentDetailsBankName' || head.value === 'bankName') accessor = 'paymentDetails.bankAccount';
             if (head.value === 'remarks' || head.value === 'remark') accessor = 'remarks';
             if (head.value === 'studentRegNo') accessor = 'studentRegNo';
-            if (head.value === 'applicationNumber') accessor = 'applicationNumber'; 
+            if (head.value === 'applicationNumber') accessor = 'applicationNumber';
             if (head.value === 'totalPaybleAmount') accessor = 'totalPaybleAmount';
             if (head.value === 'fineRemark') accessor = 'fineRemark';
             if (head.value === 'userName') accessor = 'userName';
@@ -331,8 +340,8 @@ const DailyCollectionReportPage = () => {
         // Total Row for Summary
         const summaryTotalRow: any[] = ['Total'];
         paymentModes.forEach(mode => {
-             const sum = Object.values(userSummary).reduce((acc: number, curr: any) => acc + (curr[mode] || 0), 0);
-             summaryTotalRow.push(sum);
+            const sum = Object.values(userSummary).reduce((acc: number, curr: any) => acc + (curr[mode] || 0), 0);
+            summaryTotalRow.push(sum);
         });
         summaryTotalRow.push(grandTotal);
         summaryData.push(summaryTotalRow);
@@ -373,72 +382,80 @@ const DailyCollectionReportPage = () => {
         window.open('/admission/print/dailyCollectionReport', '_blank');
     };
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(reportData && reportData.length > 0),
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExportExcel,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(reportData && reportData.length > 0),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !!(reportData && reportData.length > 0),
+            variant: 'outline'
+        }
+    ];
+
     return (
-        <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Daily Collection Report</h1>
-                    <Breadcrumb
-                        items={[
-                            { label: 'Dashboard', href: '/dashboard' },
-                            { label: 'Admissions', href: '/admissions' },
-                            { label: 'Reports', href: '/admissions/reports' },
-                            { label: 'Daily Collection Report' }
-                        ]}
-                    />
-                </div>
-                <div className="flex items-center space-x-2">
-                    {/* Filter Toggle */}
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setShowFilter(!showFilter)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
+        <div className="w-full max-w-full font-sans">
+            <PageHeader
+                title="Daily Collection Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admissions' },
+                    { label: 'Daily Collection Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                    {/* Refresh */}
-                    {reportData && reportData.length > 0 && (
-                        <Tooltip content="Refresh" placement="bottom">
+            <PageToolbar
+                tabs={templates && templates.length > 0 ? templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName })) : []}
+                activeTab={selectedTemplate}
+                onTabChange={(val) => {
+                    setSelectedTemplate(val);
+                    setEditDrawerOpen(false);
+                }}
+                actions={actionButtons}
+                extraContent={
+                    (() => {
+                        const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                        const canEdit = permissions.includes('editEntityPreferences');
+                        if (!activeTemplate?._id || !canEdit) return null;
+                        return (
                             <Button
                                 variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
-                                onClick={() => refetch()}
+                                onClick={() => setEditDrawerOpen(true)}
+                                title={`Edit template: ${activeTemplate.viewName}`}
+                                className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
                             >
-                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                <Pencil className="h-4 w-4" />
                             </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Excel Export */}
-                    {reportData && reportData.length > 0 && (
-                        <Tooltip content="Export to Excel" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handleExportExcel}
-                            >
-                                <Download className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Print */}
-                    {reportData && reportData.length > 0 && (
-                        <Tooltip content="Print" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handlePrint}
-                            >
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-                </div>
-            </div>
+                        );
+                    })()
+                }
+            />
 
             {/* Collapsible Filter Card */}
             {showFilter && (
@@ -467,15 +484,6 @@ const DailyCollectionReportPage = () => {
             {/* Table and Summary - Conditional Rendering */}
             {reportData && reportData.length > 0 && (
                 <>
-                    {templates && templates.length > 0 && (
-                        <HorizontalTabs
-                            tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-                            activeTab={selectedTemplate}
-                            onTabChange={setSelectedTemplate}
-                            className="px-0 mb-3"
-                        />
-                    )}
-
                     <div className="w-full max-w-full overflow-x-auto">
                         <DataTable
                             columns={columns}
@@ -487,10 +495,31 @@ const DailyCollectionReportPage = () => {
             )}
 
             {!isLoading && (!reportData || reportData.length === 0) && (
-                <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                    <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                </div>
+                <EmptyState message="No Records Found" />
             )}
+
+            {/* Excel Template Edit Drawer */}
+            {editDrawerOpen && (() => {
+                const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                return activeTemplate ? (
+                    <ExcelTemplateEditDrawer
+                        open={editDrawerOpen}
+                        onClose={() => setEditDrawerOpen(false)}
+                        template={activeTemplate}
+                        reportDisplayName="Daily Collection Report"
+                        availableHeads={DAILY_ADMISSION_COLLECTION_AVAILABLE_HEADS}
+                        availableFilters={DAILY_ADMISSION_COLLECTION_AVAILABLE_FILTERS}
+                        sortByOptions={DAILY_ADMISSION_COLLECTION_SORT_BY_OPTIONS}
+                        defaultHeads={DEFAULT_DAILY_ADMISSION_COLLECTION_REPORT_HEADS}
+                        datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+                        paymentModes={feeMaster?.paymentMode || []}
+                        courses={courses?.map((c: any) => c.name) || []}
+                        onSave={async (payload) => {
+                            await editTemplateMutation.mutateAsync(payload as any);
+                        }}
+                    />
+                ) : null;
+            })()}
         </div>
     );
 };

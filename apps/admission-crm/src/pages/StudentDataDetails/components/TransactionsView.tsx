@@ -239,7 +239,7 @@ const TransactionsView = ({ student }: TransactionsViewProps) => {
         <div className="space-y-6">
             {/* Payment History */}
             <section>
-                <h3 className="text-lg font-bold text-gray-700 mb-3 px-3 border-l-4 border-primary">
+                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-3 px-3 border-l-4 border-primary">
                     Payment History
                 </h3>
                 {isTransactionsLoading ? (
@@ -249,13 +249,13 @@ const TransactionsView = ({ student }: TransactionsViewProps) => {
                 ) : transactions && transactions.length > 0 ? (
                     <DataTable columns={columns} data={transactions} />
                 ) : (
-                    <div className="text-center py-8 text-gray-500 bg-gray-50 rounded">No Records found!</div>
+                    <div className="text-center py-8 text-[var(--color-muted-foreground)] bg-[var(--color-background)] rounded">No Records found!</div>
                 )}
             </section>
 
             {/* Refund Transactions History */}
             <section>
-                <h3 className="text-lg font-bold text-gray-700 mb-3 px-3 border-l-4 border-primary">
+                <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-3 px-3 border-l-4 border-primary">
                     Refund Transactions History
                 </h3>
                 {isRefundsLoading ? (
@@ -265,7 +265,7 @@ const TransactionsView = ({ student }: TransactionsViewProps) => {
                 ) : refunds && refunds.length > 0 ? (
                     <DataTable columns={refundColumns} data={refunds} />
                 ) : (
-                    <div className="text-center py-8 text-gray-500 bg-gray-50 rounded">No Records found!</div>
+                    <div className="text-center py-8 text-[var(--color-muted-foreground)] bg-[var(--color-background)] rounded">No Records found!</div>
                 )}
             </section>
 

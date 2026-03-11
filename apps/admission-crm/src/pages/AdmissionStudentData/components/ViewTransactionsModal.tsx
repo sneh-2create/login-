@@ -246,7 +246,7 @@ const ViewTransactionsModal = ({ isOpen, onClose, student }: ViewTransactionsMod
             
             {/* Sliding Panel */}
             <div 
-                className={`fixed top-0 right-0 h-full bg-white shadow-2xl z-[10000] transform transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 right-0 h-full bg-[var(--color-card)] shadow-2xl z-[10000] transform transition-transform duration-300 ease-in-out ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
                 } w-full md:w-[70%] lg:w-[60%] xl:w-[50%] flex flex-col`}
             >
@@ -258,7 +258,7 @@ const ViewTransactionsModal = ({ isOpen, onClose, student }: ViewTransactionsMod
                     </h2>
                     <button 
                         onClick={onClose} 
-                        className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-white/50"
+                        className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors p-1 rounded-full hover:bg-[var(--color-background)]"
                     >
                         <X size={24} />
                     </button>
@@ -268,7 +268,7 @@ const ViewTransactionsModal = ({ isOpen, onClose, student }: ViewTransactionsMod
                 <div className="px-3 py-2 overflow-y-auto flex-1 space-y-4">
                     {/* Payment History */}
                     <section>
-                        <h3 className="text-lg font-bold text-gray-700 mb-2 px-2 border-l-4 border-primary">
+                        <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 px-2 border-l-4 border-primary">
                             Payment History
                         </h3>
                         {isTransactionsLoading ? (
@@ -276,13 +276,13 @@ const ViewTransactionsModal = ({ isOpen, onClose, student }: ViewTransactionsMod
                         ) : transactions && transactions.length > 0 ? (
                             <DataTable columns={columns} data={transactions} />
                         ) : (
-                            <div className="text-center py-4 text-gray-500 bg-gray-50 rounded">No Records found !</div>
+                            <div className="text-center py-4 text-[var(--color-muted-foreground)] bg-[var(--color-background)] rounded">No Records found !</div>
                         )}
                     </section>
 
                     {/* Refund Transactions History */}
                     <section>
-                        <h3 className="text-lg font-bold text-gray-700 mb-2 px-2 border-l-4 border-primary">
+                        <h3 className="text-lg font-bold text-[var(--color-foreground)] mb-2 px-2 border-l-4 border-primary">
                             Refund Transactions History
                         </h3>
                         {isRefundsLoading ? (
@@ -290,7 +290,7 @@ const ViewTransactionsModal = ({ isOpen, onClose, student }: ViewTransactionsMod
                         ) : refunds && refunds.length > 0 ? (
                             <DataTable columns={refundColumns} data={refunds} />
                         ) : (
-                            <div className="text-center py-4 text-gray-500 bg-gray-50 rounded">No Records found !</div>
+                            <div className="text-center py-4 text-[var(--color-muted-foreground)] bg-[var(--color-background)] rounded">No Records found !</div>
                         )}
                     </section>
                 </div>

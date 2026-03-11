@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useCounselorTagReport, useCounselors, useAdmissionMaster } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
-import { Button, DataTable, Breadcrumb, Dropdown, DatePicker, Tooltip } from '@od-erp/ui';
+import { Button, DataTable, PageHeader, PageToolbar, ActionButton, EmptyState, SelectSingle, DatePicker } from '@od-erp/ui';
 import { ColumnDef } from '@tanstack/react-table';
 import { Download, Printer, RefreshCw, SlidersHorizontal } from 'lucide-react';
 import * as xlsx from 'xlsx';
@@ -10,7 +10,6 @@ import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { format } from 'date-fns';
 
 const CounselorTagReport = () => {
-    const [exportLoading, setExportLoading] = useState(false);
     const [data, setData] = useState<CounselorTagReportTableRow[]>([]);
 
     // Filters
@@ -65,7 +64,6 @@ const CounselorTagReport = () => {
             filteredOptions = counselors.map((c: any) => ({ label: c.name, value: c._id }));
             filteredOptions.unshift({ label: 'All Counselors', value: '' });
         } else if (isUserLead) {
-            // Already populated above, just add "All Team Members" option if needed or keep specific
             filteredOptions.unshift({ label: 'All Team Members', value: '' });
         } else {
             const myProfile = counselors.find((c: any) => c._id === user._id);
@@ -145,6 +143,7 @@ const CounselorTagReport = () => {
 
     const handleSearch = () => {
         refetch();
+        setShowFilter(false);
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => {
@@ -154,7 +153,7 @@ const CounselorTagReport = () => {
                 header: 'S.No',
                 cell: info => {
                     const val = info.getValue() as number;
-                    return val === 0 ? '' : <span className="text-gray-500">{info.row.index + 1}</span>;
+                    return val === 0 ? '' : <span className="text-[var(--color-foreground)]">{info.row.index + 1}</span>;
                 }
             },
             {
@@ -162,7 +161,7 @@ const CounselorTagReport = () => {
                 header: 'Counselor Name',
                 cell: info => {
                     const val = info.getValue() as string;
-                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-gray-700">{val}</span>;
+                    return val === 'Total' ? <span className="font-bold">{val}</span> : <span className="text-[var(--color-foreground)]">{val}</span>;
                 }
             },
             {
@@ -192,11 +191,10 @@ const CounselorTagReport = () => {
     }, [dynamicColumns]);
 
     const handleExport = () => {
-        setExportLoading(true);
         try {
             const wb = xlsx.utils.book_new();
             const ws: xlsx.WorkSheet = {};
-            
+
             // Common Header
             const tableStartRow = addExcelReportHeader(ws, entityName, 'Counselor Tag Report', []);
 
@@ -227,8 +225,6 @@ const CounselorTagReport = () => {
 
         } catch (error) {
             console.error(error);
-        } finally {
-            setExportLoading(false);
         }
     };
 
@@ -238,133 +234,123 @@ const CounselorTagReport = () => {
         window.open('/admission/print/counselorTagReport', '_blank');
     };
 
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setShowFilter(!showFilter),
+            title: 'Filter',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: () => refetch(),
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: isLoading ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Download,
+            onClick: handleExport,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: data.length > 0,
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: data.length > 0,
+            variant: 'outline'
+        }
+    ];
+
     return (
-        <div className="w-full max-w-full font-sans pb-8">
-            <div className="flex flex-col mb-6 gap-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Counselor Tag Report</h1>
-                        <Breadcrumb
-                            items={[
-                                { label: 'Dashboard', href: '/dashboard' },
-                                { label: 'Admission Reports', href: '/admission/reports' },
-                                { label: 'Counselor Tag Report' }
-                            ]}
-                        />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        {/* Filter Toggle */}
-                        <Tooltip content="Filter" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className={`!p-0 !w-9 !h-9 border-gray-300 ${showFilter ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                                onClick={() => setShowFilter(!showFilter)}
-                            >
-                                <SlidersHorizontal className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
+        <div className="w-full max-w-full font-sans">
+            <PageHeader
+                title="Counselor Tag Report"
+                breadcrumbs={[
+                    { label: 'Dashboard', href: '/dashboard' },
+                    { label: 'Admission Reports', href: '/admission/reports' },
+                    { label: 'Counselor Tag Report' }
+                ]}
+                actionButtons={actionButtons}
+            />
 
-                        {/* Refresh */}
-                        <Tooltip content="Refresh" placement="bottom">
+            <PageToolbar
+                tabs={[]}
+                activeTab=""
+                onTabChange={() => {}}
+                actions={actionButtons}
+            />
+
+            {/* Collapsible Filter Card */}
+            {showFilter && (
+                <div className="bg-[var(--color-card)] p-4 rounded-lg shadow border border-[var(--color-border)] mb-3">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4">
+                        <div>
+                            <DatePicker
+                                label="Start Date"
+                                value={startDate ? new Date(startDate) : undefined}
+                                onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
+                                maxDate={endDate ? new Date(endDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <DatePicker
+                                label="End Date"
+                                value={endDate ? new Date(endDate) : undefined}
+                                onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
+                                minDate={startDate ? new Date(startDate) : undefined}
+                                className="w-full"
+                            />
+                        </div>
+                        <div>
+                            <SelectSingle
+                                label="Select Counselor"
+                                options={counselorOptions}
+                                value={selectedCounselor}
+                                onChange={(val) => setSelectedCounselor(val as string)}
+                                placeholder="Select Counselor"
+                                disabled={!isAdmissionAdmin && !isLead}
+                                containerClassName="w-full"
+                            />
+                        </div>
+                        <div className="flex items-end">
                             <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-gray-500 hover:text-gray-700"
+                                variant="primary"
                                 onClick={handleSearch}
+                                isLoading={loading}
+                                className="w-full md:w-auto px-8 h-10 font-medium"
                             >
-                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                Apply Filters
                             </Button>
-                        </Tooltip>
-
-                        {data.length > 0 && (
-                            <>
-                                <Tooltip content="Export to Excel" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handleExport}
-                                        isLoading={exportLoading}
-                                    >
-                                        <Download className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                                <Tooltip content="Print" placement="bottom">
-                                    <Button
-                                        variant="outline"
-                                        className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                        onClick={handlePrint}
-                                    >
-                                        <Printer className="h-4 w-4" />
-                                    </Button>
-                                </Tooltip>
-                            </>
-                        )}
-                    </div>
-                </div>
-
-                {/* Collapsible Filter Card */}
-                {showFilter && (
-                    <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-6">
-                        <div className="flex flex-col md:flex-row gap-4 items-end">
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Start Date</label>
-                                <DatePicker
-                                    value={startDate ? new Date(startDate) : undefined}
-                                    onChange={(date) => setStartDate(date ? date.getTime() : undefined)}
-                                    maxDate={endDate ? new Date(endDate) : undefined}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">End Date</label>
-                                <DatePicker
-                                    value={endDate ? new Date(endDate) : undefined}
-                                    onChange={(date) => setEndDate(date ? date.getTime() : undefined)}
-                                    minDate={startDate ? new Date(startDate) : undefined}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-1/4">
-                                <label className="text-xs font-semibold text-gray-600 mb-1 block">Select Counselor</label>
-                                <Dropdown
-                                    options={counselorOptions}
-                                    value={selectedCounselor}
-                                    onChange={(val) => setSelectedCounselor(val as string)}
-                                    placeholder="Select Counselor"
-                                    disabled={!isAdmissionAdmin && !isLead}
-                                    className="w-full"
-                                />
-                            </div>
-                            <div className="w-full md:w-auto">
-                                <Button
-                                    variant="primary"
-                                    onClick={handleSearch}
-                                    isLoading={loading}
-                                    className="w-full md:w-auto"
-                                >
-                                    Go <span className="ml-1">→</span>
-                                </Button>
-                            </div>
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Data Table */}
-                {data.length > 0 && (
-                    <div className="w-full max-w-full overflow-x-auto">
-                        <DataTable
-                            columns={columns}
-                            data={data}
-                            isLoading={loading}
-                            showSearch={true}
-                        />
-                    </div>
-                )}
-                {!loading && data.length === 0 && (
-                    <div className="flex items-center justify-center p-10 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                        <span className="text-gray-400 text-lg font-medium">No Records Found</span>
-                    </div>
-                )}
-            </div>
+            {/* Data Table */}
+            {data.length > 0 && (
+                <div className="w-full max-w-full overflow-x-auto">
+                    <DataTable
+                        columns={columns}
+                        data={data}
+                        isLoading={loading}
+                        showSearch={true}
+                    />
+                </div>
+            )}
+
+            {!loading && data.length === 0 && (
+                <EmptyState message="No Records Found" />
+            )}
         </div>
     );
 };

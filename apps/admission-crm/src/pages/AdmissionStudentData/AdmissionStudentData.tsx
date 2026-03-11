@@ -1,9 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall } from '@od-erp/query';
-import { DataTable, Button, Badge, Breadcrumb, NeedHelpPanel, HorizontalTabs, Dropdown, ActionMenu, ViewDocumentsModal, Tooltip } from '@od-erp/ui';
+import { useSessions, useAdmissionStudentData, useAdmissionStages, useAdmissionStageSetup, useCounselors, useAdmissionTemplates, useDefaultAdmissionTemplate, useAdmissionTemplate, useAddReportFile, useDeleteAdmissionStudentData, useClickToCall, useEditExcelTemplate } from '@od-erp/query';
+import { DataTable, Button, Badge, PageHeader, PageToolbar, ActionButton, NeedHelpPanel, ActionMenu, ViewDocumentsModal, SelectSingle, Tooltip, ExcelTemplateEditDrawer } from '@od-erp/ui';
 import { AdmissionLead, AdmissionStudentDataPayload, ExtendedColumnMeta, TableHead } from '@od-erp/types';
-import { ADMISSION_SEARCH_BY_OPTIONS, DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS } from '@od-erp/constants';
+import {
+    ADMISSION_SEARCH_BY_OPTIONS,
+    DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS,
+    ADMISSION_APPLICATION_AVAILABLE_HEADS,
+    ADMISSION_APPLICATION_AVAILABLE_FILTERS,
+    ADMISSION_APPLICATION_SORT_BY_OPTIONS,
+    EXCEL_FILTER_DATE_PRESETS,
+    ADMISSION_REPORT_TYPE,
+} from '@od-erp/constants';
 
 import { addExcelReportHeader, addExcelReportFooter } from '@od-erp/utils';
 import { ColumnDef } from '@tanstack/react-table';
@@ -28,7 +36,8 @@ import {
     Mail,
     MessageCircle,
     Users,
-    Send
+    Send,
+    Pencil
 } from 'lucide-react';
 import AddApplicationDataPanel from './components/AddApplicationDataPanel';
 import FilterModal from './components/FilterModal';
@@ -125,6 +134,8 @@ const AdmissionStudentData = () => {
     const { data: templates } = useAdmissionTemplates(entityId);
     const { data: defaultTemplateData } = useDefaultAdmissionTemplate(entityId, entityType);
     const [selectedTemplate, setSelectedTemplate] = useState<string>(''); // viewName of selected template
+    const [editDrawerOpen, setEditDrawerOpen] = useState(false);
+    const editTemplateMutation = useEditExcelTemplate(entityId, ADMISSION_REPORT_TYPE);
 
     // Find the template object by viewName
     const selectedTemplateObj = useMemo(() => {
@@ -139,6 +150,48 @@ const AdmissionStudentData = () => {
             setSelectedTemplate(templates[0].viewName);
         }
     }, [templates, selectedTemplate]);
+
+    // Read drill-down filter parameters from localStorage (from CounselorProductivityReport)
+    useEffect(() => {
+        const filterObjectData = localStorage.getItem('filterObjectData');
+        if (filterObjectData) {
+            try {
+                const filters = JSON.parse(filterObjectData);
+                
+                // Build new filter object
+                const newFilters: Partial<AdmissionStudentDataPayload> = {};
+                
+                // Apply engagement status filter
+                if (filters.engagementStatus) {
+                    newFilters.engagementStatus = [filters.engagementStatus];
+                }
+                
+                // Apply counselor filter
+                if (filters.counselorId) {
+                    newFilters.counselorId = filters.counselorId;
+                }
+                
+                // Apply date range filters
+                if (filters.startDate) {
+                    newFilters.startDate = filters.startDate;
+                }
+                
+                if (filters.endDate) {
+                    newFilters.endDate = filters.endDate;
+                }
+                
+                // Apply filters to state
+                setCurrentFilters(newFilters);
+                
+                // Clean up localStorage
+                localStorage.removeItem('filterObjectData');
+                
+            } catch (error) {
+                console.error('Error parsing filterObjectData:', error);
+                localStorage.removeItem('filterObjectData');
+            }
+        }
+    }, []); // Run only on mount
 
     // Row selection handlers
     const handleSelectAll = (checked: boolean) => {
@@ -614,40 +667,9 @@ const AdmissionStudentData = () => {
         refetchStages();
     };
 
-
-    const handleViewTimeline = (student: AdmissionLead) => {
-        setTimelineStudent(student);
-        setIsTimelineOpen(true);
-    };
-
-    const handleViewDocuments = (student: AdmissionLead) => {
-        setDocumentStudent(student);
-        setIsViewDocumentsOpen(true);
-    };
-
-
-    const handleViewBankDetails = (student: AdmissionLead) => {
-        setBankDetailsStudent(student);
-        setIsBankDetailsOpen(true);
-    };
-
-    const handleViewTransactions = (student: AdmissionLead) => {
-        setTransactionsStudent(student);
-        setIsTransactionsOpen(true);
-    };
-
-    const handleViewFollowUp = (student: AdmissionLead) => {
-        if (!student.counselorId) {
-            alert('Please assign counselor first');
-            return;
-        }
-        setFollowUpStudent(student);
-        setIsFollowUpOpen(true);
-    };
-
-    const handleViewAdmission = (id: string) => {
-        setViewAdmissionStudentId(id);
-        setIsViewAdmissionOpen(true);
+    // Get selected students data for modals
+    const getSelectedStudents = (): AdmissionLead[] => {
+        return (data?.data || []).filter((student: AdmissionLead) => selectedRows.has(student._id));
     };
 
     // Bulk Action Handlers
@@ -685,8 +707,6 @@ const AdmissionStudentData = () => {
 
         const angularAppUrl = import.meta.env.VITE_ANGULAR_TEMPLATES_URL || 'http://localhost:4200';
 
-        // Open a single window and send all students at once
-        // Angular will render all forms on one page with page-break separators
         const printWindow = window.open(
             `${angularAppUrl}/print/open/printAdmissionForm`,
             '_blank'
@@ -707,32 +727,209 @@ const AdmissionStudentData = () => {
                             },
                             entityPreferences: entityPreferences,
                             entityType: 'school',
-                            students: selectedStudents  // Full student objects array
+                            students: selectedStudents
                         }
                     },
                     angularAppUrl
                 );
             };
-
-            // Send after Angular app loads
             setTimeout(sendData, 1000);
         } else {
             alert('Popup was blocked. Please allow popups for this site and try again.');
         }
     };
 
-
     const handleBulkUpdateCounselor = () => {
         if (selectedRows.size === 0) return;
         setIsBulkCounselorOpen(true);
     };
 
-    // Get selected students data for modals
-    const getSelectedStudents = (): AdmissionLead[] => {
-        return (data?.data || []).filter((student: AdmissionLead) => selectedRows.has(student._id));
+    // Action Buttons for PageHeader / PageToolbar
+    const actionButtons: ActionButton[] = [
+        {
+            icon: SlidersHorizontal,
+            onClick: () => setIsFilterModalOpen(!isFilterModalOpen),
+            title: 'Filter',
+            className: `text-primary hover:bg-primary/10 hover:text-primary${isFilterModalOpen ? ' bg-primary/10 border-primary/20' : ''}`,
+            isVisible: true,
+            variant: 'outline'
+        },
+        {
+            icon: RefreshCw,
+            onClick: handleRefresh,
+            title: 'Refresh',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            iconClass: isLoading || isFetching ? 'animate-spin' : '',
+            variant: 'outline'
+        },
+        {
+            icon: Upload,
+            onClick: () => setIsUploadModalOpen(true),
+            title: 'Upload Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: checkPermission('uploadAdmissionStudentData'),
+            variant: 'outline'
+        },
+        {
+            icon: FileSpreadsheet,
+            onClick: handleExportExcel,
+            title: 'Export to Excel',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !hasError || checkPermission('exportAdmissionStudentData'),
+            variant: 'outline'
+        },
+        {
+            icon: Printer,
+            onClick: handlePrint,
+            title: 'Print',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !hasError || checkPermission('exportAdmissionStudentData'),
+            variant: 'outline'
+        },
+        {
+            icon: FileText,
+            onClick: handleGenerateReport,
+            title: 'Generate Report',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: !hasError || checkPermission('exportAdmissionStudentData'),
+            variant: 'outline'
+        },
+        {
+            icon: HelpCircle,
+            onClick: handleNeedHelp,
+            title: 'Need Help',
+            className: 'text-primary hover:bg-primary/10 hover:text-primary',
+            isVisible: true,
+            variant: 'outline'
+        },
+    ];
+
+    // Extra content for PageToolbar: bulk actions (when rows selected) + Session Selector + Add Application Data button
+    const toolbarExtraContent = (
+        <div className="flex items-center gap-2">
+            {/* Bulk action buttons - only shown when rows are selected */}
+            {selectedRows.size > 0 && (
+                <>
+                    {checkPermission('sendBulkAdmissionReminderEmail') && (
+                        <Tooltip content={`Send Email (${selectedRows.size})`} placement="bottom">
+                            <button
+                                className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                                onClick={handleBulkSendEmail}
+                            >
+                                <Mail size={16} />
+                            </button>
+                        </Tooltip>
+                    )}
+                    {checkPermission('sendMultipleAdmissionReminderWhatsAppWebCommunication') && (
+                        <Tooltip content={`WhatsApp Web (${selectedRows.size})`} placement="bottom">
+                            <button
+                                className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                                onClick={handleBulkSendWhatsappWeb}
+                            >
+                                <MessageCircle size={16} />
+                            </button>
+                        </Tooltip>
+                    )}
+                    {checkPermission('sendMultipleAdmissionReminderWhatsAppCommunication') && (
+                        <Tooltip content={`WhatsApp (${selectedRows.size})`} placement="bottom">
+                            <button
+                                className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                                onClick={handleBulkSendWhatsapp}
+                            >
+                                <MessageSquare size={16} />
+                            </button>
+                        </Tooltip>
+                    )}
+                    {checkPermission('sendMultipleAdmissionReminderSMSCommunication') && (
+                        <Tooltip content={`Send SMS (${selectedRows.size})`} placement="bottom">
+                            <button
+                                className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                                onClick={handleBulkSendSms}
+                            >
+                                <Send size={16} />
+                            </button>
+                        </Tooltip>
+                    )}
+                    <Tooltip content={`Print Forms (${selectedRows.size})`} placement="bottom">
+                        <button
+                            className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                            onClick={handlePrintSelectedForms}
+                        >
+                            <Printer size={16} />
+                        </button>
+                    </Tooltip>
+                    {checkPermission('counselorUpdateBulkRequest') && (
+                        <Tooltip content={`Update Counselor (${selectedRows.size})`} placement="bottom">
+                            <button
+                                className="!p-0 !w-9 !h-9 flex items-center justify-center rounded-md border border-[var(--color-primary)] text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors"
+                                onClick={handleBulkUpdateCounselor}
+                            >
+                                <Users size={16} />
+                            </button>
+                        </Tooltip>
+                    )}
+                    {/* Divider */}
+                    <div className="h-6 w-px bg-gray-300" />
+                </>
+            )}
+
+            <SelectSingle
+                options={sessions?.map(s => ({ value: s.name, label: s.name })) || [{ value: session, label: session }]}
+                value={session}
+                onChange={(val) => handleSessionChange(val as string)}
+                placeholder="Select Session"
+                containerClassName="w-40"
+            />
+            {checkPermission('addAdmissionStudentData') && (
+                <Button
+                    variant="primary"
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-1.5"
+                >
+                    <Plus size={16} />
+                    Add Application Data
+                </Button>
+            )}
+        </div>
+    );
+
+    const handleViewTimeline = (student: AdmissionLead) => {
+        setTimelineStudent(student);
+        setIsTimelineOpen(true);
     };
 
-    // Handle bulk counselor update
+    const handleViewDocuments = (student: AdmissionLead) => {
+        setDocumentStudent(student);
+        setIsViewDocumentsOpen(true);
+    };
+
+
+    const handleViewBankDetails = (student: AdmissionLead) => {
+        setBankDetailsStudent(student);
+        setIsBankDetailsOpen(true);
+    };
+
+    const handleViewTransactions = (student: AdmissionLead) => {
+        setTransactionsStudent(student);
+        setIsTransactionsOpen(true);
+    };
+
+    const handleViewFollowUp = (student: AdmissionLead) => {
+        if (!student.counselorId) {
+            alert('Please assign counselor first');
+            return;
+        }
+        setFollowUpStudent(student);
+        setIsFollowUpOpen(true);
+    };
+
+    const handleViewAdmission = (id: string) => {
+        setViewAdmissionStudentId(id);
+        setIsViewAdmissionOpen(true);
+    };
+
+
     const handleCounselorUpdate = (counselorId: string) => {
         const studentDataIds = Array.from(selectedRows);
         // Use the admission lead service for bulk counselor update
@@ -798,7 +995,6 @@ const AdmissionStudentData = () => {
             header: head.name,
             accessorKey: head.value,
             meta: {
-                width: 150,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>,
         };
@@ -853,7 +1049,6 @@ const AdmissionStudentData = () => {
         if (head.value === 'name') {
             baseColumn.cell = (info) => <span className="font-medium">{info.getValue() as string}</span>;
             baseColumn.meta = {
-                width: 217,
                 align: 'left' as const,
                 isBold: true,
             } as ExtendedColumnMeta<AdmissionLead>;
@@ -865,7 +1060,6 @@ const AdmissionStudentData = () => {
                 return <Badge variant={val}>{val}</Badge>;
             };
             baseColumn.meta = {
-                width: 132,
                 align: 'center' as const,
             } as ExtendedColumnMeta<AdmissionLead>;
         }
@@ -920,7 +1114,6 @@ const AdmissionStudentData = () => {
                     </div>
                 ),
                 meta: {
-                    width: 100,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1026,7 +1219,6 @@ const AdmissionStudentData = () => {
                     return <Badge variant={val}>{val}</Badge>;
                 },
                 meta: {
-                    width: 132,
                     align: 'center' as const,
                 } as ExtendedColumnMeta<AdmissionLead>,
             },
@@ -1088,231 +1280,45 @@ const AdmissionStudentData = () => {
     ];
 
     return (
-        <div className="w-full max-w-full min-w-0 p-6 bg-[var(--color-background)] min-h-screen font-sans">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">Application Data</h1>
-                    <Breadcrumb items={breadcrumbItems} />
-                </div>
+        <div className="w-full max-w-full min-w-0 font-sans">
+            <PageHeader
+                title="Application Data"
+                breadcrumbs={breadcrumbItems}
+                actionButtons={actionButtons}
+            />
 
-                <div className="flex items-center gap-2">
-                    {/* Session Selector */}
-                    <Dropdown
-                        options={sessions?.map(s => ({ label: s.name, value: s.name })) || []}
-                        value={session}
-                        onChange={handleSessionChange}
-                        placeholder="Select Session"
-                        containerClassName="min-w-[200px]"
-                        className="!py-1.5 !min-h-[36px] text-sm font-semibold"
-                    />
-
-                    {/* Filter Button */}
-                    <Tooltip content="Filter" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className={`!p-0 !w-9 !h-9 border-gray-300 ${isFilterModalOpen ? 'bg-primary/10 border-primary/20 text-primary' : 'text-gray-500 hover:text-gray-700'}`}
-                            onClick={() => setIsFilterModalOpen(!isFilterModalOpen)}
-                        >
-                            <SlidersHorizontal className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
-
-                    {/* Refresh Button */}
-                    <Tooltip content="Refresh" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handleRefresh}
-                        >
-                            <RefreshCw className={`h-4 w-4 ${isLoading || isFetching ? 'animate-spin' : ''}`} />
-                        </Button>
-                    </Tooltip>
-
-                    {/* Upload Excel Button - Show if has permission */}
-                    {checkPermission('uploadAdmissionStudentData') && (
-                        <Tooltip content="Upload Excel" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={() => setIsUploadModalOpen(true)}
-                            >
-                                <Upload className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Excel Export Button - Show if data exists OR has permission */}
-                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Tooltip content="Export to Excel" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handleExportExcel}
-                            >
-                                <FileSpreadsheet className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Print Button - Show if data exists OR has permission */}
-                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Tooltip content="Print" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handlePrint}
-                            >
-                                <Printer className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Generate Report Button - Show if data exists OR has permission */}
-                    {(!hasError || checkPermission('exportAdmissionStudentData')) && (
-                        <Tooltip content="Generate Report" placement="bottom">
-                            <Button
-                                variant="outline"
-                                className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                                onClick={handleGenerateReport}
-                            >
-                                <FileText className="h-4 w-4" />
-                            </Button>
-                        </Tooltip>
-                    )}
-
-                    {/* Need Help Button - Always show */}
-                    <Tooltip content="Need Help" placement="bottom">
-                        <Button
-                            variant="outline"
-                            className="!p-0 !w-9 !h-9 border-gray-300 text-primary hover:bg-primary/10 hover:text-primary"
-                            onClick={handleNeedHelp}
-                        >
-                            <HelpCircle className="h-4 w-4" />
-                        </Button>
-                    </Tooltip>
-
-                    {/* Add Application Data Button - Show if has permission */}
-                    {checkPermission('addAdmissionStudentData') && (
-                        <Button
-                            variant="primary"
-                            onClick={() => setIsAddModalOpen(true)}
-                            title="Add Application Data"
-                        >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Application Data
-                        </Button>
-                    )}
-                </div>
-            </div>
-
-            {/* Stats / Tabs */}
-            <div className="flex flex-wrap gap-4 mb-6 justify-center">
-                {tabs.map((tab) => (
-                    <div
-                        key={tab.value}
-                        onClick={() => { setSelectedStage(tab.value); setPageNumber(1); }}
-                        className={`cursor-pointer px-4 py-2 rounded-lg border text-center min-w-[100px] transition-colors
-                            ${selectedStage === tab.value
-                                ? 'bg-green-100 border-green-300 shadow-sm'
-                                : 'bg-white border-gray-200 hover:bg-gray-50'
-                            }`}
-                    >
-                        <div className="text-xs uppercase font-semibold text-gray-500 mb-1">{tab.name}</div>
-                        <div className="text-lg font-bold text-gray-800">Count: {tab.count}</div>
+            <PageToolbar
+                tabs={templates && templates.length > 0
+                    ? templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))
+                    : []}
+                activeTab={selectedTemplate}
+                onTabChange={(val) => { setSelectedTemplate(val); setEditDrawerOpen(false); }}
+                secondaryTabs={tabs.map(tab => ({ label: `${tab.name} (${tab.count})`, value: tab.value }))}
+                secondaryActiveTab={selectedStage}
+                onSecondaryTabChange={(val) => { setSelectedStage(val); setPageNumber(1); }}
+                actions={actionButtons}
+                extraContent={
+                    <div className="flex items-center gap-2">
+                        {toolbarExtraContent}
+                        {(() => {
+                            const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                            const canEdit = permissions.includes('editEntityPreferences');
+                            if (!activeTemplate?._id || !canEdit) return null;
+                            return (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setEditDrawerOpen(true)}
+                                    title={`Edit template: ${activeTemplate.viewName}`}
+                                    className="!p-0 !w-9 !h-9 text-primary hover:bg-primary/10 hover:text-primary"
+                                >
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                            );
+                        })()}
                     </div>
-                ))}
-            </div>
+                }
+            />
 
-            {/* Bulk Action Buttons - Show when rows are selected */}
-            {selectedRows.size > 0 && !hasError && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                    <div className="flex items-center justify-between flex-wrap gap-3">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-700">
-                                {selectedRows.size} student{selectedRows.size > 1 ? 's' : ''} selected
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {/* Send Email */}
-                            {checkPermission('sendBulkAdmissionReminderEmail') && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleBulkSendEmail}
-                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
-                                    title="Send Email"
-                                >
-                                    <Mail size={16} className="mr-1" />
-                                    Send Email
-                                </Button>
-                            )}
-
-                            {/* Send WhatsApp Web */}
-                            {checkPermission('sendMultipleAdmissionReminderWhatsAppWebCommunication') && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleBulkSendWhatsappWeb}
-                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
-                                    title="Send WhatsApp Web"
-                                >
-                                    <MessageCircle size={16} className="mr-1" />
-                                    WhatsApp Web
-                                </Button>
-                            )}
-
-                            {/* Send WhatsApp */}
-                            {checkPermission('sendMultipleAdmissionReminderWhatsAppCommunication') && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleBulkSendWhatsapp}
-                                    className="!py-1.5 !px-3 text-sm border-green-300 text-green-700 hover:bg-green-100"
-                                    title="Send WhatsApp"
-                                >
-                                    <MessageCircle size={16} className="mr-1" />
-                                    WhatsApp
-                                </Button>
-                            )}
-
-                            {/* Send SMS */}
-                            {checkPermission('sendMultipleAdmissionReminderSMSCommunication') && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleBulkSendSms}
-                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
-                                    title="Send SMS"
-                                >
-                                    <Send size={16} className="mr-1" />
-                                    Send SMS
-                                </Button>
-                            )}
-
-                            {/* Print Forms - No permission required */}
-                            <Button
-                                variant="outline"
-                                onClick={handlePrintSelectedForms}
-                                className="!py-1.5 !px-3 text-sm border-gray-300 text-gray-700 hover:bg-gray-100"
-                                title="Print Forms"
-                            >
-                                <Printer size={16} className="mr-1" />
-                                Print Forms
-                            </Button>
-
-                            {/* Bulk Update Counselor */}
-                            {checkPermission('counselorUpdateBulkRequest') && (
-                                <Button
-                                    variant="outline"
-                                    onClick={handleBulkUpdateCounselor}
-                                    className="!py-1.5 !px-3 text-sm border-blue-300 text-blue-700 hover:bg-blue-100"
-                                    title="Bulk Update Counselor"
-                                >
-                                    <Users size={16} className="mr-1" />
-                                    Update Counselor
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* View Admission (Edit Mode) */}
             <AddApplicationDataPanel
@@ -1329,15 +1335,7 @@ const AdmissionStudentData = () => {
                 }}
             />
 
-            {/* Template Selection Tabs - Show if templates exist */}
-            {templates && templates.length > 0 && (
-                <HorizontalTabs
-                    tabs={templates.map(t => ({ label: t.viewName.toUpperCase(), value: t.viewName }))}
-                    activeTab={selectedTemplate}
-                    onTabChange={setSelectedTemplate}
-                    className="px-0 mb-4"
-                />
-            )}
+
 
             {/* Data Table with integrated Search By */}
             {!hasError && (
@@ -1359,7 +1357,7 @@ const AdmissionStudentData = () => {
                         setPageNumber(pagination.pageIndex + 1);
                         setPageSize(pagination.pageSize);
                     }}
-                    maxHeight="600px"
+                    maxHeight={undefined}
                 />
             )}
 
@@ -1497,6 +1495,28 @@ const AdmissionStudentData = () => {
                 onClose={() => setIsHelpPanelOpen(false)}
                 page="applicationData"
             />
+
+            {/* Excel Template Edit Drawer */}
+            {editDrawerOpen && (() => {
+                const activeTemplate = templates?.find(t => t.viewName === selectedTemplate);
+                return activeTemplate?._id ? (
+                    <ExcelTemplateEditDrawer
+                        open={editDrawerOpen}
+                        onClose={() => setEditDrawerOpen(false)}
+                        template={activeTemplate}
+                        reportDisplayName="Application Data"
+                        availableHeads={ADMISSION_APPLICATION_AVAILABLE_HEADS}
+                        availableFilters={ADMISSION_APPLICATION_AVAILABLE_FILTERS}
+                        sortByOptions={ADMISSION_APPLICATION_SORT_BY_OPTIONS}
+                        defaultHeads={DEFAULT_ADMISSION_APPLICATION_REPORT_HEADS}
+                        datePresets={EXCEL_FILTER_DATE_PRESETS.map(p => ({ label: p.name, value: p.value }))}
+                        onSave={async (payload) => {
+                            await editTemplateMutation.mutateAsync(payload as any);
+                            setEditDrawerOpen(false);
+                        }}
+                    />
+                ) : null;
+            })()}
 
         </div>
     );

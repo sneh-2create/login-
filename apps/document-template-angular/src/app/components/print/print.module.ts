@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 import { PrintAdmissionFormComponent } from './printAdmissionForm/printAdmissionForm.component';
+import { PrintAdmissionTransactionComponent } from './printAdmissionTransaction/printAdmissionTransaction.component';
 
 const routes: Routes = [
     { path: 'printAdmissionForm', component: PrintAdmissionFormComponent },
+    { path: 'printAdmissionTransaction', component: PrintAdmissionTransactionComponent },
     { path: '', redirectTo: 'printAdmissionForm', pathMatch: 'full' }
 ];
 
@@ -16,6 +18,9 @@ const routes: Routes = [
         ReactiveFormsModule,
         RouterModule.forChild(routes)
     ],
-    declarations: [PrintAdmissionFormComponent]
+    declarations: [
+        PrintAdmissionFormComponent,
+        PrintAdmissionTransactionComponent
+    ]
 })
 export class PrintModule { }

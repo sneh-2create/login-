@@ -212,17 +212,17 @@ const VerifyDocuments = ({ inline = false, studentId }: VerifyDocumentsProps = {
         }
     };
 
-    if (isLoading) return <div className="p-8 text-center text-gray-500">Loading student details...</div>;
+    if (isLoading) return <div className="p-8 text-center text-[var(--color-muted-foreground)]">Loading student details...</div>;
     if (!student) return <div className="p-8 text-center text-red-500">Student not found</div>;
 
     return (
-        <div className={inline ? "flex flex-col h-full" : "min-h-screen bg-gray-50 flex flex-col"}>
+        <div className={inline ? "flex flex-col h-full" : "min-h-screen bg-[var(--color-background)] flex flex-col"}>
             {/* Header - Only show when not inline */}
 
-            <div className="bg-white px-6 py-4 border-b border-gray-200">
+            <div className="bg-[var(--color-card)] px-6 py-4 border-b border-[var(--color-border)]">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900 mb-2">Verify Documents</h1>
+                        <h1 className="text-2xl font-bold text-[var(--color-foreground)] mb-2">Verify Documents</h1>
                         {!inline && <Breadcrumb items={breadcrumbItems} />}
                     </div>
 
@@ -248,9 +248,9 @@ const VerifyDocuments = ({ inline = false, studentId }: VerifyDocumentsProps = {
             {/* Split Content */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Left Panel: Document View */}
-                <div className="w-1/2 px-6 py-2 border-r border-gray-200 overflow-y-auto bg-white flex flex-col">
+                <div className="w-1/2 px-6 py-2 border-r border-[var(--color-border)] overflow-y-auto bg-[var(--color-card)] flex flex-col">
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">
                             Select Document
                         </label>
                         <Dropdown
@@ -277,7 +277,7 @@ const VerifyDocuments = ({ inline = false, studentId }: VerifyDocumentsProps = {
                     )}
 
                     {/* Document Placeholder / Viewer */}
-                    <div className="flex-1 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 overflow-hidden relative mb-4">
+                    <div className="flex-1 bg-[var(--color-background)] border-2 border-dashed border-[var(--color-border)] rounded-lg flex items-center justify-center text-[var(--color-muted-foreground)] overflow-hidden relative mb-4">
                         {!selectedDocument ? (
                             <span>Select a document to view</span>
                         ) : !imgURL ? (
@@ -312,9 +312,9 @@ const VerifyDocuments = ({ inline = false, studentId }: VerifyDocumentsProps = {
                 </div>
 
                 {/* Right Panel: Admission Form */}
-                <div className="w-1/2 p-6 overflow-y-auto bg-gray-100">
-                    <div className="shadow-md rounded-sm overflow-hidden bg-white">
-                        <div className="bg-white p-8">
+                <div className="w-1/2 p-6 overflow-y-auto bg-[var(--color-background)]">
+                    <div className="shadow-md rounded-sm overflow-hidden bg-[var(--color-card)]">
+                        <div className="bg-[var(--color-card)] p-8">
                             <AdmissionFormTemplate student={student} />
                         </div>
                     </div>

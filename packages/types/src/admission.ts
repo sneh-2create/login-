@@ -110,6 +110,7 @@ export interface AdmissionLeadLog {
         callRecordingLink: string;
     };
     studentData?: {
+        _id?: string;
         applicationNumber?: string;
     };
     tags?: string[];

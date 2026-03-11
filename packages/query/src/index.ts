@@ -4,7 +4,8 @@ export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             retry: 3,
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true,
+            staleTime: 30 * 1000
         },
     },
 });
@@ -14,7 +15,6 @@ export * from './admission';
 export * from './session';
 export * from './admissionStudentData';
 export * from './admissionTransaction';
-export * from './dailyCollectionReport';
 export * from './dailyCollectionReport';
 export * from './useStudentTimeline';
 export * from './useAttendanceDashboard';

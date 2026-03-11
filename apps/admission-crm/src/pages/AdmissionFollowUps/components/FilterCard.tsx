@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dropdown, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, DatePicker } from '@od-erp/ui';
 
 interface FilterCardProps {
     startDate: number;
@@ -42,27 +42,26 @@ export const FilterCard = ({
     };
 
     return (
-        <div className="bg-white rounded-lg shadow mb-6 border border-gray-200 p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="bg-[var(--color-card)] rounded-lg shadow mb-3 border border-[var(--color-border)] p-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 items-end">
                 {isAdmissionAdmin && (
                     <div className="w-full">
-                        <label className="text-xs font-semibold text-gray-500 mb-1 block">Counselor</label>
-                        <Dropdown
+                        <SelectSingle
+                            label="Counselor"
                             value={counselorId}
                             onChange={(val) => setCounselorId(val as string)}
                             options={[
                                 { value: '', label: 'Select Counselor' },
                                 ...counselors.map((c) => ({ value: c._id, label: c.name })),
                             ]}
-                            className="w-full"
                             placeholder="Select Counselor"
                         />
                     </div>
                 )}
 
                 <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Start Date</label>
                     <DatePicker
+                        label='Start Date'
                         value={startDate ? new Date(startDate) : null}
                         onChange={(date) => date && setStartDate(date.getTime())}
                         maxDate={endDate ? new Date(endDate) : undefined}
@@ -70,8 +69,8 @@ export const FilterCard = ({
                     />
                 </div>
                 <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">End Date</label>
                     <DatePicker
+                        label='End Date'
                         value={endDate ? new Date(endDate) : null}
                         onChange={(date) => date && setEndDate(date.getTime())}
                         minDate={startDate ? new Date(startDate) : undefined}
@@ -80,8 +79,8 @@ export const FilterCard = ({
                 </div>
 
                 <div className="w-full">
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Status</label>
-                    <Dropdown
+                    <SelectSingle
+                        label="Status"
                         value={status}
                         onChange={(val) => setStatus(val as string)}
                         options={[
@@ -89,7 +88,8 @@ export const FilterCard = ({
                             { value: 'pending', label: 'PENDING' },
                             { value: 'completed', label: 'COMPLETED' },
                         ]}
-                        className="w-full"
+                        placeholder="Select Status"
+                        containerClassName="w-full"
                     />
                 </div>
             </div>

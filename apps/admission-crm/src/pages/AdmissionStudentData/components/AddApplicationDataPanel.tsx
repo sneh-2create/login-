@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight, Printer, Flag } from 'lucide-react';
 import { useAppSelector } from '@od-erp/store';
 import {
@@ -988,35 +989,35 @@ const AddApplicationDataPanel = ({
 
     const checkPermission = (permission: string) => permissions.includes(permission);
 
-    return (
+    return createPortal(
         <>
             {/* Backdrop */}
             <div
-                className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
+                className={`fixed inset-0 bg-black transition-opacity duration-300 z-[9998] ${isOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
                     }`}
                 onClick={handleClose}
             />
 
             {/* Sliding Panel */}
             <div
-                className={`fixed inset-y-0 right-0 z-50 w-full max-w-5xl bg-white shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                className={`fixed inset-y-0 right-0 z-[9999] w-full max-w-5xl bg-[var(--color-card)] shadow-2xl transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'
                     }`}
             >
                 <div className="h-full flex flex-col">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)] bg-[var(--color-card)]">
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-800">
+                            <h2 className="text-2xl font-bold text-[var(--color-foreground)]">
                                 {mode === 'add' ? 'Add Application Data' : formData.applicationNumber || 'Edit Application'}
                             </h2>
                             {mode === 'edit' && (
-                                <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
+                                <div className="flex items-center gap-4 text-sm text-[var(--color-muted-foreground)] mt-1">
                                     <span>
                                         Current Stage: <Badge variant="primary">{formData.currentStage}</Badge>
                                     </span>
                                     {formData.totalPaid > 0 && (
                                         <span>
-                                            Total Paid: <span className="font-medium text-green-600">₹{formData.totalPaid}</span>
+                                            Total Paid: <span className="font-medium text-[var(--color-success,#16a34a)]">₹{formData.totalPaid}</span>
                                         </span>
                                     )}
                                     {formData.nextFollowUpDate && (
@@ -1035,24 +1036,24 @@ const AddApplicationDataPanel = ({
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowPrintMenu(!showPrintMenu)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                        className="flex items-center gap-2 px-4 py-2 bg-[var(--color-background)] hover:bg-[var(--color-border)] rounded-lg transition-colors"
                                     >
                                         <Printer size={18} />
                                         <span>Print</span>
                                     </button>
 
                                     {showPrintMenu && (
-                                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                                        <div className="absolute right-0 mt-2 w-56 bg-[var(--color-card)] rounded-lg shadow-lg border border-[var(--color-border)] z-50">
                                             <div className="py-1">
                                                 <button
                                                     onClick={handlePrintAdmissionForm}
-                                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
+                                                    className="w-full text-left px-4 py-2 hover:bg-[var(--color-background)] transition-colors text-[var(--color-foreground)]"
                                                 >
                                                     Print Admission Form
                                                 </button>
                                                 <button
                                                     onClick={handlePrintTimeline}
-                                                    className="w-full text-left px-4 py-2 hover:bg-gray-50 transition-colors"
+                                                    className="w-full text-left px-4 py-2 hover:bg-[var(--color-background)] transition-colors text-[var(--color-foreground)]"
                                                 >
                                                     Print Timeline
                                                 </button>
@@ -1064,9 +1065,9 @@ const AddApplicationDataPanel = ({
 
                             <button
                                 onClick={handleClose}
-                                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                                className="p-2 hover:bg-[var(--color-background)] rounded-full transition-colors"
                             >
-                                <X size={24} className="text-gray-600" />
+                                <X size={24} className="text-[var(--color-muted-foreground)]" />
                             </button>
                         </div>
                     </div>
@@ -1076,8 +1077,8 @@ const AddApplicationDataPanel = ({
                         <div className="p-6">
                             {/* Payment Section (if transaction required but not paid) */}
                             {mode === 'edit' && txnRequiredFlag && !txnPaidFlag && checkPermission('saveAdmissionTransaction') && (
-                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-                                    <h3 className="text-lg font-semibold text-yellow-800 mb-4">Payment Required</h3>
+                                <div className="bg-[var(--color-warning-bg,#fffbeb)] border border-[var(--color-warning-border,#fde68a)] rounded-lg p-6 mb-6">
+                                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Payment Required</h3>
                                     <div className="flex items-end gap-4">
                                         <Input
                                             label="Total Payable Amount"
@@ -1103,15 +1104,15 @@ const AddApplicationDataPanel = ({
 
                             {/* Analytics Flags (Edit mode only) */}
                             {mode === 'edit' && formData._id && entityPreferences?.showAnalyticsModule && (
-                                <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Analytics Tracking</h3>
+                                <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6 mb-6">
+                                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Analytics Tracking</h3>
                                     <div className="flex gap-6">
                                         {/* Registration Analytics */}
                                         <button
                                             onClick={() => toggleAnalytics('registration')}
                                             className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.registrationAnalytics
                                                 ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                : 'border-gray-300 bg-white text-gray-600 hover:border-blue-300'
+                                                : 'border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] hover:border-blue-300'
                                                 }`}
                                         >
                                             <Flag size={20} className={formData.registrationAnalytics ? 'fill-blue-500' : ''} />
@@ -1124,7 +1125,7 @@ const AddApplicationDataPanel = ({
                                                 onClick={() => toggleAnalytics('admission')}
                                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.admissionAnalytics
                                                     ? 'border-green-500 bg-green-50 text-green-700'
-                                                    : 'border-gray-300 bg-white text-gray-600 hover:border-green-300'
+                                                    : 'border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] hover:border-green-300'
                                                     }`}
                                             >
                                                 <Flag size={20} className={formData.admissionAnalytics ? 'fill-green-500' : ''} />
@@ -1138,7 +1139,7 @@ const AddApplicationDataPanel = ({
                                                 onClick={() => toggleAnalytics('withdrawal')}
                                                 className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all ${formData.withdrawalAnalytics
                                                     ? 'border-red-500 bg-red-50 text-red-700'
-                                                    : 'border-gray-300 bg-white text-gray-600 hover:border-red-300'
+                                                    : 'border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-muted-foreground)] hover:border-red-300'
                                                     }`}
                                             >
                                                 <Flag size={20} className={formData.withdrawalAnalytics ? 'fill-red-500' : ''} />
@@ -1150,8 +1151,8 @@ const AddApplicationDataPanel = ({
                             )}
 
                             {/* Course Selection Form */}
-                            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-                                <h3 className="text-lg font-semibold text-gray-800 mb-4">Course Selection</h3>
+                            <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6 mb-6">
+                                <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Course Selection</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <Input
                                         type="date"
@@ -1371,7 +1372,7 @@ const AddApplicationDataPanel = ({
                             {/* Dynamic Student Fields */}
                             {Object.entries(groupedFields).map(([groupName, fields]) => (
                                 <div key={groupName} className="mb-8 border-b pb-6">
-                                    <h3 className="text-lg font-semibold text-gray-700 mb-4">{groupName}</h3>
+                                    <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">{groupName}</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
                                         {fields.map((field) => (
                                             <div key={field.value}>
@@ -1398,7 +1399,7 @@ const AddApplicationDataPanel = ({
                             ))}
 
                             {/* Side Panel Section */}
-                            <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+                            <div className="bg-[var(--color-card)] border border-[var(--color-border)] rounded-lg p-6 mb-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 
                                     <Dropdown
@@ -1444,7 +1445,7 @@ const AddApplicationDataPanel = ({
 
                                     {/* Age Display for Schools/Colleges */}
                                     {formData.ageAtAdmission && (
-                                        <div className="text-sm text-gray-600">
+                                        <div className="text-sm text-[var(--color-muted-foreground)]">
                                             <span className="font-medium">Age:</span> {formData.ageAtAdmission}
                                         </div>
                                     )}
@@ -1454,7 +1455,7 @@ const AddApplicationDataPanel = ({
                     </div>
 
                     {/* Footer with Action Buttons */}
-                    <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+                    <div className="border-t border-[var(--color-border)] px-6 py-4 bg-[var(--color-card)]">
                         <div className="flex items-center justify-between">
                             {/* Left: Stage Navigation */}
                             <div className="flex gap-2">
@@ -1563,8 +1564,8 @@ const AddApplicationDataPanel = ({
             {/* Visit Remark Modal */}
             {showVisitRemarkModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Add Visit Remark</h3>
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Add Visit Remark</h3>
                         <Input
                             label="Visit Remark *"
                             value={visitRemark}
@@ -1598,8 +1599,8 @@ const AddApplicationDataPanel = ({
             {/* Follow-Up Modal */}
             {showFollowUpModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Add Follow-Up</h3>
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Add Follow-Up</h3>
                         <Input
                             label="Follow-Up Date *"
                             type="date"
@@ -1640,8 +1641,8 @@ const AddApplicationDataPanel = ({
             {/* Negative Tag Modal */}
             {showNegativeTagModal && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
-                    <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Negative Tag Remark</h3>
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-semibold text-[var(--color-foreground)] mb-4">Negative Tag Remark</h3>
                         <Input
                             label="Remark *"
                             value={negativeTagRemark}
@@ -1674,38 +1675,38 @@ const AddApplicationDataPanel = ({
             {/* Duplicate Students Modal */}
             {showDuplicateModal && duplicateStudents.length > 0 && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200">
-                            <h3 className="text-lg font-semibold text-gray-900">Duplicate Students Found</h3>
+                    <div className="bg-[var(--color-card)] rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+                        <div className="px-6 py-4 border-b border-[var(--color-border)]">
+                            <h3 className="text-lg font-semibold text-[var(--color-foreground)]">Duplicate Students Found</h3>
                         </div>
                         <div className="px-6 py-4 overflow-y-auto max-h-[60vh]">
-                            <p className="text-sm text-gray-600 mb-4">
+                            <p className="text-sm text-[var(--color-muted-foreground)] mb-4">
                                 {duplicateStudents.length} student(s) found with this phone number:
                             </p>
                             <div className="space-y-3">
                                 {duplicateStudents.map((student, index) => (
-                                    <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div key={index} className="p-4 bg-[var(--color-background)] rounded-lg border border-[var(--color-border)]">
                                         <div className="grid grid-cols-2 gap-2 text-sm">
                                             <div>
-                                                <span className="font-medium text-gray-700">Name:</span>{' '}
-                                                <span className="text-gray-900">{student.name}</span>
+                                                <span className="font-medium text-[var(--color-foreground)]">Name:</span>{' '}
+                                                <span className="text-[var(--color-foreground)]">{student.name}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Phone:</span>{' '}
-                                                <span className="text-gray-900">{student.phone}</span>
+                                                <span className="font-medium text-[var(--color-foreground)]">Phone:</span>{' '}
+                                                <span className="text-[var(--color-foreground)]">{student.phone}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Course:</span>{' '}
-                                                <span className="text-gray-900">{student.course}</span>
+                                                <span className="font-medium text-[var(--color-foreground)]">Course:</span>{' '}
+                                                <span className="text-[var(--color-foreground)]">{student.course}</span>
                                             </div>
                                             <div>
-                                                <span className="font-medium text-gray-700">Stage:</span>{' '}
-                                                <span className="text-gray-900">{student.currentStage}</span>
+                                                <span className="font-medium text-[var(--color-foreground)]">Stage:</span>{' '}
+                                                <span className="text-[var(--color-foreground)]">{student.currentStage}</span>
                                             </div>
                                             {student.applicationNumber && (
                                                 <div>
-                                                    <span className="font-medium text-gray-700">App No:</span>{' '}
-                                                    <span className="text-gray-900">{student.applicationNumber}</span>
+                                                    <span className="font-medium text-[var(--color-foreground)]">App No:</span>{' '}
+                                                    <span className="text-[var(--color-foreground)]">{student.applicationNumber}</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1713,7 +1714,7 @@ const AddApplicationDataPanel = ({
                                 ))}
                             </div>
                         </div>
-                        <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+                        <div className="px-6 py-4 border-t border-[var(--color-border)] flex justify-end">
                             <Button variant="outline" onClick={() => setShowDuplicateModal(false)}>
                                 Close
                             </Button>
@@ -1722,7 +1723,7 @@ const AddApplicationDataPanel = ({
                 </div>
             )}
         </>
-    );
+    , document.body);
 };
 
 export default AddApplicationDataPanel;

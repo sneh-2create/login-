@@ -25,10 +25,10 @@ const NegativeTagModal = ({ isOpen, onClose, onSave, title = 'Add Remark' }: Neg
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-md mx-4 flex flex-col animate-in fade-in zoom-in-95 duration-200">
                 <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+                    <h2 className="text-lg font-semibold text-[var(--color-foreground)]">{title}</h2>
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)]">
                         <X size={20} />
                     </button>
                 </div>
@@ -36,22 +36,22 @@ const NegativeTagModal = ({ isOpen, onClose, onSave, title = 'Add Remark' }: Neg
                 <div className="p-6">
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Remark *</label>
+                            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-2">Remark *</label>
                             <textarea
                                 rows={4}
                                 value={remark}
                                 onChange={(e) => setRemark(e.target.value)}
                                 placeholder="Enter remark here..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                                className="w-full px-3 py-2 border border-[var(--color-border)] bg-[var(--color-card)] text-[var(--color-foreground)] rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
+                <div className="p-4 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-3">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded hover:bg-gray-50 transition-colors"
+                        className="px-4 py-2 bg-[var(--color-card)] border border-[var(--color-border)] text-[var(--color-foreground)] font-medium rounded hover:bg-[var(--color-background)] transition-colors"
                         disabled={isLoading}
                     >
                         Cancel

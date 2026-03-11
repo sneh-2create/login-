@@ -5,7 +5,7 @@ import { AttendanceLog, HrmMasterResponse } from '@od-erp/types';
 interface AttendanceTableProps {
     attendance: AttendanceLog[];
     employeeTypes: HrmMasterResponse['employeeTypes'];
-    onFilterChange: (type: string | undefined) => void;
+    onFilterChange: (_type: string | undefined) => void;
 }
 
 export const AttendanceTable: React.FC<AttendanceTableProps> = ({ attendance, employeeTypes, onFilterChange }) => {

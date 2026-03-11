@@ -51,27 +51,59 @@ export const Layout: React.FC = () => {
         );
     }
 
-    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
+    const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(true);
+    const [isMobile, setIsMobile] = React.useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+    // Initial check for mobile
+    React.useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+            if (window.innerWidth < 768) {
+                setIsSidebarExpanded(false); // Default collapsed on mobile logic (though hidden)
+            } else {
+                setIsMobileMenuOpen(false); // Close mobile menu when switching to desktop
+                setIsSidebarExpanded(true); // Default expanded on desktop
+            }
+        };
+        
+        checkMobile();
+        
+        const handleResize = () => checkMobile();
+        window.addEventListener('resize', handleResize);
+        
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    // const [isSidebarExpanded, setIsSidebarExpanded] = React.useState(false);
 
     const toggleSidebar = () => {
-        setIsSidebarExpanded(!isSidebarExpanded);
+        if (isMobile) {
+            setIsMobileMenuOpen(!isMobileMenuOpen);
+        } else {
+            setIsSidebarExpanded(!isSidebarExpanded);
+        }
     };
 
     return (
         <div className="flex h-screen overflow-hidden" style={{ background: 'var(--color-muted)' }}>
             {/* Sidebar (Fixed Left, Full Height) */}
-            <Sidebar collapsed={!isSidebarExpanded} />
+            <Sidebar 
+                collapsed={!isSidebarExpanded} 
+                isMobile={isMobile}
+                isOpen={isMobileMenuOpen}
+                onClose={() => setIsMobileMenuOpen(false)}
+            />
 
             {/* Main Content Area (Header + Content) */}
             <div
                 className="flex-1 min-w-0 flex flex-col h-full transition-all duration-300"
-                style={{ marginLeft: isSidebarExpanded ? '265px' : '100px' }}
+                style={{ marginLeft: isMobile ? '0' : (isSidebarExpanded ? '265px' : '100px') }}
             >
                 {/* Header (Fixed Top, to the right of sidebar) */}
-                <Header isSidebarExpanded={isSidebarExpanded} onToggleSidebar={toggleSidebar} />
+                <Header isSidebarExpanded={isMobile ? isMobileMenuOpen : isSidebarExpanded} onToggleSidebar={toggleSidebar} isMobile={isMobile} />
 
                 {/* Page Content */}
-                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-6" style={{ background: 'var(--color-background)' }}>
+                <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden p-2 md:p-6" style={{ background: 'var(--color-background)' }}>
                     <Outlet />
                 </main>
 

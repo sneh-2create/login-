@@ -9,6 +9,12 @@ export const ADMISSION_SEARCH_BY_OPTIONS = [
     { label: 'Source Id', value: 'sourceId' }
 ] as const;
 
+export const ADMISSION_LEADS_SEARCH_BY_OPTIONS = [
+    { label: 'Name', value: 'name' },
+    { label: 'Phone', value: 'phone' },
+    { label: 'Application Number', value: 'applicationNumber' }
+] as const;
+
 // Pagination Options
 export const ADMISSION_PAGE_SIZE_OPTIONS = [10, 25, 100] as const;
 export const DEFAULT_ADMISSION_PAGE_SIZE = 10;

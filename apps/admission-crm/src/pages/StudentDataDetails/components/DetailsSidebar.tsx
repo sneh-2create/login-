@@ -110,7 +110,7 @@ const DetailsSidebar = ({ selectedItem, onItemSelect, student }: DetailsSidebarP
     const visibleItems = menuItems.filter(item => item.visible);
     
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden sticky top-6">
+        <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] overflow-hidden sticky top-6">
             <div className="bg-primary px-4 py-3">
                 <h3 className="text-white font-semibold text-sm">Navigation</h3>
             </div>
@@ -128,11 +128,11 @@ const DetailsSidebar = ({ selectedItem, onItemSelect, student }: DetailsSidebarP
                                 transition-all duration-200 text-left
                                 ${isActive 
                                     ? 'bg-primary/10 text-primary font-semibold shadow-sm border border-primary/20' 
-                                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                                    : 'text-[var(--color-foreground)] hover:bg-[var(--color-background)] hover:text-[var(--color-foreground)]'
                                 }
                             `}
                         >
-                            <span className={isActive ? 'text-primary' : 'text-gray-500'}>
+                            <span className={isActive ? 'text-primary' : 'text-[var(--color-muted-foreground)]'}>
                                 {item.icon}
                             </span>
                             <span className="text-sm">{item.label}</span>

@@ -2,7 +2,6 @@ export { default as StudentInfoCard } from './StudentInfoCard';
 export { default as StageProgressIndicator } from './StageProgressIndicator';
 export { default as DetailsSidebar } from './DetailsSidebar';
 export { default as DetailsContentArea } from './DetailsContentArea';
-export { default as TagsAndNotesView } from './TagsAndNotesView';
 export { default as TimelineView } from './TimelineView';
 export { default as FollowUpView } from './FollowUpView';
 export { default as TransactionsView } from './TransactionsView';

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Button, Select, DatePicker } from '@od-erp/ui';
+import { Button, SelectSingle, DatePicker, MultiSelect, Checkbox } from '@od-erp/ui';
 import { useCounselors, useAdmissionMaster, useCourses } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { X } from 'lucide-react';
-import MultiSelect from './MultiSelect';
 
 interface FilterCardProps {
     onClose: () => void;
@@ -91,34 +90,34 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-            <div className="flex justify-between items-center px-3 py-2 border-b bg-gray-50/50">
+        <div className="bg-[var(--color-card)] rounded-lg shadow-sm border border-[var(--color-border)] mb-6">
+            <div className="flex justify-between items-center px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-background)]">
                 <div>
-                    <h2 className="text-lg font-bold text-gray-800">Filter Leads</h2>
+                    <h2 className="text-lg font-bold text-[var(--color-foreground)]">Filter Leads</h2>
                 </div>
                 <div className="flex items-center gap-4">
                     <div
-                         className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border transition-colors ${globalSearch ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                         className={`flex items-center gap-2 cursor-pointer px-3 py-1.5 rounded-lg border transition-colors ${globalSearch ? 'bg-blue-50 border-blue-200' : 'bg-[var(--color-card)] border-[var(--color-border)] hover:bg-[var(--color-background)]'}`}
                          onClick={() => setGlobalSearch(!globalSearch)}
                      >
-                         <div className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors ${globalSearch ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                             <div className={`bg-white w-3 h-3 rounded-full shadow-sm transform duration-300 ease-in-out ${globalSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                         <div className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors ${globalSearch ? 'bg-blue-600' : 'bg-[var(--ui-gray-300)]'}`}>
+                              <div className={`bg-[var(--color-card)] w-3 h-3 rounded-full shadow-sm transform duration-300 ease-in-out ${globalSearch ? 'translate-x-4' : 'translate-x-0'}`}></div>
                          </div>
-                         <span className={`text-xs font-medium ${globalSearch ? 'text-blue-700' : 'text-gray-600'}`}>Global Search</span>
+                         <span className={`text-xs font-medium ${globalSearch ? 'text-blue-700' : 'text-[var(--color-muted-foreground)]'}`}>Global Search</span>
                      </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition-colors">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] p-1 hover:bg-[var(--color-background)] rounded-full transition-colors">
                         <X size={20} />
                     </button>
                 </div>
             </div>
             
-            <div className="p-4 bg-white">
+            <div className="p-4 bg-[var(--color-card)]">
                 <div className="space-y-4">
                     {/* Academic Section */}
                     <section>
                         <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Academic</h3>
-                                <div className="h-px bg-gray-100 flex-1"></div>
+                                <h3 className="font-semibold text-sm text-[var(--color-foreground)] tracking-wide">Academic</h3>
+                                <div className="h-px bg-[var(--color-border)] flex-1"></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <MultiSelect
@@ -152,31 +151,19 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     {/* Application Details Section */}
                     <section>
                             <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Application Details</h3>
-                                <div className="h-px bg-gray-100 flex-1"></div>
+                                <h3 className="font-semibold text-sm text-[var(--color-foreground)] tracking-wide">Application Details</h3>
+                                <div className="h-px bg-[var(--color-border)] flex-1"></div>
                         </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                             <MultiSelect
                                 label="Tags"
                                 options={admissionMaster?.tags?.map((t: any) => ({ 
                                     value: t.tag, 
-                                    label: t.tag,
-                                    group: t.label ? t.label.toUpperCase() : 'OTHER',
-                                    color: t.colour 
+                                    label: t.tag
                                 })) || []}
                                 value={filters.tag || []}
                                 onChange={(val) => setFilters({ ...filters, tag: val })}
                                 placeholder="Select Tags"
-                                groupBy="group"
-                                renderOption={(option: any) => (
-                                    <div className="flex items-center gap-2 w-full">
-                                        <div 
-                                            className="w-3 h-3 rounded-full" 
-                                            style={{ backgroundColor: option.color || '#ccc' }}
-                                        />
-                                        <span>{option.label}</span>
-                                    </div>
-                                )}
                             />
                             <MultiSelect
                                 label="Source"
@@ -200,26 +187,20 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                             </div>
                             
                             {/* Counselor Selection */}
-                            <Select
+                            <SelectSingle
                                 label="Counselor"
                                 options={counselors?.map((c: any) => ({ value: c._id, label: c.name })) || []}
                                 value={filters.counselorId}
-                                onChange={(e) => setFilters({ ...filters, counselorId: e.target.value })}
+                                onChange={(val) => setFilters({ ...filters, counselorId: val as string })}
                                 placeholder="Select Counselor"
-                                className="w-full"
                             />
                             
                             <div className="flex items-center h-full pt-6">
-                                    <label className="inline-flex items-center cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={filters.memberDetails || false}
-                                        onChange={(e) => setFilters({...filters, memberDetails: e.target.checked})}
-                                        className="sr-only peer"
-                                        />
-                                    <div className="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                    <span className="ms-2 text-sm font-medium text-gray-700">Show Member Details</span>
-                                </label>
+                                <Checkbox
+                                    label="Show Member Details"
+                                    checked={filters.memberDetails || false}
+                                    onChange={(checked) => setFilters({ ...filters, memberDetails: checked })}
+                                />
                             </div>
                             </div>
                     </section>
@@ -227,8 +208,8 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     {/* Dates Section */}
                     <section>
                         <div className="flex items-center gap-2 mb-3">
-                                <h3 className="font-semibold text-sm text-gray-700 uppercase tracking-wide">Dates</h3>
-                                <div className="h-px bg-gray-100 flex-1"></div>
+                                <h3 className="font-semibold text-sm text-[var(--color-foreground)] tracking-wide">Dates</h3>
+                                <div className="h-px bg-[var(--color-border)] flex-1"></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                             <DatePicker
@@ -271,7 +252,7 @@ const FilterCard: React.FC<FilterCardProps> = ({ onClose, onApply, initialFilter
                     </section>
                 </div>
             </div>
-            <div className="px-3 py-2 border-t bg-gray-50 rounded-b-lg flex justify-end gap-2">
+            <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-2">
                 <Button variant="outline" size="sm" onClick={handleReset}>Reset All</Button>
                 <Button variant="primary" size="sm" onClick={handleApply}>Apply Filters</Button>
             </div>

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Card, cn } from '@od-erp/ui';
 import { LucideIcon } from 'lucide-react';
 

@@ -60,7 +60,10 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
         <div
             ref={containerRef}
             className={cn('relative flex flex-col min-w-0 w-full', containerClassName)}
-            {...rest}
+            {...Object.keys(rest).reduce((acc, key) => {
+                if (key !== 'className') acc[key] = (rest as any)[key];
+                return acc;
+            }, {} as any)}
         >
             {label && (
                 <label
@@ -83,51 +86,65 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 aria-label={label}
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
-                    'flex items-center gap-1.5 sm:gap-2 w-full min-w-0 box-border border pl-2 sm:pl-2.5 pr-2 py-1.5 sm:py-2 text-[var(--font-size-sm)]',
-                    'rounded-[var(--border-radius-md)] transition-colors duration-150 text-left',
-                    'bg-[var(--color-white)] border-[var(--border-color)] text-[var(--color-dark)]',
-                    'hover:border-[var(--ui-gray-400)] outline-none focus:!outline-none focus:ring-0 focus-visible:!outline-none focus:border-[var(--color-primary)] focus-visible:border-[var(--color-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
-                    'disabled:bg-[var(--color-grey-1)] disabled:border-[var(--ui-gray-300)] disabled:text-[var(--color-secondary)] disabled:cursor-not-allowed',
-                    open && '!border-[var(--color-primary)] ring-2 ring-[var(--color-primary)] ring-opacity-40',
-                    error && !open && '!border-[var(--color-error)]'
+                    'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-[var(--color-foreground)]',
+                    disabled && 'cursor-not-allowed opacity-50 bg-[var(--color-background)]',
+                    error && !open && 'border-red-500 focus:ring-red-500',
+                    open && 'ring-1 ring-primary border-primary',
+                    rest.className
                 )}
             >
-                <span className={cn('flex-1 min-w-0 truncate', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
+                <div className={cn('block truncate mr-2', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
                     {displayLabel || placeholder}
+                </div>
+                <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                    <ChevronDown
+                        className={cn('h-4 w-4 text-[var(--color-muted-foreground)] transition-transform', open && 'rotate-180')}
+                        aria-hidden
+                    />
                 </span>
-                <ChevronDown
-                    className={cn('w-4 h-4 shrink-0 text-[var(--color-secondary)] transition-transform', open && 'rotate-180')}
-                    aria-hidden
-                />
             </button>
             {open && !disabled && triggerWidth != null && (
                 <ul
                     role="listbox"
                     aria-activedescendant={selected ? `${selectId}-opt-${String(selected.value)}` : undefined}
                     className={cn(
-                        'absolute left-0 z-50 py-1 overflow-auto rounded-[var(--border-radius-md)] border border-[var(--border-color)] bg-[var(--color-white)] shadow-lg',
+                        'absolute left-0 z-[10002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-lg ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
                         placement === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
                     )}
-                    style={{ width: triggerWidth, maxWidth: triggerWidth, maxHeight: '240px', boxSizing: 'border-box' }}
+                    style={{ minWidth: triggerWidth, width: 'max-content', maxWidth: '300px', maxHeight: '240px', boxSizing: 'border-box' }}
                 >
-                    {options.map((option) => (
-                        <li
-                            key={String(option.value)}
-                            id={`${selectId}-opt-${String(option.value)}`}
-                            role="option"
-                            aria-selected={option.value === value}
-                            className={cn(
-                                'px-2 sm:px-2.5 py-1.5 sm:py-2 text-sm cursor-pointer outline-none',
-                                'focus-visible:ring-inset focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-opacity-40',
-                                option.value === value
-                                    ? 'bg-[var(--color-primary)] text-white'
-                                    : 'text-[var(--color-dark)] hover:bg-[var(--color-grey-1)]'
-                            )}
-                            onClick={() => handleSelect(option)}
-                        >
-                            {option.label}
-                        </li>
-                    ))}
+                    {options.map((option) => {
+                        const isSelected = option.value === value;
+                        const isDisabled = !!option.disabled;
+                        return (
+                            <li
+                                key={String(option.value)}
+                                id={`${selectId}-opt-${String(option.value)}`}
+                                role="option"
+                                aria-selected={isSelected}
+                                aria-disabled={isDisabled}
+                                className={cn(
+                                    'relative select-none py-2 pl-3 pr-9',
+                                    isDisabled
+                                        ? 'cursor-not-allowed opacity-40 text-[var(--color-muted-foreground)]'
+                                        : 'cursor-pointer hover:bg-[var(--color-background)]',
+                                    isSelected && !isDisabled ? 'bg-primary/5 text-primary' : 'text-[var(--color-foreground)]'
+                                )}
+                                onClick={() => !isDisabled && handleSelect(option)}
+                            >
+                                <span className={cn('block truncate', isSelected && 'font-medium')}>
+                                    {option.label}
+                                </span>
+                                {isSelected && !isDisabled && (
+                                    <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-primary">
+                                        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                        </svg>
+                                    </span>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
             {error && (

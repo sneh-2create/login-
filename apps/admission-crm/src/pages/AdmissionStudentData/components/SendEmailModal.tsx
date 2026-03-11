@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Mail } from 'lucide-react';
-import { Button, SelectInput, useToast } from '@od-erp/ui';
+import { Button, SelectSingle, MultiSelect, TextArea, useToast } from '@od-erp/ui';
 import { useCommunicationTemplates, useSendAdmissionEmail, useCommunicationConfig } from '@od-erp/query';
 import { useAppSelector } from '@od-erp/store';
 import { AdmissionLead } from '@od-erp/types';
-import MultiSelect from '../../AdmissionLeads/components/MultiSelect';
+import { useEffect } from 'react';
 
 interface SendEmailModalProps {
     isOpen: boolean;
@@ -25,7 +25,6 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
     const session = useAppSelector((state) => state.session.academicSession) || '';
     const { showToast } = useToast();
 
-    // State
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const [sendTo, setSendTo] = useState<string[]>([]);
     const [content, setContent] = useState('');
@@ -33,16 +32,20 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
     const [senderId, setSenderId] = useState('');
     const [DLT_TE_ID, setDLT_TE_ID] = useState('');
 
-    // Queries
     const { data: templates } = useCommunicationTemplates(entityId, 'admissionReminder', 'email');
     const { data: communicationConfig } = useCommunicationConfig(entityId, session);
     const { mutate: sendEmail, isPending: isSending } = useSendAdmissionEmail();
 
-    // Handle Template Selection
-    const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const templateId = e.target.value;
+    useEffect(() => {
+        if (communicationConfig?.emailConfig?.senderId?.length > 0 && !senderId) {
+            setSenderId(communicationConfig.emailConfig.senderId[0]);
+        }
+    }, [communicationConfig, senderId]);
+
+    const handleTemplateChange = (val: string | number | (string | number)[]) => {
+        const templateId = val as string;
         setSelectedTemplateId(templateId);
-        
+
         const template = templates?.find((t: any) => t._id === templateId);
         if (template) {
             setContent(template.content);
@@ -52,12 +55,9 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
         }
     };
 
-    // Set default sender ID when config loads
-    React.useEffect(() => {
-        if (communicationConfig?.emailConfig?.senderId?.length > 0 && !senderId) {
-            setSenderId(communicationConfig.emailConfig.senderId[0]);
-        }
-    }, [communicationConfig, senderId]);
+    const handleSenderId = (val: string | number | (string | number)[]) => {
+        setSenderId(val as string);
+    };
 
     const handleSend = () => {
         if (!selectedTemplateId || sendTo.length === 0) {
@@ -65,10 +65,9 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
             return;
         }
 
-        // Map data strictly matching Angular implementation
         const dataList = selectedStudents.map(row => {
             const item: any = { ...row };
-            
+
             if (row.studentDetails) {
                 item.fatherMobile = row.studentDetails.fatherMobile;
                 item.motherMobile = row.studentDetails.motherMobile;
@@ -77,7 +76,7 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
                 item.socialCategory = row.studentDetails.socialCategory;
                 item.studentCity = row.studentDetails.city;
             }
-            
+
             item.dueAmount = row.dueAmount;
             if (row.installments) {
                 item.installments = row.installments.toString();
@@ -100,9 +99,8 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
         sendEmail(payload, {
             onSuccess: () => {
                 showToast('success', 'Emails initiated successfully');
-                onSuccess?.(); // Clear selection
+                onSuccess?.();
                 onClose();
-                // Reset form
                 setSelectedTemplateId('');
                 setContent('');
                 setSubject('');
@@ -118,102 +116,89 @@ const SendEmailModal = ({ isOpen, onClose, selectedStudents, onSuccess }: SendEm
 
     if (!isOpen) return null;
 
+    const senderIdOptions = communicationConfig?.emailConfig?.senderId?.map((id: string) => ({ label: id, value: id })) || [];
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 animate-in fade-in duration-200">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 flex flex-col">
-                <div className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <Mail size={18} className="text-blue-600" />
-                        Send Multiple Admission Reminder Email
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-[var(--color-card)] rounded-lg shadow-xl w-full max-w-2xl mx-4 flex flex-col">
+                {/* Header */}
+                <div className="flex justify-between items-center px-3 py-2 border-b">
+                    <h2 className="text-lg font-semibold text-[var(--color-foreground)] flex items-center gap-2">
+                        <Mail size={18} className="text-primary" />
+                        Send Admission Reminder Email
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                    <button onClick={onClose} className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-6">
-                    {/* Form Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                        {/* Template Select */}
-                        <div>
-                            <SelectInput
-                                label="Select Template"
-                                value={selectedTemplateId}
-                                onChange={handleTemplateChange}
-                                options={templates?.map((t: any) => ({ label: t.name, value: t._id })) || []}
-                                placeholder="Select Template"
-                            />
-                        </div>
+                {/* Body */}
+                <div className="px-3 py-3 flex flex-col gap-3">
+                    <p className="text-sm text-[var(--color-muted-foreground)]">
+                        Sending to <span className="font-bold text-[var(--color-foreground)]">{selectedStudents.length}</span> student{selectedStudents.length !== 1 ? 's' : ''}.
+                    </p>
 
-                        {/* Send To MultiSelect */}
-                        <div>
-                           <MultiSelect
-                                label="Send to Email of"
-                                options={SEND_TO_OPTIONS}
-                                value={sendTo}
-                                onChange={setSendTo}
-                                placeholder="Send to Email of"
-                           />
-                        </div>
-
-                        {/* Sender ID Select */}
-                        <div>
-                            <SelectInput
-                                label="Select Sender ID"
-                                value={senderId}
-                                onChange={(e) => setSenderId(e.target.value)}
-                                options={communicationConfig?.emailConfig?.senderId?.map((id: string) => ({ label: id, value: id })) || []}
-                                placeholder="Select Sender ID"
-                            />
-                        </div>
-
-                        {/* DLT_TE_ID Display */}
-                        <div className="flex flex-col">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">DLT_TE_ID</label>
-                            <div className="flex items-center h-10 px-3 border border-gray-300 rounded-md bg-gray-50">
-                                <span className="text-sm font-semibold text-gray-800">{DLT_TE_ID || '-'}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <SelectSingle
+                            label="Select Template"
+                            options={templates?.map((t: any) => ({ label: t.name, value: t._id })) || []}
+                            value={selectedTemplateId}
+                            onChange={handleTemplateChange}
+                            placeholder="Select Template"
+                        />
+                        <MultiSelect
+                            label="Send to Email of"
+                            options={SEND_TO_OPTIONS}
+                            value={sendTo}
+                            onChange={(val) => setSendTo(val as string[])}
+                            placeholder="Select recipients"
+                        />
+                        <SelectSingle
+                            label="Select Sender ID"
+                            options={senderIdOptions}
+                            value={senderId}
+                            onChange={handleSenderId}
+                            placeholder="Select Sender ID"
+                        />
+                        {DLT_TE_ID && (
+                            <div className="flex flex-col">
+                                <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">DLT_TE_ID</label>
+                                <div className="flex items-center h-10 px-3 border border-[var(--color-border)] rounded-md bg-[var(--color-background)]">
+                                    <span className="text-sm font-semibold text-[var(--color-foreground)]">{DLT_TE_ID}</span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Subject */}
                     {subject && (
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                            <input
-                                type="text"
-                                className="w-full border border-gray-300 rounded-md p-2 text-sm bg-gray-50 font-medium"
-                                value={subject}
-                                readOnly
-                            />
+                        <div>
+                            <label className="block text-sm font-medium text-[var(--color-foreground)] mb-1">Subject</label>
+                            <div className="flex items-center px-3 py-2 border border-[var(--color-border)] rounded-md bg-[var(--color-background)]">
+                                <span className="text-sm font-medium text-[var(--color-foreground)]">{subject}</span>
+                            </div>
                         </div>
                     )}
 
-                    {/* Content Preview */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-                        <textarea
-                            className="w-full border border-gray-300 rounded-md p-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none min-h-[120px] bg-gray-50 font-medium disabled:opacity-75"
-                            placeholder="Content"
-                            value={content}
-                            readOnly
-                            disabled
-                        />
-                        <div className="text-xs text-gray-500 mt-1 text-right">
-                            Sending to {selectedStudents.length} students
-                        </div>
-                    </div>
+                    <TextArea
+                        label="Content"
+                        value={content}
+                        onChange={() => {}}
+                        placeholder="Select a template to preview content"
+                        readOnly
+                        disabled
+                        rows={5}
+                    />
                 </div>
 
-                <div className="p-4 border-t bg-gray-50 rounded-b-lg flex justify-end gap-3">
-                    <Button variant="outline" onClick={onClose} className="bg-white border-gray-300 text-gray-700 hover:bg-gray-50">
+                {/* Footer */}
+                <div className="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-lg flex justify-end gap-2">
+                    <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button 
-                        variant="primary" 
+                    <Button
+                        variant="primary"
                         onClick={handleSend}
-                        disabled={isSending || !selectedTemplateId}
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
+                        disabled={isSending || !selectedTemplateId || sendTo.length === 0}
                     >
                         {isSending ? 'Sending...' : 'Send'}
                     </Button>

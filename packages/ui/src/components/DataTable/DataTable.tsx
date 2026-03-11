@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
+import { getScrollParent } from '../../utils';
 import {
     useReactTable,
     getCoreRowModel,
@@ -9,8 +10,7 @@ import {
     ColumnDef,
 } from '@tanstack/react-table';
 import { Search, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { ExtendedColumnMeta, BaseDataTableProps } from '@od-erp/types';
-import { Dropdown } from '../Atoms/Dropdown';
+import { ExtendedColumnMeta, DataTableProps } from '@od-erp/types';
 import {
     FONT_WEIGHT_NUMERIC_MAP,
     FONT_WEIGHT_STRING_MAP,
@@ -20,16 +20,13 @@ import {
     DEFAULT_ITEMS_PER_PAGE_OPTIONS,
     DEFAULT_SEARCH_PLACEHOLDER,
 } from '@od-erp/constants';
+import { SelectSingle } from '../Atoms/SelectSingle';
 
-export interface DataTableProps<TData, TValue> extends BaseDataTableProps {
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-}
 
 export function DataTable<TData, TValue>({
     columns,
     data,
-    maxHeight,
+    maxHeight: _maxHeight,
     isLoading,
     showSearch = true,
     searchPlaceholder = DEFAULT_SEARCH_PLACEHOLDER,
@@ -53,6 +50,42 @@ export function DataTable<TData, TValue>({
         pageIndex: 0,
         pageSize: initialItemsPerPage,
     });
+
+    const [windowWidth, setWindowWidth] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200);
+    React.useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    const isMobile = windowWidth < 768;
+
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [isStuck, setIsStuck] = useState(false);
+
+    // IntersectionObserver only to detect when the table is sticky for shadow feedback.
+    // The actual stickiness is handled by CSS position: sticky.
+    React.useEffect(() => {
+        const parent = getScrollParent(cardRef.current);
+        
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                // We consider it "stuck" when the entry is not fully visible at the top
+                // due to the sticky offset. We use a small 5px buffer.
+                const raw = getComputedStyle(document.documentElement).getPropertyValue('--table-sticky-top-px').trim();
+                const stickyTop = parseFloat(raw) || 140;
+                setIsStuck(entry.boundingClientRect.top <= stickyTop + 5);
+            },
+            { 
+                threshold: [0.99, 1],
+                root: parent === document.documentElement ? null : parent
+            }
+        );
+
+        if (cardRef.current) observer.observe(cardRef.current);
+        return () => observer.disconnect();
+    }, [data]);
+
+
 
     // Handle external pagination updates
     const handlePaginationChange = (updater: any) => {
@@ -114,11 +147,12 @@ export function DataTable<TData, TValue>({
         table.setPageIndex(0);
     };
 
-    const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const value = parseInt(e.target.value, 10);
+    const handleItemsPerPageChange = (value: string | number | (string | number)[]) => {
+        if (Array.isArray(value)) return;
+        const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
         const newPagination = {
             pageIndex: 0,
-            pageSize: value,
+            pageSize: numValue,
         };
         setPagination(newPagination);
         if (onPaginationChange) {
@@ -207,18 +241,25 @@ export function DataTable<TData, TValue>({
 
 
     return (
-        <div className={`w-full flex justify-center items-start p-0 font-sans ${containerClassName}`}>
-            <div className={`w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl overflow-hidden flex flex-col ${maxHeight ? `max-h-[${maxHeight}]` : ''}`}>
-                {/* Search Section */}
+        <div className={`w-full flex justify-center items-start p-0 font-sans relative ${containerClassName}`}>
+            <div
+                ref={cardRef}
+                className={`w-full bg-[var(--color-card)] border border-[var(--color-border)] rounded-xl flex flex-col sticky z-20 transition-shadow duration-300 ${isStuck ? 'shadow-lg border-opacity-50' : ''}`}
+                style={{
+                    top: 'var(--table-sticky-top-px, 0px)',
+                    maxHeight: 'calc(100vh - var(--table-sticky-top-px, 0px) - 16px)',
+                }}
+            >
+                {/* Search Section — sticky at top */}
                 {showSearch && (
-                    <div className="w-full min-h-16 p-3 box-border flex items-center gap-3 border-b border-[var(--color-border)]">
+                    <div className="w-full min-h-16 p-3 box-border flex items-center gap-3 border-b border-[var(--color-border)] flex-shrink-0 bg-[var(--color-card)] rounded-t-xl">
                         {/* Search By Dropdown (optional) */}
                         {searchByOptions && searchByOptions.length > 0 && (
                             <div className="w-48 flex-shrink-0">
-                                <Dropdown
+                                <SelectSingle
                                     value={searchByValue || ''}
                                     onChange={(val) => onSearchByChange?.(val as string)}
-                                    options={searchByOptions}
+                                    options={searchByOptions as any}
                                     placeholder="Search By"
                                 />
                             </div>
@@ -240,10 +281,10 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                {/* Table Section */}
-                <div className="w-full overflow-x-auto overflow-y-auto" style={maxHeight ? { maxHeight: maxHeight } : {}}>
+                {/* Table Section — scrollable body */}
+                <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
                     <table className="w-full border-collapse bg-[var(--color-card)]">
-                        <thead className="bg-[var(--color-muted)]">
+                        <thead className="bg-[var(--color-muted)] sticky top-0 z-10">
                             <tr className="h-[50px]">
                                 {table.getHeaderGroups().map((headerGroup) =>
                                     headerGroup.headers.map((header) => {
@@ -251,11 +292,11 @@ export function DataTable<TData, TValue>({
                                         return (
                                             <th
                                                 key={header.id}
-                                                className="px-6 py-3 text-left font-sans text-xs font-bold tracking-wide text-[var(--color-foreground)] border-b border-[var(--color-border)]"
+                                                className="px-6 py-3 text-center font-sans text-xs font-bold tracking-wide text-[var(--color-foreground)] border-b border-[var(--color-border)] whitespace-nowrap"
                                                 style={getHeaderStyle(column)}
                                                 onClick={enableSorting && header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
                                             >
-                                                <div className={`flex items-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-[var(--color-primary)]' : ''}`}>
+                                                <div className={`flex items-center justify-center gap-2 ${enableSorting && header.column.getCanSort() ? 'cursor-pointer hover:text-[var(--color-primary)]' : ''}`}>
                                                     {flexRender(column.header, header.getContext())}
                                                     {enableSorting && header.column.getCanSort() && (
                                                         <span className="ml-1">
@@ -315,51 +356,44 @@ export function DataTable<TData, TValue>({
                     </table>
                 </div>
 
-                {/* Pagination Section */}
+                {/* Pagination Section — sticky at bottom */}
                 {showPagination && (
-                    <div className="w-full h-[65px] px-6 py-3 box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)]">
-                        <div className="flex items-center gap-2">
-                            <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
-                                Items per page:
+                    <div className={`w-full ${isMobile ? 'px-2 py-1.5' : 'px-3 py-2'} box-border flex justify-between items-center border-t border-[var(--color-border)] bg-[var(--color-card)] flex-shrink-0 rounded-b-xl`}>
+                        <div className={`flex items-center ${isMobile ? 'gap-1' : 'gap-2'}`}>
+                            <span className={`font-sans ${isMobile ? 'text-[12px]' : 'text-sm'} text-[var(--color-muted-foreground)] whitespace-nowrap`}>
+                                {isMobile ? 'Items:' : 'Items per page:'}
                             </span>
-                            <div className="relative">
-                                <select
-                                    className="h-8 pl-3 pr-7 border border-[var(--color-border)] rounded-md bg-[var(--color-background)] text-sm text-[var(--color-foreground)] cursor-pointer outline-none focus:border-[var(--color-primary)] appearance-none min-w-[60px]"
-                                    style={{
-                                        backgroundImage: `url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22 viewBox=%220 0 10 6%22 fill=%22none%22%3E%3Cpath d=%22M1 1L5 5L9 1%22 stroke=%22%236B7280%22 stroke-width=%221.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E')`,
-                                        backgroundRepeat: 'no-repeat',
-                                        backgroundPosition: 'right 8px center'
-                                    }}
+                            <div className="flex-shrink-0">
+                                <SelectSingle
                                     value={pageSize}
                                     onChange={handleItemsPerPageChange}
-                                >
-                                    {itemsPerPageOptions.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </select>
+                                    options={itemsPerPageOptions.map((option) => ({
+                                        label: option.toString(),
+                                        value: option,
+                                    }))}
+                                    className={isMobile ? "h-7 min-h-0 py-0 pl-2 pr-8 text-xs min-w-[50px]" : "h-8 min-h-0 py-0 pl-3 pr-10 text-sm min-w-[60px]"}
+                                />
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <span className="font-sans text-sm text-[var(--color-muted-foreground)]">
-                                {startItem} – {endItem} of {totalRows}
+                        <div className={`flex items-center ${isMobile ? 'gap-2' : 'gap-4'}`}>
+                            <span className={`font-sans ${isMobile ? 'text-[12px]' : 'text-sm'} text-[var(--color-muted-foreground)] whitespace-nowrap`}>
+                                {startItem}–{endItem} of {totalRows}
                             </span>
-                            <div className="flex gap-2">
+                            <div className={`flex ${isMobile ? 'gap-1' : 'gap-2'}`}>
                                 <button
-                                    className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
                                     onClick={handlePrevPage}
-                                    disabled={!table.getCanPreviousPage()}
+                                    disabled={currentPageIndex === 0}
                                 >
-                                    <ChevronLeft className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
+                                    <ChevronLeft className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[var(--color-muted-foreground)]`} strokeWidth={1.5} />
                                 </button>
                                 <button
-                                    className="w-8 h-8 flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className={`${isMobile ? 'w-7 h-7' : 'w-8 h-8'} flex items-center justify-center border border-[var(--color-border)] rounded-md bg-[var(--color-background)] cursor-pointer hover:bg-[var(--color-muted)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
                                     onClick={handleNextPage}
-                                    disabled={!table.getCanNextPage()}
+                                    disabled={endItem >= totalRows}
                                 >
-                                    <ChevronRight className="w-4 h-4 text-[var(--color-muted-foreground)]" strokeWidth={1.5} />
+                                    <ChevronRight className={`${isMobile ? 'w-3.5 h-3.5' : 'w-4 h-4'} text-[var(--color-muted-foreground)]`} strokeWidth={1.5} />
                                 </button>
                             </div>
                         </div>

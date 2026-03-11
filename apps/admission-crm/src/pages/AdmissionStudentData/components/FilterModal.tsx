@@ -139,15 +139,15 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
             onClick={onClose}
         >
             <div 
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col"
+                className="bg-[var(--color-card)] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200">
-                    <h2 className="text-xl font-bold text-gray-900">Application Data Filters</h2>
+                <div className="flex justify-between items-center px-3 py-2 border-b border-[var(--color-border)]">
+                    <h2 className="text-xl font-bold text-[var(--color-foreground)]">Application Data Filters</h2>
                     <button 
                         onClick={onClose} 
-                        className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+                        className="text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors p-1 hover:bg-[var(--color-background)] rounded-full"
                     >
                         <X size={24} />
                     </button>
@@ -157,12 +157,12 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                 <div className="flex-1 overflow-y-auto px-3 py-2">
                     <div className="space-y-6">
                         {/* Section 1: Date Filters */}
-                        <div className="bg-blue-50 rounded-xl px-3 py-2 border border-blue-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-blue-500 rounded-lg">
                                     <Calendar className="w-5 h-5 text-white" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Date Filters</h3>
+                                <h3 className="text-lg font-semibold text-[var(--color-foreground)]">Date Filters</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                 <DatePicker
@@ -195,12 +195,12 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 2: Academic, Batch & Source */}
-                        <div className="bg-purple-50 rounded-xl px-3 py-2 border border-purple-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-purple-500 rounded-lg">
                                     <BookOpen className="w-5 h-5 text-white" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Academic, Batch & Source</h3>
+                                <h3 className="text-lg font-semibold text-[var(--color-foreground)]">Academic, Batch & Source</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Dropdown
@@ -260,12 +260,12 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 3: Stage & Engagement */}
-                        <div className="bg-green-50 rounded-xl px-3 py-2 border border-green-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-green-500 rounded-lg">
                                     <Target className="w-5 h-5 text-white" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Stage & Engagement</h3>
+                                <h3 className="text-lg font-semibold text-[var(--color-foreground)]">Stage & Engagement</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Dropdown
@@ -291,12 +291,12 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                         </div>
 
                         {/* Section 4: Counselor & Tag */}
-                        <div className="bg-orange-50 rounded-xl px-3 py-2 border border-orange-100">
+                        <div className="bg-[var(--color-background)] rounded-xl px-3 py-2 border border-[var(--color-border)]">
                             <div className="flex items-center gap-3 mb-2">
                                 <div className="p-2 bg-orange-500 rounded-lg">
                                     <Users className="w-5 h-5 text-white" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-gray-900">Counselor & Tag</h3>
+                                <h3 className="text-lg font-semibold text-[var(--color-foreground)]">Counselor & Tag</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Dropdown
@@ -340,13 +340,12 @@ const FilterModal = ({ isOpen, onClose, onApply, currentFilters, stages }: Filte
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-3 px-3 py-2 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <div className="flex justify-end gap-3 px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-background)] rounded-b-2xl">
                     <Button 
                         variant="primary" 
                         onClick={handleApply}
-                        className="px-8 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all"
                     >
-                        Go <ArrowRightIcon className="w-5 h-5 text-white" />
+                        Go <ArrowRightIcon className="w-5 h-5" />
                     </Button>
                 </div>
             </div>
