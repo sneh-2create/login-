@@ -194,4 +194,37 @@ export const admissionStudentDataService = {
         const response = await apiClient.post<{ id: string; name: string; mobile: string; email: string }>('/getStageCounselor/admissionStudentData', payload);
         return response.data;
     },
+
+    // Admission Stage Setup CRUD
+    addAdmissionStageSetup: async (payload: any) => {
+        const response = await apiClient.post<any>('/add/admissionStageSetup', payload);
+        return response.data;
+    },
+
+    editAdmissionStageSetup: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionStageSetup', payload);
+        return response.data;
+    },
+
+    viewAdmissionStageSetup: async (id: string) => {
+        const response = await apiClient.get<any>(`/view/admissionStageSetup?id=${id}`);
+        return response.data;
+    },
+
+    deleteAdmissionStageSetup: async (id: string, stage: string, entity: string, session: string) => {
+        const response = await apiClient.get<any>(`/delete/admissionStageSetup?id=${id}&stage=${stage}&entity=${entity}&session=${session}`);
+        return response.data;
+    },
+
+    // Course Edit (used by Minimum Age Master — mirrors Angular's OtherApiService.editCourseData)
+    editCourseData: async (courseData: any) => {
+        const response = await apiClient.post<any>('/edit/course', courseData);
+        return response.data;
+    },
+
+    // Admission Master Edit
+    editAdmissionMaster: async (payload: any) => {
+        const response = await apiClient.post<any>('/edit/admissionMaster', payload);
+        return response.data;
+    },
 };

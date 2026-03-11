@@ -17,4 +17,5 @@ export interface MultiSelectProps extends Omit<React.HTMLAttributes<HTMLDivEleme
     containerClassName?: string;
     id?: string;
     disabled?: boolean;
+    usePortal?: boolean;
 }

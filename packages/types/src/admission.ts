@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 export interface AdmissionSummaryReportParams {
     entity: string;
     session?: string[];
@@ -448,4 +450,106 @@ export interface AdmissionTemplate {
 
 export interface DefaultTemplateResponse {
     tableHeads: AdmissionTableHead[];
+}
+
+// --- Admission Setup Types ---
+
+export interface SetupCard {
+    id: string;
+    title: string;
+    description: string;
+    icon: ReactNode;
+    route: string;
+    permission: string;
+    linkLabel: string;
+}
+
+export interface SetupCardProps {
+    card: SetupCard;
+    onClick?: () => void;
+}
+
+// --- Stage Setup Form Types ---
+export interface StageField {
+    key: string;
+    displayName: string;
+    requiredField: boolean;
+    fieldType: string;
+    sequence: number;
+    groupBy: string;
+    option: boolean;
+    options: string[];
+}
+
+export interface TxnMapping {
+    course: string;
+    stream: string;
+    amount: number;
+    headData: { admissionHead: string; headAmount: number }[];
+    amountEditable: boolean;
+    isEditableDisable: boolean;
+    disableHead: string[];
+}
+
+export interface StageFormData {
+    _id?: string;
+    stage: string;
+    sequence: number | '';
+    stageType: string;
+    checkSeats: boolean;
+    sendSMS: boolean;
+    sendWhatsAppWeb: boolean;
+    sendWhatsApp: boolean;
+    sendEmail: boolean;
+    smsTemplate: string;
+    whatsAppWebTemplate: string;
+    whatsAppTemplate: string;
+    emailTemplate: string;
+    txnRequired: boolean;
+    saveZeroAmountTransaction: boolean;
+    stageCounselor: string[];
+    fields: StageField[];
+    txnMapping: TxnMapping[];
+}
+
+export interface StageSetupFormDrawerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+    editData: any | null;
+    entityId: string;
+    session: string;
+    admissionMaster: any;
+    permissions?: string[];
+}
+
+
+export interface AdmissionStep {
+    id: string;
+    title: string;
+    subtitle: string;
+    icon: ReactNode;
+    permission: string;
+    component: (_onSuccess: () => void) => ReactNode;
+}
+
+export interface AdmissionPhase {
+    id: string;
+    phaseNumber: number;
+    title: string;
+    steps: AdmissionStep[];
+}
+
+export interface PhaseTimelineProps {
+    title: string;
+    phaseNumber: number;
+    children: ReactNode;
+}
+
+export interface PhaseStepCardProps {
+    title: string;
+    subtitle: string;
+    icon: ReactNode;
+    isStarted: boolean;
+    onAction: () => void;
 }

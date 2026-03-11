@@ -51,6 +51,7 @@ export * from './components/Atoms/Toggle';
 export * from './components/Atoms/Dropdown';
 export * from './components/Atoms/HorizontalTabs';
 export * from './components/Atoms/ActionMenu';
+export * from './components/Atoms/Accordion';
 
 // Login-specific components (from dev branch)
 export * from './components/Atoms/FeatureCard';
@@ -62,6 +63,8 @@ export * from './components/Atoms/LoginButton';
 export * from './components/SummaryCard/SummaryCard';
 export * from './components/DashboardSection/DashboardSection';
 export * from './components/DataTable/DataTable';
+export * from './components/EditableTable/EditableTable';
+
 
 // Molecules
 export * from './components/DateRangeFilter/DateRangeFilter';
@@ -79,6 +82,10 @@ export * from './components/ThemeSwitcher';
 export * from './components/FloatingThemePicker';
 export * from './components/Toast/Toast';
 export * from './components/EmptyState/EmptyState';
+export * from './components/SetupCard/SetupCard';
+export * from './components/PhaseSetup/PhaseTimeline';
+export * from './components/PhaseSetup/PhaseStepCard';
+export * from './components/StepOrchestrator';
 export * from './components/NeedHelpPanel';
 export { default as ViewDocumentsModal } from './components/ViewDocumentsModal/ViewDocumentsModal';
 export * from './components/ExcelTemplateEditDrawer/ExcelTemplateEditDrawer';

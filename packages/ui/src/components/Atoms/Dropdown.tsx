@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Check, X } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -25,6 +26,7 @@ export interface DropdownProps extends Omit<React.HTMLAttributes<HTMLDivElement>
     displayMode?: 'tags' | 'text';
     maxTags?: number;
     id?: string;
+    usePortal?: boolean;
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -42,6 +44,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     displayMode = 'text',
     maxTags = 3,
     id,
+    usePortal = false,
     ...rest
 }) => {
     const [internalOpen, setInternalOpen] = useState(false);
@@ -51,7 +54,26 @@ export const Dropdown: React.FC<DropdownProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
     const { placement, triggerWidth } = useDropdownPosition(triggerRef, isOpen);
+    
+    const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+    
+    useEffect(() => {
+        if (!isOpen || !usePortal || !triggerRef.current) return;
+        const rect = triggerRef.current.getBoundingClientRect();
+        const isTop = placement === 'top';
+        
+        setMenuStyle({
+            position: 'fixed',
+            zIndex: 100002,
+            width: triggerWidth ?? undefined,
+            ...(isTop
+                ? { bottom: window.innerHeight - rect.top + 4 }
+                : { top: rect.bottom + 4 }),
+            left: rect.left
+        });
+    }, [isOpen, placement, triggerWidth, usePortal]);
     
     // Generate unique ID if not provided
     const uniqueId = useRef(`dropdown-${Math.random().toString(36).substr(2, 9)}`).current;
@@ -63,7 +85,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const insideTrigger = containerRef.current?.contains(target);
+            const insideMenu = usePortal && menuRef.current?.contains(target);
+            if (!insideTrigger && !insideMenu) {
                 setIsOpen(false);
             }
         };
@@ -216,19 +241,23 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     </span>
                 </button>
 
-                {isOpen && (
-                    <div 
-                        className={clsx(
-                            "absolute z-[10002] w-full overflow-hidden rounded-md bg-white text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm",
-                             placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1'
-                        )}
-                        style={{ 
-                            width: triggerWidth ?? undefined, 
-                            maxHeight: '240px', 
-                            display: 'flex', 
-                            flexDirection: 'column' 
-                        }}
-                    >
+                {isOpen && (() => {
+                    const menuContent = (
+                        <div 
+                            ref={menuRef}
+                            className={clsx(
+                                "w-full overflow-hidden rounded-md bg-white text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm",
+                                !usePortal && "absolute z-[100002]",
+                                !usePortal && (placement === 'top' ? 'bottom-full mb-1' : 'top-full mt-1')
+                            )}
+                            style={{ 
+                                width: triggerWidth ?? undefined, 
+                                maxHeight: '240px', 
+                                display: 'flex', 
+                                flexDirection: 'column',
+                                ...(usePortal ? menuStyle : {})
+                            }}
+                        >
                         {searchable && (
                             <div className="sticky top-0 z-10 bg-[var(--color-card)] px-2 py-1.5 border-b border-[var(--color-border)] shrink-0">
                                 <input
@@ -288,7 +317,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
                             )}
                         </div>
                     </div>
-                )}
+                    );
+                    return usePortal ? createPortal(menuContent, document.body) : menuContent;
+                })()}
             </div>
             {error && <span className="text-xs text-red-500">{error}</span>}
         </div>

@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import type { SelectSingleProps, SelectSingleOption } from '@od-erp/types';
 import { cn } from '../../utils';
@@ -25,7 +26,8 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     const selectId = id ?? `select-single-${Math.random().toString(36).slice(2, 9)}`;
     const containerRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
-    const { placement, triggerWidth } = useDropdownPosition(triggerRef, open);
+    const portalRef = useRef<HTMLUListElement>(null);
+    const { placement, triggerWidth, coords } = useDropdownPosition(triggerRef, open);
 
     const selected = options.find((o) => o.value === value);
     const displayLabel = selected ? selected.label : '';
@@ -37,7 +39,11 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     useEffect(() => {
         if (!open) return;
         const handleClickOutside = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+            const isOutsideContainer = containerRef.current && !containerRef.current.contains(e.target as Node);
+            const isOutsidePortal = portalRef.current && !portalRef.current.contains(e.target as Node);
+            if (isOutsideContainer && (portalRef.current ? isOutsidePortal : true)) {
+                setOpen(false);
+            }
         };
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setOpen(false);
@@ -51,6 +57,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
     }, [open]);
 
     const handleSelect = (option: SelectSingleOption) => {
+        if (option.disabled) return;
         if (!controlled) setInternalValue(option.value);
         onChange?.(option.value);
         setOpen(false);
@@ -83,7 +90,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 disabled={disabled}
                 aria-expanded={open}
                 aria-haspopup="listbox"
-                aria-label={label}
+                aria-label={typeof label === 'string' ? label : undefined}
                 onClick={() => !disabled && setOpen((o) => !o)}
                 className={cn(
                     'relative w-full cursor-pointer rounded-md border border-[var(--color-border)] bg-[var(--color-card)] py-2 pl-3 pr-10 text-left text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all text-[var(--color-foreground)]',
@@ -94,7 +101,7 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                 )}
             >
                 <div className={cn('block truncate mr-2', !displayLabel && 'text-[var(--ui-placeholder-color)]')}>
-                    {displayLabel || placeholder}
+                    {selected ? selected.label : placeholder}
                 </div>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
                     <ChevronDown
@@ -103,19 +110,29 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                     />
                 </span>
             </button>
-            {open && !disabled && triggerWidth != null && (
+            {open && !disabled && triggerWidth != null && coords && createPortal(
                 <ul
+                    ref={portalRef}
                     role="listbox"
                     aria-activedescendant={selected ? `${selectId}-opt-${String(selected.value)}` : undefined}
                     className={cn(
-                        'absolute left-0 z-[10002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-lg ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
-                        placement === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1'
+                        'fixed z-[100002] overflow-auto rounded-md bg-[var(--color-card)] text-base shadow-xl ring-1 ring-[var(--color-border)] ring-opacity-100 focus:outline-none sm:text-sm py-1',
+                        placement === 'bottom' ? 'mt-1' : 'mb-1'
                     )}
-                    style={{ minWidth: triggerWidth, width: 'max-content', maxWidth: '300px', maxHeight: '240px', boxSizing: 'border-box' }}
+                    style={{ 
+                        top: placement === 'bottom' ? triggerRef.current?.getBoundingClientRect().bottom : undefined,
+                        bottom: placement === 'top' ? (window.innerHeight - (triggerRef.current?.getBoundingClientRect().top || 0)) : undefined,
+                        left: triggerRef.current?.getBoundingClientRect().left,
+                        minWidth: triggerWidth, 
+                        width: 'max-content', 
+                        maxWidth: '300px', 
+                        maxHeight: '240px', 
+                        boxSizing: 'border-box' 
+                    }}
                 >
                     {options.map((option) => {
                         const isSelected = option.value === value;
-                        const isDisabled = !!option.disabled;
+                        const isDisabled = option.disabled ?? false;
                         return (
                             <li
                                 key={String(option.value)}
@@ -126,13 +143,13 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                                 className={cn(
                                     'relative select-none py-2 pl-3 pr-9',
                                     isDisabled
-                                        ? 'cursor-not-allowed opacity-40 text-[var(--color-muted-foreground)]'
+                                        ? 'cursor-not-allowed opacity-40 line-through text-[var(--color-muted-foreground)]'
                                         : 'cursor-pointer hover:bg-[var(--color-background)]',
-                                    isSelected && !isDisabled ? 'bg-primary/5 text-primary' : 'text-[var(--color-foreground)]'
+                                    !isDisabled && isSelected ? 'bg-primary/5 text-primary' : !isDisabled && 'text-[var(--color-foreground)]'
                                 )}
                                 onClick={() => !isDisabled && handleSelect(option)}
                             >
-                                <span className={cn('block truncate', isSelected && 'font-medium')}>
+                                <span className={cn('block truncate', isSelected && !isDisabled && 'font-medium')}>
                                     {option.label}
                                 </span>
                                 {isSelected && !isDisabled && (
@@ -145,7 +162,8 @@ export const SelectSingle: React.FC<SelectSingleProps> = ({
                             </li>
                         );
                     })}
-                </ul>
+                </ul>,
+                document.body
             )}
             {error && (
                 <p className="mt-1 text-xs text-[var(--color-error)]" role="alert">
