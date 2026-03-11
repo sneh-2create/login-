@@ -1,0 +1,16 @@
+export const DASHBOARD_TABS_METADATA = [
+    { id: 'quick_links', label: 'Quick Links', permission: 'viewEntityDashboard' },
+    { id: 'overview', label: 'Student Overview', permission: 'overviewDashboard' },
+    { id: 'fee', label: 'Fee', permission: 'feeDashboard' },
+    { id: 'admission', label: 'Admission', permission: 'admissionDashboard' },
+    { id: 'attendance', label: 'Attendance', permission: 'attendanceDashboard' },
+    { id: 'examination', label: 'Examination', permission: 'examinationDashboard' },
+    { id: 'employee', label: 'Human Resource', permission: 'employeeDashboard' },
+    { id: 'hod', label: 'HOD Dashboard', permission: 'getHODDashboard' },
+    { id: 'communication', label: 'Communication Dashboard', permission: 'communicationDashboard' },
+    { id: 'analytics', label: 'Analytics', permission: 'analyticsDashboard' },
+    { id: 'library', label: 'Library', permission: 'libraryDashboard' },
+    { id: 'profile', label: 'My Profile', permission: 'profileDashboard' },
+    { id: 'calendar', label: 'Calendar', permission: 'calendarDashboard' },
+    { id: 'mess', label: 'Mess Management', permission: 'getMessMangementDashboard' },
+] as const;

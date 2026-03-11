@@ -1,0 +1,37 @@
+{
+    "name": "@od-erp/ui",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    },
+    "peerDependencies": {
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.20.0"
+    },
+    "devDependencies": {
+        "@types/js-cookie": "^3.0.6",
+        "@types/react": "^18.2.0",
+        "@types/react-dom": "^18.2.0",
+        "react": "^18.2.0",
+        "react-dom": "^18.2.0",
+        "react-router-dom": "^6.20.0",
+        "typescript": "^5.3.3",
+        "vite": "^7.3.0"
+    },
+    "dependencies": {
+        "@od-erp/api-client": "workspace:*",
+        "@od-erp/constants": "workspace:*",
+        "@od-erp/store": "workspace:*",
+        "@od-erp/types": "workspace:*",
+        "@tanstack/react-table": "^8.21.3",
+        "clsx": "^2.1.1",
+        "date-fns": "^4.1.0",
+        "js-cookie": "^3.0.5",
+        "lucide-react": "^0.562.0",
+        "tailwind-merge": "^3.4.0"
+    }
+}

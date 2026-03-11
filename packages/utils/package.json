@@ -1,0 +1,23 @@
+{
+    "name": "@od-erp/utils",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts"
+    },
+    "dependencies": {
+        "@od-erp/types": "workspace:*",
+        "@od-erp/constants": "workspace:*",
+        "js-cookie": "^3.0.5",
+        "react": "^18.0.0",
+        "date-fns": "^4.1.0",
+        "xlsx": "^0.18.5"
+    },
+    "devDependencies": {
+        "@types/js-cookie": "^3.0.6",
+        "typescript": "^5.3.3",
+        "@types/react": "^18.0.0"
+    }
+}

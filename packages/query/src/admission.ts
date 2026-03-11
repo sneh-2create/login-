@@ -1,0 +1,320 @@
+import { useQuery, keepPreviousData, useMutation, useQueryClient } from '@tanstack/react-query';
+import { sourceWiseReportService, courseWiseTagReportService, nepSubjectReportService, counselorProductivityReportService, counselorTagReportService, admissionLeadLogsService, admissionFollowUpService, admissionLeadService, admissionVisitService, admissionNoteService, admissionService, admissionStudentDataService } from '@od-erp/api-client';
+import { SourceWiseReportData, CourseWiseTagReportData, NepSubjectReportData, CounselorProductivityReportData, AdmissionLeadLogResponse, AdmissionLeadLogPayload, AdmissionFollowUp, AdmissionFollowUpPayload, AdmissionFollowUpStats, AdmissionLeadPayload, AdmissionLead, AdmissionVisit, AdmissionVisitPayload, AdmissionNote, AdmissionNotePayload, CounselorTagReportTableRow } from '@od-erp/types';
+
+export const useSourceWiseReport = (
+    entityId: string,
+    session: string,
+    stageType: 'lead' | 'application',
+    startDate?: number,
+    endDate?: number,
+    source?: string,
+    counselorId?: string
+) => {
+    return useQuery<SourceWiseReportData[]>({
+        queryKey: ['sourceWiseReport', entityId, session, stageType, startDate, endDate, source, counselorId],
+        queryFn: () => sourceWiseReportService.sourceLeadReport(
+            entityId,
+            session,
+            stageType,
+            startDate,
+            endDate,
+            source,
+            counselorId
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useCourseWiseTagReport = (
+    entityId: string,
+    session: string,
+    counselorId?: string,
+    startDate?: number,
+    endDate?: number
+) => {
+    return useQuery<CourseWiseTagReportData[]>({
+        queryKey: ['courseWiseTagReport', entityId, session, counselorId, startDate, endDate],
+        queryFn: () => courseWiseTagReportService.courseWiseTagReport(
+            entityId,
+            session,
+            counselorId,
+            startDate,
+            endDate
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+
+export const useNepSubjectReport = (
+    entityId: string,
+    session: string,
+    course?: string,
+    stream?: string,
+    batch?: string,
+    subjectGroupValue?: string,
+    subjectGroupName?: string,
+    enabled: boolean = true
+) => {
+    return useQuery<NepSubjectReportData[]>({
+        queryKey: ['nepSubjectReport', entityId, session, course, stream, batch, subjectGroupValue, subjectGroupName],
+        queryFn: () => nepSubjectReportService.getNepSubjectReport(
+            entityId,
+            session,
+            course,
+            stream,
+            batch,
+            subjectGroupValue,
+            subjectGroupName
+        ),
+        enabled: !!entityId && !!session && enabled,
+        staleTime: 30000,
+    });
+};
+
+export const useCounselorProductivityReport = (
+    entityId: string,
+    session: string,
+    stageType: 'lead' | 'application',
+    startDate?: number,
+    endDate?: number,
+    counselorId?: string
+) => {
+    return useQuery<CounselorProductivityReportData[]>({
+        queryKey: ['counselorProductivityReport', entityId, session, stageType, startDate, endDate, counselorId],
+        queryFn: () => counselorProductivityReportService.getCounselorProductivityReport(
+            entityId,
+            session,
+            stageType,
+            startDate,
+            endDate,
+            counselorId
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useCounselorTagReport = (
+    entityId: string,
+    session: string,
+    counselorId?: string,
+    startDate?: number,
+    endDate?: number
+) => {
+    return useQuery<CounselorTagReportTableRow[]>({
+        queryKey: ['counselorTagReport', entityId, session, counselorId, startDate, endDate],
+        queryFn: () => counselorTagReportService.counselorTagList(
+            entityId,
+            session,
+            counselorId,
+            startDate,
+            endDate
+        ),
+        enabled: !!entityId && !!session,
+        staleTime: 30000,
+    });
+};
+
+export const useCounselors = (entityId: string, role?: string) => {
+    return useQuery<any[]>({
+        queryKey: ['counselors', entityId, role],
+        queryFn: () => admissionService.listEmployee(entityId, role),
+        enabled: !!entityId,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useAdmissionLead = (payload: AdmissionLeadPayload) => {
+    return useQuery<{ data: AdmissionLead[]; totalCount: number }>({
+        queryKey: ['admissionLead', payload],
+        queryFn: () => admissionLeadService.listAdmissionLeads(payload),
+        enabled: !!payload.entity,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdmissionFollowUp = (payload: AdmissionFollowUpPayload) => {
+    return useQuery<AdmissionFollowUp[]>({
+        queryKey: ['admissionFollowUp', payload],
+        queryFn: () => admissionFollowUpService.listFollowUp(payload),
+        enabled: !!payload.entity,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAdmissionFollowUpStats = (payload: AdmissionFollowUpPayload) => {
+    return useQuery<AdmissionFollowUpStats>({
+        queryKey: ['admissionFollowUpStats', payload],
+        queryFn: () => admissionFollowUpService.getFilterCountFollowUp(payload),
+        enabled: !!payload.entity,
+    });
+};
+
+export const useAdmissionLeadLog = (payload: AdmissionLeadLogPayload) => {
+    return useQuery<AdmissionLeadLogResponse>({
+        queryKey: ['admissionLeadLog', payload],
+        queryFn: () => admissionLeadLogsService.listAdmissionLeadLogs(payload),
+        enabled: !!payload.entity && !!payload.session,
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddAdmissionLeadLog = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadLogsService.addAdmissionLeadLogs,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionVisit'] });
+        },
+    });
+};
+
+export const useClickToCall = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadLogsService.clickToCall,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['viewAdmissionStudentData'] });
+        },
+    });
+};
+
+
+export const useAddAdmissionLead = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.addAdmissionLead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useUpdateAdmissionLead = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.updateAdmissionLead,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useBulkCounselorUpdate = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionLeadService.bulkCounselorUpdate,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+        },
+    });
+};
+
+export const useEditAdmissionStudentData = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionStudentDataService.editAdmissionStudentData,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionLeadLog'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionLeads'] });
+            queryClient.invalidateQueries({ queryKey: ['admissionStudentData'] });
+            queryClient.invalidateQueries({ queryKey: ['viewAdmissionStudentData'] });
+        },
+    });
+};
+
+export const useAdmissionVisit = (payload: AdmissionVisitPayload, enabled?: boolean) => {
+    return useQuery<{ data: AdmissionVisit[]; totalCount: number }>({
+        queryKey: ['admissionVisit', payload],
+        queryFn: () => admissionVisitService.listAdmissionVisit(payload),
+        enabled: !!payload.entity && (enabled !== undefined ? enabled : true),
+        placeholderData: keepPreviousData,
+    });
+};
+
+export const useAddAdmissionVisit = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionVisitService.addAdmissionVisit,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionVisit'] });
+        },
+    });
+};
+
+export const useAdmissionNote = (payload: AdmissionNotePayload, enabled?: boolean) => {
+    return useQuery<{ data: AdmissionNote[]; totalCount: number }>({
+        queryKey: ['admissionNote', payload],
+        queryFn: () => admissionNoteService.listAdmissionNote(payload),
+        enabled: !!payload.entity && (enabled !== undefined ? enabled : true),
+        placeholderData: keepPreviousData,
+    });
+};
+
+
+export const useAddAdmissionNote = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionNoteService.addAdmissionNote,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admissionNote'] });
+        },
+    });
+};
+
+export const useCourses = (entityId: string, session: string) => {
+    return useQuery<any[]>({
+        queryKey: ['courses', entityId, session],
+        queryFn: () => admissionService.getCourseList(entityId, session),
+        enabled: !!entityId && !!session,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useStreams = (entityId: string, course: string) => {
+    return useQuery<string[]>({
+        queryKey: ['streams', entityId, course],
+        queryFn: () => admissionService.getStreamList(entityId, course),
+        enabled: !!entityId && !!course,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useBatches = (entityId: string, course: string, stream: string, enabled: boolean = true) => {
+    return useQuery<string[]>({
+        queryKey: ['batches', entityId, course, stream],
+        queryFn: () => admissionService.getBatchList(entityId, course, stream),
+        enabled: !!entityId && !!course && !!stream && enabled,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useSources = (entityId: string, session: string) => {
+    return useQuery<string[]>({
+        queryKey: ['sources', entityId, session],
+        queryFn: async () => {
+            const data = await admissionService.viewAdmissionMaster(entityId, session);
+            return data.source || [];
+        },
+        enabled: !!entityId && !!session,
+        staleTime: 60000 * 5,
+    });
+};
+
+export const useAddReportFile = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: admissionService.addReportFile,
+        onSuccess: () => {
+            // Invalidate templates cache if it exists
+            queryClient.invalidateQueries({ queryKey: ['admissionTemplates'] });
+        },
+    });
+};
+

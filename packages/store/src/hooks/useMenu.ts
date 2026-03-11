@@ -1,0 +1,116 @@
+
+import { useAppSelector } from '../hooks';
+
+// Define the shape of the raw menu item from config
+export interface ConfigMenuItem {
+    title: string;
+    icon?: string;
+    page?: string;
+    root?: boolean;
+    alignment?: string;
+    bullet?: string;
+    admPermission?: string;
+    entPermission?: string;
+    submenu?: ConfigMenuItem[];
+
+    fav?: boolean;
+}
+
+export const useMenu = () => {
+    const { menuConfig, entityPreferences } = useAppSelector((state) => state.config);
+    const { permissions, user, preferences } = useAppSelector((state) => state.auth);
+
+    // Transform logic
+    const getFilteredMenu = (): ConfigMenuItem[] => {
+        if (!menuConfig) {
+            return [];
+        }
+
+        let rawItems: ConfigMenuItem[] = [];
+
+
+        // Determine which section to use based on user role/type
+        // For now assuming 'admin' or 'entity' based on existence of entityPreferences
+        // In real app, check user.role or userType
+        if (user?.role === 'superadmin' || user?.role === 'od1' || user?.userType === 'od1') {
+            // User requested to see BOTH admin and entity lists combined
+            const adminItems = menuConfig.adminAside?.items || [];
+            const entityItems = menuConfig.entityAside?.items || [];
+
+            // Deduplicate based on title (prefer Admin items)
+            const adminTitles = new Set(adminItems.map((item: ConfigMenuItem) => item.title));
+            const filteredEntityItems = entityItems.filter((item: ConfigMenuItem) => !adminTitles.has(item.title));
+
+            rawItems = [...adminItems, ...filteredEntityItems];
+        } else if (entityPreferences) { // If logged in as entity
+            rawItems = menuConfig.entityAside?.items || [];
+        }
+
+        const favourites = preferences?.favourites || [];
+        console.log('[useMenu] Preferences:', preferences);
+        console.log('[useMenu] Extracted Favourites:', favourites);
+        return transformMenuItems(rawItems, favourites);
+    };
+
+    const transformMenuItems = (items: ConfigMenuItem[], favourites: any[]): ConfigMenuItem[] => {
+        let updatedItems: ConfigMenuItem[] = [];
+
+        for (const item of items) {
+            // 1. Check Permissions
+            let hasPermission = true;
+            const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'od1' || user?.userType === 'od1';
+
+            if (!isSuperAdmin) {
+                if (item.entPermission) {
+                    hasPermission = permissions.includes(item.entPermission);
+                } else if (item.admPermission) {
+                    hasPermission = permissions.includes(item.admPermission);
+                }
+            }
+
+            if (!hasPermission) continue;
+
+            // 2. Clone item to avoid mutating store
+            const newItem = { ...item };
+
+            // 3. Rename Title based on Preferences
+            if (entityPreferences?.displayNames) {
+                newItem.title = renameTitle(newItem.title, entityPreferences.displayNames);
+            }
+
+            // 4. Check Favourite Status
+            newItem.fav = favourites.some((f: any) => f.name === newItem.title);
+
+            // 5. Process Submenu
+            if (newItem.submenu && newItem.submenu.length > 0) {
+                newItem.submenu = transformMenuItems(newItem.submenu, favourites);
+                // Also check if any child is favourite, might be relevant for parent highlighting, but typically only leaf or direct subitems are marked. 
+                // However, matching Angular logic, we might not need to mark parent as fav based on child. 
+            }
+
+            // 6. Version Check (Attendance) - simplified for now
+            if (newItem.title === 'Attendance' && entityPreferences?.studentAttendanceVersion !== 'old') continue;
+            if (newItem.title === 'Attendance New' && entityPreferences?.studentAttendanceVersion !== 'new') continue;
+
+            updatedItems.push(newItem);
+        }
+        return updatedItems;
+    };
+
+    const renameTitle = (title: string, displayNames: any): string => {
+        // Simple exact match replacement or lookup
+        // Based on Angular logic:
+        const map: { [key: string]: string } = {
+            'Events': displayNames.event,
+            'Partner Institutes': displayNames.partnerInstitute,
+            'Class': displayNames.course,
+            // Add more as needed
+        };
+        return map[title] || title;
+    };
+
+    return {
+        menuItems: getFilteredMenu(),
+        isLoading: !menuConfig
+    };
+};

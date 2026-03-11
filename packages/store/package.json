@@ -1,0 +1,25 @@
+{
+    "name": "@od-erp/store",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts,tsx"
+    },
+    "dependencies": {
+        "@reduxjs/toolkit": "^2.11.2",
+        "react-redux": "^9.2.0",
+        "redux-persist": "^6.0.0",
+        "@od-erp/types": "workspace:*",
+        "@od-erp/constants": "workspace:*",
+        "@od-erp/utils": "workspace:*"
+    },
+    "peerDependencies": {
+        "react": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.0",
+        "typescript": "^5.3.3"
+    }
+}

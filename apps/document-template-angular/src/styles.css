@@ -1,0 +1,120 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background-color: #fff;
+}
+
+/* Custom classes for admission form template */
+.mt10 {
+    margin-top: 10px;
+}
+
+.mt20p {
+    margin-top: 20px;
+    padding-top: 20px;
+}
+
+.textCenter {
+    text-align: center;
+}
+
+.card {
+    border-radius: 4px;
+    padding: 20px;
+    background-color: #fff;
+}
+
+.img-rounded {
+    border-radius: 4px;
+}
+
+/* Print-specific global styles */
+@media print {
+    body {
+        background-color: white;
+    }
+
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
+    /* Each student form starts on a new page */
+    .page-break {
+        page-break-after: always;
+        /* Legacy browsers */
+        break-after: page;
+        /* Modern browsers */
+    }
+
+    .student-form-wrapper {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
+
+    .card {
+        box-shadow: none;
+    }
+
+    /* Force all content to fit within the printable page width */
+    body,
+    html {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* Override Bootstrap container fixed max-width */
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 15px !important;
+        padding-right: 15px !important;
+    }
+
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+    }
+
+    /* Reduce vertical spacing so form fits compactly on page */
+    .mt10 {
+        margin-top: 6px !important;
+    }
+
+    .mt20p {
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+    }
+
+    .card {
+        padding: 10px !important;
+    }
+
+    .row {
+        margin-bottom: 0 !important;
+    }
+
+    h1 {
+        font-size: 18px !important;
+        margin: 4px 0 !important;
+    }
+
+    h4 {
+        font-size: 12px !important;
+        margin: 2px 0 !important;
+    }
+
+    br {
+        display: none !important;
+    }
+}

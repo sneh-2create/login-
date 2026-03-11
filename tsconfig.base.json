@@ -1,0 +1,84 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "useDefineForClassFields": true,
+        "lib": [
+            "ES2020",
+            "DOM",
+            "DOM.Iterable"
+        ],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        /* Bundler mode */
+        "moduleResolution": "bundler",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        /* Linting */
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "baseUrl": ".",
+        "paths": {
+            "@od-erp/types": [
+                "./packages/types/src"
+            ],
+            "@od-erp/types/*": [
+                "./packages/types/src/*"
+            ],
+            "@od-erp/ui": [
+                "./packages/ui/src"
+            ],
+            "@od-erp/ui/global/*": [
+                "./packages/ui/src/global/*"
+            ],
+            "@od-erp/ui/*": [
+                "./packages/ui/src/*"
+            ],
+            "@od-erp/theme": [
+                "./packages/theme/src"
+            ],
+            "@od-erp/theme/*": [
+                "./packages/theme/src/*"
+            ],
+            "@od-erp/auth": [
+                "./packages/auth/src"
+            ],
+            "@od-erp/auth/*": [
+                "./packages/auth/src/*"
+            ],
+            "@od-erp/api-client": [
+                "./packages/api-client/src"
+            ],
+            "@od-erp/api-client/*": [
+                "./packages/api-client/src/*"
+            ],
+            "@od-erp/store": [
+                "./packages/store/src"
+            ],
+            "@od-erp/store/*": [
+                "./packages/store/src/*"
+            ],
+            "@od-erp/query": [
+                "./packages/query/src"
+            ],
+            "@od-erp/query/*": [
+                "./packages/query/src/*"
+            ],
+            "@od-erp/utils": [
+                "./packages/utils/src"
+            ],
+            "@od-erp/utils/*": [
+                "./packages/utils/src/*"
+            ],
+            "@od-erp/constants": [
+                "./packages/constants/src"
+            ],
+            "@od-erp/constants/*": [
+                "./packages/constants/src/*"
+            ]
+        }
+    }
+}

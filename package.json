@@ -1,0 +1,58 @@
+{
+    "name": "od-erp-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Monorepo for OD ERP Micro-frontends",
+    "scripts": {
+        "build": "pnpm -r build",
+        "test": "pnpm -r test",
+        "lint": "pnpm -r lint",
+        "build:types": "pnpm --filter types build",
+        "build:constants": "pnpm --filter constants build",
+        "build:utils": "pnpm --filter utils build",
+        "build:api": "pnpm --filter api-client build",
+        "build:query": "pnpm --filter query build",
+        "build:store": "pnpm --filter store build",
+        "build:auth": "pnpm --filter auth build",
+        "build:ui": "pnpm --filter ui build",
+        "build:shell": "pnpm --filter shell build",
+        "build:admission": "pnpm --filter admission-crm build",
+        "build:fee": "pnpm --filter fee-module build",
+        "build:academic": "pnpm --filter academic-module build",
+        "build:exam": "pnpm --filter exam-coe build",
+        "build:hrm": "pnpm --filter hrm build",
+        "build:back-office": "pnpm --filter back-office build",
+        "build:templates": "pnpm --filter document-template-angular build",
+        "dev": "pnpm -r dev",
+        "dev:shell": "pnpm --filter shell dev",
+        "dev:admission": "pnpm --filter admission-crm dev",
+        "dev:fee": "pnpm --filter fee-module dev",
+        "dev:academic": "pnpm --filter academic-module dev",
+        "dev:exam": "pnpm --filter exam-coe dev",
+        "dev:hrm": "pnpm --filter hrm dev",
+        "dev:back-office": "pnpm --filter back-office dev",
+        "dev:templates": "pnpm --filter document-template-angular dev",
+        "preview": "pnpm --filter shell --filter admission-crm --parallel preview",
+        "preview:templates": "pnpm --filter document-template-angular preview",
+        "prepare": "husky"
+    },
+    "lint-staged": {
+        "**/*.{ts,tsx}": "eslint"
+    },
+    "devDependencies": {
+        "@typescript-eslint/eslint-plugin": "^8.53.1",
+        "@typescript-eslint/parser": "^8.53.1",
+        "@vitejs/plugin-react": "4.2.1",
+        "eslint": "^8.56.0",
+        "eslint-plugin-check-file": "^3.3.1",
+        "husky": "^9.1.7",
+        "lint-staged": "^16.2.7",
+        "prettier": "^3.1.1",
+        "typescript": "^5.3.3",
+        "vite": "4.5.5"
+    },
+    "engines": {
+        "node": ">=18",
+        "pnpm": ">=8"
+    }
+}

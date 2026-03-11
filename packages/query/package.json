@@ -1,0 +1,23 @@
+{
+    "name": "@od-erp/query",
+    "version": "1.0.0",
+    "main": "src/index.ts",
+    "types": "dist/index.d.ts",
+    "scripts": {
+        "build": "tsc",
+        "lint": "eslint src --ext ts,tsx"
+    },
+    "dependencies": {
+        "@od-erp/api-client": "workspace:*",
+        "@od-erp/types": "workspace:*",
+        "@tanstack/react-query": "^5.14.0",
+        "@tanstack/react-query-devtools": "^5.91.2"
+    },
+    "peerDependencies": {
+        "react": "^18.2.0"
+    },
+    "devDependencies": {
+        "@types/react": "^18.2.0",
+        "typescript": "^5.3.3"
+    }
+}

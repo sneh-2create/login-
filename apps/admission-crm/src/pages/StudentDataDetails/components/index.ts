@@ -1,0 +1,12 @@
+export { default as StudentInfoCard } from './StudentInfoCard';
+export { default as StageProgressIndicator } from './StageProgressIndicator';
+export { default as DetailsSidebar } from './DetailsSidebar';
+export { default as DetailsContentArea } from './DetailsContentArea';
+export { default as TimelineView } from './TimelineView';
+export { default as FollowUpView } from './FollowUpView';
+export { default as TransactionsView } from './TransactionsView';
+export { default as DocumentsView } from './DocumentsView';
+export { default as BankDetailsView } from './BankDetailsView';
+export { default as MoveApplicationView } from './MoveApplicationView';
+export { default as MoveStudentView } from './MoveStudentView';
+export { default as VerifyDocumentsView } from './VerifyDocumentsView';
